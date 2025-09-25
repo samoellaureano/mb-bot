@@ -250,4 +250,4 @@ MIT License - Livre para uso comercial.
 
 ps aux | grep node
 SIMULATE=false npm run dashboard
-npm run start
+nohup npm run start > exec-25092025report.log 2>&1 &

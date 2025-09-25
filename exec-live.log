@@ -1,0 +1,9 @@
+23:20:11.827 [INFO]   Initializing DB... 
+23:20:11.867 [SUCCESS] DB initialized 
+23:20:11.868 [INFO]   Fetching initial orderbook... 
+23:20:11.869 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+23:20:12.300 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+23:20:12.301 [INFO]   Starting main loop - cycle every 15s 
+23:20:12.301 [WARN]   Cycle 1 skipped - no orderbook 
+23:20:12.302 [SUCCESS] Bot operational - SIMULATE=false 
+23:20:27.309 [WARN]   Cycle 2 skipped - no orderbook 

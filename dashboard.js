@@ -123,28 +123,30 @@ async function getLiveData() {
 
     // ===== Cálculo de P&L =====
     let btcPosition = 0;
-    let costBasis = 0;
+    let totalCost = 0;
     let totalPnL = 0;
 
-    orders.forEach(o => {
-      if (o.status !== 'filled') return;
+    orders
+      .filter(o => o.status === 'filled')
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)) // garante ordem cronológica
+      .forEach(o => {
+        const qty = parseFloat(o.qty);
+        const price = parseFloat(o.price || o.limitPrice);
 
-      const qty = parseFloat(o.qty);
-      const price = parseFloat(o.limitPrice || o.price);
+        if (o.side === 'buy') {
+          btcPosition += qty;
+          totalCost += qty * price;
+        } else if (o.side === 'sell' && btcPosition > 0) {
+          const avgPrice = totalCost / btcPosition;
+          totalPnL += (price - avgPrice) * qty;
 
-      if (o.side === 'buy') {
-        // Aumenta posição e custo médio
-        costBasis = ((btcPosition * costBasis) + (qty * price)) / (btcPosition + qty);
-        btcPosition += qty;
-      } else if (o.side === 'sell') {
-        // Lucro da venda
-        totalPnL += (price - costBasis) * qty;
-        btcPosition -= qty;
-        if (btcPosition < 0) btcPosition = 0; // evita posição negativa
-      }
-    });
+          btcPosition -= qty;
+          totalCost -= avgPrice * qty;
+        }
+      });
 
-    totalPnL = totalPnL.toFixed(2); // em BRL
+    totalPnL = Number(totalPnL).toFixed(8); // mantém precisão
+
 
     return {
       timestamp: new Date().toISOString(),
@@ -157,8 +159,9 @@ async function getLiveData() {
         spread: (((parseFloat(ticker.sell) - parseFloat(ticker.buy)) / parseFloat(ticker.last)) * 100).toFixed(2)
       },
       balances: {
-        brl: balances.find(b => b.symbol === 'BRL')?.available || 0,
-        btc: balances.find(b => b.symbol === 'BTC')?.available || 0
+        brl: balances.find(b => b.symbol === 'BRL')?.total || 0,
+        btc: balances.find(b => b.symbol === 'BTC')?.total || 0,
+        total: balances.reduce((sum, b) => sum + parseFloat(b.total) * (b.symbol === 'BRL' ? 1 : (b.symbol === 'BTC' ? parseFloat(ticker.last) : 0)), 0).toFixed(2)
       },
       orders: orders.map(o => ({
         id: o.id,

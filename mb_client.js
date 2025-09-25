@@ -79,6 +79,7 @@ class MercadoBitcoinAuth {
       if (accountsResponse.data && accountsResponse.data.length > 0) {
         accountId = accountsResponse.data[0].id;
         log('INFO', `Account ID: ${accountId.substring(0, 8)}...`);
+        log('INFO', `Access Token: ${accessToken.substring(0, 8)}...`);
       } else throw new Error('No accounts found');
 
       const expiresIn = Math.floor((tokenExpiration - Date.now()) / (1000 * 60));
@@ -163,7 +164,7 @@ function simulateResponse(endpoint, method, params, body) {
   const simulations = {
     '/tickers': { GET: () => [{ pair: PAIR, last: marketPrice.toFixed(2), buy: (marketPrice - spread * 0.5).toFixed(2), sell: (marketPrice + spread * 0.5).toFixed(2), high: (marketPrice * 1.005).toFixed(2), low: (marketPrice * 0.995).toFixed(2), open: (marketPrice * 0.998).toFixed(2), vol: (15 + Math.random() * 25).toFixed(3), date: now * 1000000000 }] },
     '/accounts/{accountId}/balances': { GET: () => [{ symbol: 'BRL', available: simulatedBalances.BRL.toFixed(2), on_hold: '0.00', total: simulatedBalances.BRL.toFixed(2) }, { symbol: 'BTC', available: simulatedBalances.BTC.toFixed(8), on_hold: '0.00000000', total: simulatedBalances.BTC.toFixed(8) }] },
-    '/accounts/{accountId}/{symbol}/orders': { 
+    '/accounts/{accountId}/{symbol}/orders': {
       POST: () => {
         const qty = parseFloat(body.qty);
         const price = parseFloat(body.limitPrice);
@@ -197,7 +198,7 @@ function simulateResponse(endpoint, method, params, body) {
 // =========================================
 // ===== Trading Functions =================
 async function placeOrder(side, price, quantity = 0.001, stopPrice = 0, cost = 100, externalId = null) {
-  const MIN_QTY = 0.0000015; 
+  const MIN_QTY = 0.0000015;
   const qty = Math.max(quantity, MIN_QTY);
   const finalExternalId = externalId || `ORD_${Date.now()}`;
 
