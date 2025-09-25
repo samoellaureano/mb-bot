@@ -14,3 +14,18 @@
 22:06:30.758 [WARN]   Cycle 3 skipped - no orderbook 
 22:06:32.085 [WARN]   SIGINT received - shutting down... 
 22:06:32.133 [SUCCESS] Shutdown complete 
+
+> mb-bot@1.0.0 start
+> concurrently --kill-others "npm:live:log" "npm:dashboard:log"
+
+[live:log] 
+[live:log] > mb-bot@1.0.0 live:log
+[live:log] > SIMULATE=false node bot.js >> exec-live.log 2>&1
+[live:log] 
+[dashboard:log] 
+[dashboard:log] > mb-bot@1.0.0 dashboard:log
+[dashboard:log] > node dashboard.js >> exec-dashboard.log 2>&1
+[dashboard:log] 
+[live:log] npm run live:log exited with code SIGTERM
+--> Sending SIGTERM to other processes..
+[dashboard:log] npm run dashboard:log exited with code SIGTERM
