@@ -1,0 +1,13 @@
+nohup: ignoring input
+
+> mb-bot@1.0.0 start
+> node bot.js
+
+22:07:20.281 [INFO]   Initializing DB... 
+22:07:20.400 [SUCCESS] DB initialized 
+22:07:20.401 [INFO]   Fetching initial orderbook... 
+22:07:20.402 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:07:21.082 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+22:07:21.083 [INFO]   Starting main loop - cycle every 5s 
+22:07:21.085 [WARN]   Cycle 1 skipped - no orderbook 
+22:07:21.087 [SUCCESS] Bot operational - SIMULATE=false 

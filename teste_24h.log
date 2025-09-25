@@ -1,0 +1,8 @@
+nohup: ignoring input
+🟢 Iniciando teste de 24h do MB Bot...
+2025-09-23T22:11:32.148Z [WARN]   Token expired/near expiry, reauthenticating...
+2025-09-23T22:11:32.149Z [INFO]   Authentication (SIMULATE): Bearer token generated
+💰 Ticker BTC-BRL: R$ 302.370,18
+💵 Saldo BRL: 0 | ₿ BTC: 0.00000000
+📋 Ordens criadas -> Buy: N/A | Sell: N/A
+📌 Open Orders: N/A

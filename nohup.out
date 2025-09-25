@@ -1,0 +1,16 @@
+
+> mb-bot@1.0.0 start
+> node bot.js
+
+22:06:20.053 [INFO]   Initializing DB... 
+22:06:20.124 [SUCCESS] DB initialized 
+22:06:20.125 [INFO]   Fetching initial orderbook... 
+22:06:20.126 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:06:20.734 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+22:06:20.736 [INFO]   Starting main loop - cycle every 5s 
+22:06:20.741 [WARN]   Cycle 1 skipped - no orderbook 
+22:06:20.752 [SUCCESS] Bot operational - SIMULATE=false 
+22:06:25.757 [WARN]   Cycle 2 skipped - no orderbook 
+22:06:30.758 [WARN]   Cycle 3 skipped - no orderbook 
+22:06:32.085 [WARN]   SIGINT received - shutting down... 
+22:06:32.133 [SUCCESS] Shutdown complete 
