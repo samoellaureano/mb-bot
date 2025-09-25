@@ -11,3 +11,305 @@ nohup: ignoring input
 22:07:21.083 [INFO]   Starting main loop - cycle every 5s 
 22:07:21.085 [WARN]   Cycle 1 skipped - no orderbook 
 22:07:21.087 [SUCCESS] Bot operational - SIMULATE=false 
+22:07:26.094 [WARN]   Cycle 2 skipped - no orderbook 
+22:07:31.096 [WARN]   Cycle 3 skipped - no orderbook 
+22:07:36.100 [WARN]   Cycle 4 skipped - no orderbook 
+22:07:41.104 [WARN]   Cycle 5 skipped - no orderbook 
+22:07:46.109 [WARN]   Cycle 6 skipped - no orderbook 
+22:07:51.115 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:07:51.335 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:07:51.338Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 587302.11
+2025-09-25T22:07:51.339Z [WARN]   Token expired/near expiry, reauthenticating...
+2025-09-25T22:07:51.340Z [INFO]   API_KEY: bdb29a91...
+2025-09-25T22:07:51.340Z [INFO]   API_SECRET: e14075f1...
+2025-09-25T22:07:52.284Z [INFO]   Account ID: f02d1506...
+2025-09-25T22:07:52.287Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+2025-09-25T22:07:52.290Z [DEBUG]  [GET] /tickers
+2025-09-25T22:07:52.523Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838071338',
+  limitPrice: 587302,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:07:52.525Z [DEBUG]  Rate limit: waiting 97ms
+2025-09-25T22:07:52.624Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:07:52.925 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:07:52.925Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 588477.89
+2025-09-25T22:07:52.926Z [DEBUG]  [GET] /tickers
+2025-09-25T22:07:53.156Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838072925',
+  limitPrice: 588478,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:07:53.185Z [DEBUG]  Rate limit: waiting 74ms
+2025-09-25T22:07:53.279Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:07:53.635 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:07:53.636 [INFO]   Cycle 7 summary | {"cycles":7,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillPr...
+22:07:56.117 [WARN]   Cycle 8 skipped - no orderbook 
+22:08:01.120 [WARN]   Cycle 9 skipped - no orderbook 
+22:08:06.125 [WARN]   Cycle 10 skipped - no orderbook 
+22:08:11.131 [WARN]   Cycle 11 skipped - no orderbook 
+22:08:16.136 [WARN]   Cycle 12 skipped - no orderbook 
+22:08:21.142 [WARN]   Cycle 13 skipped - no orderbook 
+22:08:26.148 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:08:26.384 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:08:26.389Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 587855.55
+2025-09-25T22:08:26.390Z [DEBUG]  [GET] /tickers
+2025-09-25T22:08:26.649Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838106389',
+  limitPrice: 587856,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:08:26.652Z [DEBUG]  Rate limit: waiting 72ms
+2025-09-25T22:08:26.725Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:08:27.087 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:08:27.089Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 589032.45
+2025-09-25T22:08:27.092Z [DEBUG]  [GET] /tickers
+2025-09-25T22:08:27.434Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838107089',
+  limitPrice: 589032,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:08:27.453Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:08:27.807 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:08:27.807 [INFO]   Cycle 14 summary | {"cycles":14,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillP...
+22:08:31.151 [WARN]   Cycle 15 skipped - no orderbook 
+22:08:36.154 [WARN]   Cycle 16 skipped - no orderbook 
+22:08:41.158 [WARN]   Cycle 17 skipped - no orderbook 
+22:08:46.164 [WARN]   Cycle 18 skipped - no orderbook 
+22:08:51.170 [WARN]   Cycle 19 skipped - no orderbook 
+22:08:56.176 [WARN]   Cycle 20 skipped - no orderbook 
+22:09:01.180 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:09:01.439 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:09:01.444Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 587682.72
+2025-09-25T22:09:01.445Z [DEBUG]  [GET] /tickers
+2025-09-25T22:09:01.697Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838141444',
+  limitPrice: 587683,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:09:01.698Z [DEBUG]  Rate limit: waiting 80ms
+2025-09-25T22:09:01.780Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:09:02.139 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:09:02.139Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 588859.28
+2025-09-25T22:09:02.141Z [DEBUG]  [GET] /tickers
+2025-09-25T22:09:02.633Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838142139',
+  limitPrice: 588859,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:09:02.634Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:09:02.939 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:09:02.972 [INFO]   Cycle 21 summary | {"cycles":21,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillP...
+22:09:06.184 [WARN]   Cycle 22 skipped - no orderbook 
+22:09:11.187 [WARN]   Cycle 23 skipped - no orderbook 
+22:09:16.191 [WARN]   Cycle 24 skipped - no orderbook 
+22:09:21.197 [WARN]   Cycle 25 skipped - no orderbook 
+22:09:26.202 [WARN]   Cycle 26 skipped - no orderbook 
+22:09:31.208 [WARN]   Cycle 27 skipped - no orderbook 
+22:09:36.212 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:09:36.463 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:09:36.475Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 587906
+2025-09-25T22:09:36.477Z [DEBUG]  [GET] /tickers
+2025-09-25T22:09:36.714Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838176475',
+  limitPrice: 587906,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:09:36.715Z [DEBUG]  Rate limit: waiting 95ms
+2025-09-25T22:09:36.811Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:09:37.118 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:09:37.136Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 589083
+2025-09-25T22:09:37.146Z [DEBUG]  [GET] /tickers
+2025-09-25T22:09:37.385Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838177136',
+  limitPrice: 589083,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:09:37.389Z [DEBUG]  Rate limit: waiting 89ms
+2025-09-25T22:09:37.479Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:09:37.739 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:09:37.741 [INFO]   Cycle 28 summary | {"cycles":28,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillP...
+22:09:41.216 [WARN]   Cycle 29 skipped - no orderbook 
+22:09:46.219 [WARN]   Cycle 30 skipped - no orderbook 
+22:09:51.224 [WARN]   Cycle 31 skipped - no orderbook 
+22:09:56.229 [WARN]   Cycle 32 skipped - no orderbook 
+22:10:01.231 [WARN]   Cycle 33 skipped - no orderbook 
+22:10:06.236 [WARN]   Cycle 34 skipped - no orderbook 
+22:10:11.239 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:10:11.558 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:10:11.572Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 588104.3
+2025-09-25T22:10:11.590Z [DEBUG]  [GET] /tickers
+2025-09-25T22:10:11.994Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838211572',
+  limitPrice: 588104,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:10:11.995Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:10:12.327 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:10:12.328Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 589281.7
+2025-09-25T22:10:12.329Z [DEBUG]  [GET] /tickers
+2025-09-25T22:10:12.573Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838212328',
+  limitPrice: 589282,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:10:12.574Z [DEBUG]  Rate limit: waiting 88ms
+2025-09-25T22:10:12.663Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:10:13.050 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:10:13.051 [INFO]   Cycle 35 summary | {"cycles":35,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillP...
+22:10:16.243 [WARN]   Cycle 36 skipped - no orderbook 
+22:10:21.245 [WARN]   Cycle 37 skipped - no orderbook 
+22:10:26.251 [WARN]   Cycle 38 skipped - no orderbook 
+22:10:31.256 [WARN]   Cycle 39 skipped - no orderbook 
+22:10:36.261 [WARN]   Cycle 40 skipped - no orderbook 
+22:10:41.265 [WARN]   Cycle 41 skipped - no orderbook 
+22:10:46.271 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:10:46.525 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:10:46.531Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 587996.91
+2025-09-25T22:10:46.532Z [DEBUG]  [GET] /tickers
+2025-09-25T22:10:46.898Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838246530',
+  limitPrice: 587997,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:10:46.916Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:10:47.315 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:10:47.316Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 589174.09
+2025-09-25T22:10:47.317Z [DEBUG]  [GET] /tickers
+2025-09-25T22:10:47.550Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838247316',
+  limitPrice: 589174,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:10:47.552Z [DEBUG]  Rate limit: waiting 97ms
+2025-09-25T22:10:47.650Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:10:47.960 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:10:47.961 [INFO]   Cycle 42 summary | {"cycles":42,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillP...
+22:10:51.275 [WARN]   Cycle 43 skipped - no orderbook 
+22:10:56.277 [WARN]   Cycle 44 skipped - no orderbook 
+22:11:01.283 [WARN]   Cycle 45 skipped - no orderbook 
+22:11:06.287 [WARN]   Cycle 46 skipped - no orderbook 
+22:11:11.292 [WARN]   Cycle 47 skipped - no orderbook 
+22:11:16.297 [WARN]   Cycle 48 skipped - no orderbook 
+22:11:21.300 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:11:21.700 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:11:21.701Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 588166.74
+2025-09-25T22:11:21.702Z [DEBUG]  [GET] /tickers
+2025-09-25T22:11:22.121Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838281701',
+  limitPrice: 588167,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:11:22.122Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:11:22.385 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:11:22.411Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 589344.26
+2025-09-25T22:11:22.429Z [DEBUG]  Rate limit: waiting 27ms
+2025-09-25T22:11:22.498Z [DEBUG]  [GET] /tickers
+2025-09-25T22:11:22.868Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838282411',
+  limitPrice: 589344,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:11:22.868Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:11:23.164 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:11:23.165 [INFO]   Cycle 49 summary | {"cycles":49,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillP...
+22:11:26.304 [WARN]   Cycle 50 skipped - no orderbook 
+22:11:31.306 [WARN]   Cycle 51 skipped - no orderbook 
+22:11:36.311 [WARN]   Cycle 52 skipped - no orderbook 
+22:11:41.317 [WARN]   Cycle 53 skipped - no orderbook 
+22:11:46.322 [WARN]   Cycle 54 skipped - no orderbook 
+22:11:51.327 [WARN]   Cycle 55 skipped - no orderbook 
+22:11:56.332 [DEBUG]  Fetching orderbook from: https://api.mercadobitcoin.net/api/v4/BTC-BRL/orderbook?limit=10 
+22:11:56.624 [INFO]   Orderbook refreshed: 10 bids, 10 asks 
+2025-09-25T22:11:56.690Z [INFO]   Placing BUY order: 0.000002 BTC-BRL at 588257.65
+2025-09-25T22:11:56.712Z [DEBUG]  [GET] /tickers
+2025-09-25T22:11:57.053Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838316690',
+  limitPrice: 588258,
+  qty: '0.000002',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit',
+  cost: 100
+}
+2025-09-25T22:11:57.054Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:11:57.333 [ERROR]  Buy placement failed | "Insufficient balance to carry out the operation"
+2025-09-25T22:11:57.341Z [INFO]   Placing SELL order: 0.000002 BTC-BRL at 589435.35
+2025-09-25T22:11:57.352Z [DEBUG]  Rate limit: waiting 35ms
+2025-09-25T22:11:57.392Z [DEBUG]  [GET] /tickers
+2025-09-25T22:11:57.715Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1758838317341',
+  limitPrice: 589435,
+  qty: '0.000002',
+  side: 'sell',
+  stopPrice: 0,
+  type: 'limit'
+}
+2025-09-25T22:11:57.720Z [DEBUG]  [POST] /accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders
+22:11:58.022 [ERROR]  Sell placement failed | "Insufficient balance to carry out the operation"
+22:11:58.023 [INFO]   Cycle 56 summary | {"cycles":56,"totalOrders":0,"filledOrders":0,"cancels":0,"totalPnL":0,"avgFillP...
