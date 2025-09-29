@@ -231,8 +231,8 @@ async function runCycle() {
     if (volatility >= 0.7) dynamicSpreadPct = Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
     else if (volatility >= 0.3) dynamicSpreadPct = 0.006;
 
-    const buyPrice = Math.floor(orderbook.bids[0][0] * (1 + dynamicSpreadPct) * 100) / 100; // Ajusta buyPrice com dynamicSpreadPct
-    const sellPrice = Math.ceil(mid * (1 + dynamicSpreadPct) * 100) / 100; // Ajusta sellPrice com dynamicSpreadPct
+    const buyPrice = Math.floor(orderbook.bids[0][0] * (1 + dynamicSpreadPct) * 100) / 100;
+    const sellPrice = Math.ceil(orderbook.bids[0][0] * (1 + dynamicSpreadPct) * 100) / 100;
 
     log('INFO', `📈 Cycle ${cycleCount}: Volatility ${volatility.toFixed(2)}%, Spread ${dynamicSpreadPct * 100}%, Buy: ${buyPrice}, Sell: ${sellPrice}`);
 
