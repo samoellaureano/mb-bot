@@ -51,6 +51,8 @@ function generateSimulatedData() {
   const cycles = Math.floor(uptimeSeconds / cycleDuration);
   const basePrice = 300000 + Math.sin(uptimeSeconds / 25) * 1500;
   const tradingSpread = basePrice * parseFloat(process.env.SPREAD_PCT || '0.002');
+  const volatility = Math.abs(Math.sin(uptimeSeconds / 50)) * 0.5; // Simulação de volatilidade
+  const dynamicSpreadPct = volatility >= 0.7 ? Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01)) : (volatility >= 0.3 ? 0.006 : 0.005);
 
   const brlBalance = (10000 + Math.sin(uptimeSeconds / 60) * 100).toFixed(2);
   const btcBalance = (0.05 + Math.sin(uptimeSeconds / 120) * 0.002).toFixed(8);
@@ -67,7 +69,7 @@ function generateSimulatedData() {
       price: price.toFixed(2),
       qty: parseFloat(process.env.ORDER_SIZE || '0.0001'),
       status: 'working',
-      timestamp: now - i * 60000,
+      timestamp: new Date(now - i * 60000).toISOString(), // Adiciona data/hora
       type: 'limit'
     });
   }
@@ -98,7 +100,8 @@ function generateSimulatedData() {
       cancels,
       totalPnL,
       fillRate: ((fills / Math.max(1, totalOrders)) * 100).toFixed(1) + '%',
-      avgSpread: (parseFloat(process.env.SPREAD_PCT || 0.002) * 100).toFixed(2)
+      avgSpread: (dynamicSpreadPct * 100).toFixed(2), // Spread dinâmico
+      dynamicSpread: (dynamicSpreadPct * 100).toFixed(2) + '%' // Novo campo
     },
     config: {
       simulate: true,
@@ -121,17 +124,26 @@ async function getLiveData() {
     const fills = orders.filter(o => o.status === 'filled').length;
     const now = Date.now();
 
-    // ===== Cálculo de P&L =====
+    // Calcular volatilidade e spread dinâmico
+    const bid = parseFloat(ticker.buy);
+    const ask = parseFloat(ticker.sell);
+    const mid = (bid + ask) / 2;
+    const volatility = ((ask - bid) / mid) * 100;
+    let dynamicSpreadPct = 0.005;
+    if (volatility >= 0.7) dynamicSpreadPct = Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
+    else if (volatility >= 0.3) dynamicSpreadPct = 0.006;
+
+    // Cálculo de P&L
     let btcPosition = 0;
     let totalCost = 0;
     let totalPnL = 0;
 
     orders
       .filter(o => o.status === 'filled')
-      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)) // garante ordem cronológica
+      .sort((a, b) => (a.created_at || 0) - (b.created_at || 0))
       .forEach(o => {
         const qty = parseFloat(o.qty);
-        const price = parseFloat(o.price || o.limitPrice);
+        const price = parseFloat(o.limitPrice || o.price);
 
         if (o.side === 'buy') {
           btcPosition += qty;
@@ -145,8 +157,23 @@ async function getLiveData() {
         }
       });
 
-    totalPnL = Number(totalPnL).toFixed(8); // mantém precisão
+    totalPnL = Number(totalPnL).toFixed(8);
 
+    // Correção de timestamps (segundos para ISO)
+    const correctedOrders = orders.map(o => {
+      const createdAt = o.created_at ? new Date(o.created_at * 1000).toISOString() : null;
+      const updatedAt = o.updated_at ? new Date(o.updated_at * 1000).toISOString() : null;
+      return {
+        id: o.id,
+        side: o.side,
+        price: parseFloat(o.limitPrice || o.price),
+        qty: parseFloat(o.qty),
+        status: o.status,
+        type: o.type,
+        timestamp: createdAt, // Usar created_at como timestamp principal
+        updated_at: updatedAt // Opcional, se precisar no frontend
+      };
+    });
 
     return {
       timestamp: new Date().toISOString(),
@@ -163,15 +190,7 @@ async function getLiveData() {
         btc: balances.find(b => b.symbol === 'BTC')?.total || 0,
         total: balances.reduce((sum, b) => sum + parseFloat(b.total) * (b.symbol === 'BRL' ? 1 : (b.symbol === 'BTC' ? parseFloat(ticker.last) : 0)), 0).toFixed(2)
       },
-      orders: orders.map(o => ({
-        id: o.id,
-        side: o.side,
-        price: parseFloat(o.limitPrice || o.price),
-        qty: parseFloat(o.qty),
-        status: o.status,
-        type: o.type,
-        timestamp: o.created_at || o.timestamp
-      })),
+      orders: correctedOrders,
       stats: {
         cycles: 0,
         uptime: Math.floor((now - serverStartTime) / 1000) + 's',
@@ -180,7 +199,8 @@ async function getLiveData() {
         cancels: 0,
         totalPnL,
         fillRate: orders.length ? ((fills / orders.length) * 100).toFixed(1) + '%' : '0%',
-        avgSpread: (parseFloat(process.env.SPREAD_PCT || 0.002) * 100).toFixed(2)
+        avgSpread: (parseFloat(process.env.SPREAD_PCT || 0.002) * 100).toFixed(2),
+        dynamicSpread: (dynamicSpreadPct * 100).toFixed(2) + '%'
       },
       config: {
         simulate: false,

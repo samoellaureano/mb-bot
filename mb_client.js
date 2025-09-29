@@ -1,7 +1,7 @@
 /**
  * mb_client.js - Mercado Bitcoin API v4 Client
  * Compatível com .env.example - usa API_KEY, API_SECRET, PAIR, SIMULATE
- * Versão 1.2.0 - Adicionado suporte a pegar última ordem de venda finalizada e emitir nova venda
+ * Versão 1.2.1 - Simulação com avgPrice e filledQty consistentes
  */
 require('dotenv').config();
 const axios = require('axios');
@@ -63,7 +63,7 @@ class MercadoBitcoinAuth {
       const authResponse = await axios.post(
         `${REST_BASE}/authorize`,
         { login: API_KEY, password: API_SECRET },
-        { headers: { 'Content-Type': 'application/json', 'User-Agent': 'MB-Bot/1.2.0' }, timeout: 15000 }
+        { headers: { 'Content-Type': 'application/json', 'User-Agent': 'MB-Bot/1.2.1' }, timeout: 15000 }
       );
 
       if (!authResponse.data.access_token) throw new Error('Authentication failed: no access token received');
@@ -73,7 +73,7 @@ class MercadoBitcoinAuth {
 
       const accountsResponse = await axios.get(
         `${REST_BASE}/accounts`,
-        { headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'MB-Bot/1.2.0' }, timeout: 10000 }
+        { headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'MB-Bot/1.2.1' }, timeout: 10000 }
       );
 
       if (accountsResponse.data && accountsResponse.data.length > 0) {
@@ -133,7 +133,7 @@ async function makeRequest(endpoint, method = 'GET', params = {}, body = null) {
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${accessToken}`,
-    'User-Agent': 'MB-Bot/1.2.0'
+    'User-Agent': 'MB-Bot/1.2.1'
   };
 
   const config = { method: method.toUpperCase(), url: url.toString(), headers, timeout: 10000, validateStatus: () => true };
@@ -142,6 +142,9 @@ async function makeRequest(endpoint, method = 'GET', params = {}, body = null) {
 
   try {
     log('DEBUG', `[${method}] ${endpoint}`);
+    if (DEBUG) {
+      log('DEBUG', 'CURL:', `curl -X ${method} '${url.toString()}' -H 'Authorization: Bearer ${accessToken}' -H 'User-Agent: MB-Bot/1.2.1'`);
+    }
     const response = await axios(config);
     if (response.status >= 400) throw new Error(response.data?.message || `HTTP ${response.status}`);
     return response.data;
@@ -157,41 +160,115 @@ function simulateResponse(endpoint, method, params, body) {
   const marketPrice = 300000 + Math.sin(now / 15000) * 5000;
   const spread = marketPrice * SPREAD_PCT;
 
+  // placeholders
   let ep = endpoint.replace(/\{accountId\}/g, accountId || 'simulate-account-001');
   ep = ep.replace(/\{symbol\}/g, PAIR);
   ep = ep.replace(/\{orderId\}/g, params?.orderId || 'SIM_ORDER_001');
 
+  // helper: gera avgPrice com pequeno slippage
+  const genAvgPrice = (side, basePrice) => {
+    const slippage = (Math.random() - 0.5) * 0.002; // ±0.1%
+    return side === 'buy' ? (basePrice * (1 + slippage)) : (basePrice * (1 + slippage));
+  };
+
   const simulations = {
-    '/tickers': { GET: () => [{ pair: PAIR, last: marketPrice.toFixed(2), buy: (marketPrice - spread * 0.5).toFixed(2), sell: (marketPrice + spread * 0.5).toFixed(2), high: (marketPrice * 1.005).toFixed(2), low: (marketPrice * 0.995).toFixed(2), open: (marketPrice * 0.998).toFixed(2), vol: (15 + Math.random() * 25).toFixed(3), date: now * 1000000000 }] },
-    '/accounts/{accountId}/balances': { GET: () => [{ symbol: 'BRL', available: simulatedBalances.BRL.toFixed(2), on_hold: '0.00', total: simulatedBalances.BRL.toFixed(2) }, { symbol: 'BTC', available: simulatedBalances.BTC.toFixed(8), on_hold: '0.00000000', total: simulatedBalances.BTC.toFixed(8) }] },
+    '/tickers': {
+      GET: () => [{
+        pair: PAIR,
+        last: marketPrice.toFixed(2),
+        buy: (marketPrice - spread * 0.5).toFixed(2),
+        sell: (marketPrice + spread * 0.5).toFixed(2),
+        high: (marketPrice * 1.005).toFixed(2),
+        low: (marketPrice * 0.995).toFixed(2),
+        open: (marketPrice * 0.998).toFixed(2),
+        vol: (15 + Math.random() * 25).toFixed(3),
+        date: now * 1000000000
+      }]
+    },
+
+    '/accounts/{accountId}/balances': {
+      GET: () => [
+        { symbol: 'BRL', available: simulatedBalances.BRL.toFixed(2), on_hold: '0.00', total: simulatedBalances.BRL.toFixed(2) },
+        { symbol: 'BTC', available: simulatedBalances.BTC.toFixed(8), on_hold: '0.00000000', total: simulatedBalances.BTC.toFixed(8) }
+      ]
+    },
+
     '/accounts/{accountId}/{symbol}/orders': {
       POST: () => {
+        // Ao "executar" uma ordem na simulação, devolvemos filled com avgPrice e filledQty
         const qty = parseFloat(body.qty);
-        const price = parseFloat(body.limitPrice);
-        if (body.side === 'buy') { simulatedBalances.BRL -= price * qty; simulatedBalances.BTC += qty; }
-        else { simulatedBalances.BRL += price * qty; simulatedBalances.BTC -= qty; }
-        const orderId = `SIM_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        const price = parseFloat(body.limitPrice) || marketPrice;
+        const side = (body.side || 'buy').toLowerCase();
+        const avgPrice = genAvgPrice(side, price);
+        // ajustar saldos simulados
+        if (side === 'buy') {
+          simulatedBalances.BRL = Math.max(0, simulatedBalances.BRL - avgPrice * qty);
+          simulatedBalances.BTC += qty;
+        } else {
+          simulatedBalances.BRL += avgPrice * qty;
+          simulatedBalances.BTC = Math.max(0, simulatedBalances.BTC - qty);
+        }
+        const orderId = `SIM_${Date.now()}_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
         log('INFO', `[SIMULATE] Order executed - balances updated`, simulatedBalances);
-        return { orderId, status: 'filled', side: body.side, qty: qty.toString(), limitPrice: price.toFixed(2) };
+        return {
+          orderId,
+          status: 'filled',
+          side,
+          qty: qty.toString(),
+          limitPrice: price.toFixed(2),
+          filledQty: qty.toString(),
+          avgPrice: avgPrice.toFixed(2)
+        };
       },
       GET: () => {
+        // retorna algumas ordens "abertas" aleatórias (working)
         const numOrders = Math.floor(Math.random() * 3);
         const orders = [];
         for (let i = 0; i < numOrders; i++) {
           const side = Math.random() > 0.5 ? 'buy' : 'sell';
           const price = side === 'buy' ? (marketPrice - spread).toFixed(2) : (marketPrice + spread).toFixed(2);
-          orders.push({ id: `SIM_OPEN_${Date.now() - i * 60000}`, side, type: 'limit', status: 'working', qty: ORDER_SIZE.toString(), limitPrice: price, created_at: Math.floor((now - i * 60000) / 1000), updated_at: Math.floor(now / 1000) });
+          orders.push({
+            id: `SIM_OPEN_${Date.now() - i * 60000}`,
+            side,
+            type: 'limit',
+            status: 'working',
+            qty: ORDER_SIZE.toString(),
+            limitPrice: price,
+            created_at: Math.floor((now - i * 60000) / 1000),
+            updated_at: Math.floor(now / 1000)
+          });
         }
         return orders;
       }
     },
-    '/accounts/{accountId}/{symbol}/orders/{orderId}': { DELETE: () => ({ status: 'cancelled', orderId: params.orderId, message: 'Order cancelled (simulated)' }), GET: () => ({ id: params.orderId, status: 'filled', side: 'sell', qty: ORDER_SIZE.toString(), limitPrice: (marketPrice + spread).toFixed(2) }) },
-    '/{symbol}/orderbook': { GET: () => { const levels = params.limit ? parseInt(params.limit) : 10; const asks = [], bids = []; for (let i = 0; i < levels; i++) { asks.push([(marketPrice + spread + i * 25).toFixed(2), (0.01 + Math.random() * 0.05).toFixed(8)]); bids.push([(marketPrice - spread - i * 25).toFixed(2), (0.01 + Math.random() * 0.05).toFixed(8)]); } return { asks, bids, timestamp: Math.floor(now / 1000) }; } }
+
+    '/accounts/{accountId}/{symbol}/orders/{orderId}': {
+      DELETE: () => ({ status: 'cancelled', orderId: params.orderId, message: 'Order cancelled (simulated)' }),
+      GET: () => {
+        // quando pedimos status de uma ordem simulada, devolvemos um filled com avgPrice
+        const qty = ORDER_SIZE;
+        const avgPrice = (marketPrice + spread).toFixed(2);
+        return { id: params.orderId, status: 'filled', side: 'sell', qty: qty.toString(), filledQty: qty.toString(), avgPrice: avgPrice, limitPrice: avgPrice, updated_at: Math.floor(now / 1000) };
+      }
+    },
+
+    '/{symbol}/orderbook': {
+      GET: () => {
+        const levels = params.limit ? parseInt(params.limit) : 10;
+        const asks = [], bids = [];
+        for (let i = 0; i < levels; i++) {
+          asks.push([(marketPrice + spread + i * 25).toFixed(2), (0.01 + Math.random() * 0.05).toFixed(8)]);
+          bids.push([(marketPrice - spread - i * 25).toFixed(2), (0.01 + Math.random() * 0.05).toFixed(8)]);
+        }
+        return { asks, bids, timestamp: Math.floor(now / 1000) };
+      }
+    }
   };
 
   const handler = simulations[ep]?.[method];
   if (handler && typeof handler === 'function') return handler(params, body);
 
+  // fallback genérico
   return { success: true, data: null };
 }
 
@@ -205,7 +282,17 @@ async function placeOrder(side, price, quantity = 0.001, stopPrice = 0, cost = 1
   log('INFO', `Placing ${side.toUpperCase()} order: ${qty} ${PAIR} at ${price || 'market price'}`);
 
   if (SIMULATE) {
-    return simulateResponse(`/accounts/{accountId}/{symbol}/orders`, 'POST', {}, { async: true, cost: side === 'buy' ? cost : undefined, externalId: finalExternalId, limitPrice: price, qty: qty.toString(), side: side.toLowerCase(), stopPrice, type: 'limit' });
+    // simulateResponse returns filled with avgPrice + filledQty
+    return simulateResponse(`/accounts/{accountId}/{symbol}/orders`, 'POST', {}, {
+      async: true,
+      cost: side === 'buy' ? cost : undefined,
+      externalId: finalExternalId,
+      limitPrice: price,
+      qty: qty.toString(),
+      side: side.toLowerCase(),
+      stopPrice,
+      type: 'limit'
+    });
   }
 
   await MercadoBitcoinAuth.ensureAuthenticated();
@@ -252,14 +339,14 @@ async function sellAfterLastFilled() {
   const orders = await getOpenOrders();
   const lastFilledSell = orders
     .filter(o => o.side === 'sell' && o.status === 'filled')
-    .sort((a, b) => b.updated_at - a.updated_at)[0];
+    .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))[0];
 
   if (!lastFilledSell) {
     log('WARN', 'Nenhuma ordem de venda finalizada encontrada');
     return;
   }
 
-  const price = parseFloat(lastFilledSell.limitPrice) * 1.01; // vender 1% acima da última
+  const price = parseFloat(lastFilledSell.limitPrice || lastFilledSell.avgPrice) * (1 + SPREAD_PCT);
   const qty = parseFloat(lastFilledSell.qty);
 
   const balances = await getBalances();

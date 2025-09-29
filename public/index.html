@@ -1,76 +1,171 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>MB Bot Dashboard</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
-        .metric { display: flex; justify-content: space-between; margin: 10px 0; }
-        .metric-label { color: #ccc; }
-        .metric-value { font-weight: bold; }
-        .price { font-size: 2em; text-align: center; color: #4CAF50; margin: 10px 0; }
-        .status { padding: 10px; border-radius: 20px; text-align: center; margin: 10px; }
-        .live { background: rgba(76,175,80,0.2); color: #4CAF50; }
-        .sim { background: rgba(255,152,0,0.2); color: #FF9800; }
-        .orders { margin-top: 10px; }
-        .order { display: flex; justify-content: space-between; padding: 5px; margin: 2px 0; background: rgba(255,255,255,0.05); border-radius: 4px; }
-        .buy { border-left: 3px solid #4CAF50; }
-        .sell { border-left: 3px solid #f44336; }
-        .refresh { position: fixed; top: 10px; right: 10px; padding: 10px; background: rgba(255,255,255,0.1); border: none; border-radius: 20px; color: white; cursor: pointer; }
-        .error { color: #f44336; text-align: center; padding: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .metric-label {
+            color: #ccc;
+        }
+
+        .metric-value {
+            font-weight: bold;
+        }
+
+        .price {
+            font-size: 2em;
+            text-align: center;
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 10px;
+        }
+
+        .live {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .sim {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FF9800;
+        }
+
+        .orders {
+            margin-top: 10px;
+        }
+
+        .order {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            margin: 2px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .buy {
+            border-left: 3px solid #4CAF50;
+        }
+
+        .sell {
+            border-left: 3px solid #f44336;
+        }
+
+        .refresh {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .error {
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>🦙 MB Bot Dashboard</h1>
             <div id="status" class="status">Loading...</div>
         </div>
-        
+
         <div class="grid" id="grid">
             <!-- Dynamic content -->
         </div>
     </div>
-    
+
     <button class="refresh" onclick="refresh()">🔄 Refresh</button>
-    
+
     <script>
         async function refresh() {
             try {
-                const res = await fetch('/api/status');
+                const res = await fetch('/api/status?refresh=true'); // Força atualização
                 const data = await res.json();
-                
+
                 if (data.error) {
                     document.getElementById('status').innerHTML = `<span class="status">❌ ${data.error}</span>`;
                     document.getElementById('grid').innerHTML = '<div class="error">Error loading data</div>';
                     return;
                 }
-                
+
                 // Status
                 const modeClass = data.mode.includes('SIMULATE') ? 'sim' : 'live';
                 document.getElementById('status').innerHTML = `<span class="status ${modeClass}">${data.mode}</span>`;
-                
+
                 // Grid
                 document.getElementById('grid').innerHTML = `
                     <div class="card">
                         <h3>📈 Market</h3>
-                        <div class="price">R$ ${parseFloat(data.market.last).toLocaleString('pt-BR', {min:2, max:2})}</div>
-                        <div class="metric"><span>Bid:</span><span>R$ ${parseFloat(data.market.bid).toLocaleString('pt-BR', {min:2, max:2})}</span></div>
-                        <div class="metric"><span>Ask:</span><span>R$ ${parseFloat(data.market.ask).toLocaleString('pt-BR', {min:2, max:2})}</span></div>
+                        <div class="price">R$ ${parseFloat(data.market.last).toLocaleString('pt-BR', { min: 2, max: 2 })}</div>
+                        <div class="metric"><span>Bid:</span><span>R$ ${parseFloat(data.market.bid).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
+                        <div class="metric"><span>Ask:</span><span>R$ ${parseFloat(data.market.ask).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
                         <div class="metric"><span>Spread:</span><span>${data.market.spread}%</span></div>
                     </div>
                     
                     <div class="card">
                         <h3>💰 Balances</h3>
-                        <div class="metric"><span>BRL:</span><span>R$ ${parseFloat(data.balances.brl).toLocaleString('pt-BR', {min:2, max:2})}</span></div>
+                        <div class="metric"><span>BRL:</span><span>R$ ${parseFloat(data.balances.brl).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
                         <div class="metric"><span>BTC:</span><span>${parseFloat(data.balances.btc).toFixed(8)}</span></div>
-                        <div class="metric"><span>Total Value:</span><span>R$ ${parseFloat(data.balances.total).toLocaleString('pt-BR', {min:2, max:2})}</span></div>
+                        <div class="metric"><span>Total Value:</span><span>R$ ${parseFloat(data.balances.total).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
                     </div>
                     
                     <div class="card">
@@ -79,6 +174,7 @@
                         <div class="metric"><span>Uptime:</span><span>${data.stats.uptime}</span></div>
                         <div class="metric"><span>Fills:</span><span>${data.stats.fills}</span></div>
                         <div class="metric"><span>P&L:</span><span>R$ ${data.stats.totalPnL}</span></div>
+                        <div class="metric"><span>Dynamic Spread:</span><span>${data.stats.dynamicSpread || 'N/A'}</span></div>
                     </div>
                     
                     <div class="card">
@@ -98,20 +194,26 @@
                                     <span>R$ ${parseFloat(o.price).toLocaleString()}</span>
                                     <span>${o.qty}</span>
                                     <span>${o.status}</span>
+                                    <span>${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span> <!-- Ajuste para UTC-03 -->
                                 </div>
                             `).join('') || '<div style="text-align:center;color:#aaa">No open orders</div>'}
                         </div>
                     </div>
                 `;
-                
+
+                // Depuração no console (opcional)
+                console.log('Data recebida:', data);
+
             } catch (e) {
                 document.getElementById('status').innerHTML = '<span class="status error">Network Error</span>';
                 document.getElementById('grid').innerHTML = '<div class="error">Failed to load data</div>';
+                console.error('Erro na requisição:', e);
             }
         }
-        
+
         setInterval(refresh, 3000);
         refresh();
     </script>
 </body>
+
 </html>
