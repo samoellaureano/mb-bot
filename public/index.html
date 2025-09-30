@@ -48,14 +48,6 @@
             margin: 10px 0;
         }
 
-        .metric-label {
-            color: #ccc;
-        }
-
-        .metric-value {
-            font-weight: bold;
-        }
-
         .price {
             font-size: 2em;
             text-align: center;
@@ -89,16 +81,43 @@
             justify-content: space-between;
             padding: 5px;
             margin: 2px 0;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            flex-direction: column;
+            opacity: 1;
+            transition: opacity 0.3s;
+            border-left: 4px solid #ccc;
         }
 
         .buy {
-            border-left: 3px solid #4CAF50;
+            border-left: 4px solid #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
         }
 
         .sell {
-            border-left: 3px solid #f44336;
+            border-left: 4px solid #f44336;
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .filled {
+            opacity: 0.4;
+        }
+
+        .order span {
+            margin-right: 8px;
+            white-space: nowrap;
+        }
+
+        .drift-positive {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .drift-negative {
+            color: #f44336;
+            font-weight: bold;
         }
 
         .refresh {
@@ -136,72 +155,89 @@
     <button class="refresh" onclick="refresh()">🔄 Refresh</button>
 
     <script>
+        function formatDrift(drift, mid, orderPrice) {
+            if (!drift || !mid || !orderPrice) return 'N/A';
+            const driftPercent = ((orderPrice - mid) / mid * 100).toFixed(2);
+            const cls = parseFloat(driftPercent) < -0.05 ? 'drift-negative' : 'drift-positive';
+            return `<span class="${cls}">${driftPercent}%</span>`;
+        }
+
         async function refresh() {
             try {
-                const res = await fetch('/api/status?refresh=true'); // Força atualização
+                const res = await fetch('/api/status?refresh=true');
                 const data = await res.json();
 
                 if (data.error) {
-                    document.getElementById('status').innerHTML = `<span class="status">❌ ${data.error}</span>`;
+                    document.getElementById('status').innerHTML = `<span class="status error">❌ ${data.error}</span>`;
                     document.getElementById('grid').innerHTML = '<div class="error">Error loading data</div>';
                     return;
                 }
 
-                // Status
                 const modeClass = data.mode.includes('SIMULATE') ? 'sim' : 'live';
                 document.getElementById('status').innerHTML = `<span class="status ${modeClass}">${data.mode}</span>`;
 
-                // Grid
+                // Construir grid
                 document.getElementById('grid').innerHTML = `
                     <div class="card">
                         <h3>📈 Market</h3>
-                        <div class="price">R$ ${parseFloat(data.market.last).toLocaleString('pt-BR', { min: 2, max: 2 })}</div>
-                        <div class="metric"><span>Bid:</span><span>R$ ${parseFloat(data.market.bid).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
-                        <div class="metric"><span>Ask:</span><span>R$ ${parseFloat(data.market.ask).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
-                        <div class="metric"><span>Spread:</span><span>${data.market.spread}%</span></div>
+                        <div class="price">R$ ${parseFloat(data.market.last ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <div class="metric"><span>Bid:</span><span>R$ ${parseFloat(data.market.bid ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                        <div class="metric"><span>Ask:</span><span>R$ ${parseFloat(data.market.ask ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                        <div class="metric"><span>Mid:</span><span>R$ ${parseFloat(data.market.mid ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                        <div class="metric"><span>Volatility:</span><span>${data.market.volatility ?? 'N/A'}</span></div>
+                        <div class="metric"><span>Spread:</span><span>${data.market.spread ?? 'N/A'}%</span></div>
                     </div>
-                    
+
                     <div class="card">
                         <h3>💰 Balances</h3>
-                        <div class="metric"><span>BRL:</span><span>R$ ${parseFloat(data.balances.brl).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
-                        <div class="metric"><span>BTC:</span><span>${parseFloat(data.balances.btc).toFixed(8)}</span></div>
-                        <div class="metric"><span>Total Value:</span><span>R$ ${parseFloat(data.balances.total).toLocaleString('pt-BR', { min: 2, max: 2 })}</span></div>
+                        <div class="metric"><span>BRL Available:</span><span>R$ ${parseFloat(data.balances.brlAvailable ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                        <div class="metric"><span>BTC Available:</span><span>${parseFloat(data.balances.btcAvailable ?? 0).toFixed(8)}</span></div>
+                        <div class="metric"><span>Total Value:</span><span>R$ ${parseFloat(data.balances.total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                        <div class="metric"><span>Buy Cost:</span><span>R$ ${parseFloat(data.balances.buyCost ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                        <div class="metric"><span>Can Buy:</span><span>${data.balances.canBuy ? 'Yes' : 'No'}</span></div>
                     </div>
-                    
+
                     <div class="card">
                         <h3>📊 Stats</h3>
-                        <div class="metric"><span>Cycles:</span><span>${data.stats.cycles}</span></div>
-                        <div class="metric"><span>Uptime:</span><span>${data.stats.uptime}</span></div>
-                        <div class="metric"><span>Fills:</span><span>${data.stats.fills}</span></div>
-                        <div class="metric"><span>P&L:</span><span>R$ ${data.stats.totalPnL}</span></div>
-                        <div class="metric"><span>Dynamic Spread:</span><span>${data.stats.dynamicSpread || 'N/A'}</span></div>
+                        <div class="metric"><span>Cycles:</span><span>${data.stats.cycles ?? 0}</span></div>
+                        <div class="metric"><span>Uptime:</span><span>${data.stats.uptime ?? 'N/A'}</span></div>
+                        <div class="metric"><span>Fills:</span><span>${data.stats.fills ?? 0}</span></div>
+                        <div class="metric"><span>Cancels:</span><span>${data.stats.cancels ?? 0}</span></div>
+                        <div class="metric"><span>P&L:</span><span style="color:${(parseFloat(data.stats.totalPnL ?? 0) >= 0) ? '#4CAF50' : '#f44336'}">R$ ${parseFloat(data.stats.totalPnL ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                        <div class="metric"><span>Fill Rate:</span><span>${data.stats.fillRate ?? 'N/A'}</span></div>
+                        <div class="metric"><span>Dynamic Spread:</span><span>${data.stats.dynamicSpread ?? 'N/A'}</span></div>
                     </div>
-                    
+
                     <div class="card">
                         <h3>⚙️ Config</h3>
-                        <div class="metric"><span>Spread:</span><span>${data.config.spreadPct}%</span></div>
-                        <div class="metric"><span>Size:</span><span>${data.config.orderSize} BTC</span></div>
-                        <div class="metric"><span>Cycle:</span><span>${data.config.cycleSec}s</span></div>
+                        <div class="metric"><span>Spread:</span><span>${data.config.spreadPct ?? 0}%</span></div>
+                        <div class="metric"><span>Size:</span><span>${data.config.orderSize ?? 0} BTC</span></div>
+                        <div class="metric"><span>Cycle:</span><span>${data.config.cycleSec ?? 0}s</span></div>
                     </div>
-                    
+
                     <div class="card" style="grid-column: 1/-1">
-                        <h3>📋 Orders</h3>
+                        <h3>📋 Ordens Executadas</h3>
                         <div class="orders">
-                            ${data.orders.map(o => `
-                                <div class="order ${o.side.toLowerCase()}">
-                                    <span>${o.id}</span>
-                                    <span>${o.side}</span>
-                                    <span>R$ ${parseFloat(o.price).toLocaleString()}</span>
-                                    <span>${o.qty}</span>
-                                    <span>${o.status}</span>
-                                    <span>${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span> <!-- Ajuste para UTC-03 -->
+                            ${data.orders?.length ? data.orders.map(o => `
+                                <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : ''}">
+                                    <span>ID: ${o.id}</span>
+                                    <span>Side: ${o.side}</span>
+                                    <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>Qty: ${o.qty ?? 0}</span>
+                                    <span>Status: ${o.status ?? 'N/A'}</span>
+                                    <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
                                 </div>
-                            `).join('') || '<div style="text-align:center;color:#aaa">No open orders</div>'}
+                            `).join('') : '<div style="text-align:center;color:#aaa">No open orders</div>'}
                         </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>🔍 Debug</h3>
+                        <div class="metric"><span>Market Interest:</span><span>${data.debug.marketInterest ? 'Yes' : 'No'}</span></div>
+                        <div class="metric"><span>Last OB Update:</span><span>${data.debug.lastObUpdate ?? 'N/A'}</span></div>
                     </div>
                 `;
 
-                // Depuração no console (opcional)
                 console.log('Data recebida:', data);
 
             } catch (e) {

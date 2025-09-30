@@ -2,12 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const mbClient = require('./mb_client'); // seu mb_client.js
+const mbClient = require('./mb_client');
+const axios = require('axios');
 
 // Config
 const SIMULATE = mbClient.SIMULATE;
 const PORT = parseInt(process.env.PORT) || 3001;
-const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 180000; // 3 minutos
+const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 30000; // 30 segundos
 const DEBUG = process.env.DEBUG === 'true';
 
 // Logging
@@ -51,7 +52,7 @@ function generateSimulatedData() {
   const cycles = Math.floor(uptimeSeconds / cycleDuration);
   const basePrice = 300000 + Math.sin(uptimeSeconds / 25) * 1500;
   const tradingSpread = basePrice * parseFloat(process.env.SPREAD_PCT || '0.002');
-  const volatility = Math.abs(Math.sin(uptimeSeconds / 50)) * 0.5; // Simulação de volatilidade
+  const volatility = Math.abs(Math.sin(uptimeSeconds / 50)) * 0.5;
   const dynamicSpreadPct = volatility >= 0.7 ? Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01)) : (volatility >= 0.3 ? 0.006 : 0.005);
 
   const brlBalance = (10000 + Math.sin(uptimeSeconds / 60) * 100).toFixed(2);
@@ -69,7 +70,7 @@ function generateSimulatedData() {
       price: price.toFixed(2),
       qty: parseFloat(process.env.ORDER_SIZE || '0.0001'),
       status: 'working',
-      timestamp: new Date(now - i * 60000).toISOString(), // Adiciona data/hora
+      timestamp: new Date(now - i * 60000).toISOString(),
       type: 'limit'
     });
   }
@@ -88,7 +89,9 @@ function generateSimulatedData() {
       last: basePrice.toFixed(2),
       bid: (basePrice - tradingSpread / 2).toFixed(2),
       ask: (basePrice + tradingSpread / 2).toFixed(2),
-      spread: ((tradingSpread) / basePrice * 100).toFixed(2)
+      spread: ((tradingSpread) / basePrice * 100).toFixed(2),
+      mid: basePrice.toFixed(2),
+      volatility: (volatility * 100).toFixed(2) + '%'
     },
     balances: { brl: brlBalance, btc: btcBalance },
     orders,
@@ -100,8 +103,8 @@ function generateSimulatedData() {
       cancels,
       totalPnL,
       fillRate: ((fills / Math.max(1, totalOrders)) * 100).toFixed(1) + '%',
-      avgSpread: (dynamicSpreadPct * 100).toFixed(2), // Spread dinâmico
-      dynamicSpread: (dynamicSpreadPct * 100).toFixed(2) + '%' // Novo campo
+      avgSpread: (dynamicSpreadPct * 100).toFixed(2),
+      dynamicSpread: (dynamicSpreadPct * 100).toFixed(2) + '%'
     },
     config: {
       simulate: true,
@@ -115,11 +118,57 @@ function generateSimulatedData() {
 // ===== Função para dados LIVE via mb_client =====
 async function getLiveData() {
   try {
+    // Garantir que mbClient esteja autenticado
+    await mbClient.authenticate();
+
+    // Buscar ticker, balanços e ordens com Account ID correto
+    const accountId = mbClient.getAccountId(); // Supondo que mbClient tenha esse método
     const [ticker, balances, orders] = await Promise.all([
       mbClient.getTicker(),
-      mbClient.getBalances(),
-      mbClient.getOpenOrders()
+      mbClient.getBalances(accountId),
+      mbClient.getOpenOrders(accountId)
     ]);
+
+    // Buscar orderbook com autenticação
+    let orderbook = null;
+    try {
+      const baseUrl = 'https://api.mercadobitcoin.com.br';
+      const pair = mbClient.PAIR.replace('-', '');
+      log('DEBUG', `[ORDERBOOK] curl ${baseUrl}/api/v4/${pair}/orderbook?limit=10 header 'Authorization: Bearer ${mbClient.getAccessToken()}'`);
+      const response = await axios.get(`${baseUrl}/api/v4/${pair}/orderbook?limit=10`, {
+        timeout: 8000,
+        headers: {
+          'User-Agent': 'MB-Dashboard/1.0.0',
+          'Authorization': `Bearer ${mbClient.getAccessToken()}`
+        }
+      });
+      orderbook = {
+        bids: Array.isArray(response.data.bids) ? response.data.bids.slice(0, 10) : [],
+        asks: Array.isArray(response.data.asks) ? response.data.asks.slice(0, 10) : []
+      };
+    } catch (e) {
+      log('WARN', '[ORDERBOOK] Fetch failed, using fallback:', e.message);
+
+      const mid = parseFloat(ticker.last);
+      const baseSpreadPct = parseFloat(process.env.SPREAD_PCT || '0.002');
+      const levels = 5;
+      const qty = 0.01;
+
+      const bids = [];
+      const asks = [];
+
+      for (let i = 1; i <= levels; i++) {
+        const spreadMultiplier = baseSpreadPct * i;
+        bids.push([(mid * (1 - spreadMultiplier)).toFixed(2), qty.toFixed(2)]);
+        asks.push([(mid * (1 + spreadMultiplier)).toFixed(2), qty.toFixed(2)]);
+      }
+
+      orderbook = {
+        bids,
+        asks,
+        fallback: true
+      };
+    }
 
     const fills = orders.filter(o => o.status === 'filled').length;
     const now = Date.now();
@@ -130,8 +179,10 @@ async function getLiveData() {
     const mid = (bid + ask) / 2;
     const volatility = ((ask - bid) / mid) * 100;
     let dynamicSpreadPct = 0.005;
-    if (volatility >= 0.7) dynamicSpreadPct = Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
-    else if (volatility >= 0.3) dynamicSpreadPct = 0.006;
+    if (volatility >= 0.5) dynamicSpreadPct = Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
+    else if (volatility >= 0.1) dynamicSpreadPct = 0.003;
+    else if (volatility >= 0.05) dynamicSpreadPct = 0.002;
+    else dynamicSpreadPct = 0.001;
 
     // Cálculo de P&L
     let btcPosition = 0;
@@ -151,7 +202,6 @@ async function getLiveData() {
         } else if (o.side === 'sell' && btcPosition > 0) {
           const avgPrice = totalCost / btcPosition;
           totalPnL += (price - avgPrice) * qty;
-
           btcPosition -= qty;
           totalCost -= avgPrice * qty;
         }
@@ -159,7 +209,7 @@ async function getLiveData() {
 
     totalPnL = Number(totalPnL).toFixed(8);
 
-    // Correção de timestamps (segundos para ISO)
+    // Correção de timestamps
     const correctedOrders = orders.map(o => {
       const createdAt = o.created_at ? new Date(o.created_at * 1000).toISOString() : null;
       const updatedAt = o.updated_at ? new Date(o.updated_at * 1000).toISOString() : null;
@@ -170,10 +220,17 @@ async function getLiveData() {
         qty: parseFloat(o.qty),
         status: o.status,
         type: o.type,
-        timestamp: createdAt, // Usar created_at como timestamp principal
-        updated_at: updatedAt // Opcional, se precisar no frontend
+        timestamp: createdAt,
+        updated_at: updatedAt
       };
     });
+
+    // Dados adicionais
+    const activeOrder = correctedOrders.find(o => o.status === 'working') || (orders.length > 0 ? correctedOrders[0] : null);
+    const lastCancelledOrder = orders.find(o => o.status === 'cancelled');
+    const buyCost = bid * parseFloat(process.env.ORDER_SIZE || '0.00002') * 1.003;
+    const canBuy = balances.find(b => b.symbol === 'BRL')?.available >= buyCost;
+    const marketInterest = orderbook.bids[0][1] > parseFloat(process.env.ORDER_SIZE || '0.00002') * 5 || orderbook.asks[0][1] > parseFloat(process.env.ORDER_SIZE || '0.00002') * 5;
 
     return {
       timestamp: new Date().toISOString(),
@@ -183,12 +240,18 @@ async function getLiveData() {
         last: parseFloat(ticker.last),
         bid: parseFloat(ticker.buy),
         ask: parseFloat(ticker.sell),
-        spread: (((parseFloat(ticker.sell) - parseFloat(ticker.buy)) / parseFloat(ticker.last)) * 100).toFixed(2)
+        spread: (((parseFloat(ticker.sell) - parseFloat(ticker.buy)) / parseFloat(ticker.last)) * 100).toFixed(2),
+        mid: mid.toFixed(2),
+        volatility: volatility.toFixed(2) + '%'
       },
       balances: {
         brl: balances.find(b => b.symbol === 'BRL')?.total || 0,
         btc: balances.find(b => b.symbol === 'BTC')?.total || 0,
-        total: balances.reduce((sum, b) => sum + parseFloat(b.total) * (b.symbol === 'BRL' ? 1 : (b.symbol === 'BTC' ? parseFloat(ticker.last) : 0)), 0).toFixed(2)
+        total: balances.reduce((sum, b) => sum + parseFloat(b.total) * (b.symbol === 'BRL' ? 1 : (b.symbol === 'BTC' ? parseFloat(ticker.last) : 0)), 0).toFixed(2),
+        brlAvailable: balances.find(b => b.symbol === 'BRL')?.available || 0,
+        btcAvailable: balances.find(b => b.symbol === 'BTC')?.available || 0,
+        buyCost: buyCost.toFixed(2),
+        canBuy: canBuy
       },
       orders: correctedOrders,
       stats: {
@@ -196,7 +259,7 @@ async function getLiveData() {
         uptime: Math.floor((now - serverStartTime) / 1000) + 's',
         fills,
         totalOrders: orders.length,
-        cancels: 0,
+        cancels: orders.filter(o => o.status === 'cancelled').length,
         totalPnL,
         fillRate: orders.length ? ((fills / orders.length) * 100).toFixed(1) + '%' : '0%',
         avgSpread: (parseFloat(process.env.SPREAD_PCT || 0.002) * 100).toFixed(2),
@@ -205,8 +268,12 @@ async function getLiveData() {
       config: {
         simulate: false,
         spreadPct: (parseFloat(process.env.SPREAD_PCT || 0.002) * 100).toFixed(1),
-        orderSize: process.env.ORDER_SIZE || '0.0001',
+        orderSize: process.env.ORDER_SIZE || '0.00002',
         cycleSec: process.env.CYCLE_SEC || '5'
+      },
+      debug: {
+        marketInterest: marketInterest,
+        lastObUpdate: new Date().toISOString()
       }
     };
 

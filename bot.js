@@ -47,6 +47,7 @@ let totalPnL = 0.0;
 let btcPosition = 0;   // posição líquida em BTC
 let totalCost = 0;     // custo acumulado em BRL
 let lastObUpdate = 0;
+let lastOrderbook = { bids: [], asks: [] };
 const OB_REFRESH_SEC = 10;
 const startTime = Date.now();
 
@@ -93,7 +94,10 @@ async function fetchOrderbookRest() {
   try {
     const url = `${REST_BASE}/${PAIR}/orderbook?limit=10`;
     log('DEBUG', `Fetching orderbook from: ${url}`);
-    const response = await axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'MB-Bot/1.0.0' } });
+    const response = await axios.get(url, {
+      timeout: 15000,
+      headers: { 'User-Agent': 'MB-Bot/1.0.0' }
+    });
     const data = response.data;
 
     const orderbook = {
@@ -103,18 +107,18 @@ async function fetchOrderbookRest() {
 
     if (orderbook.bids.length && orderbook.asks.length) {
       lastObUpdate = Date.now();
-      log('INFO', `📊 Orderbook refreshed: ${orderbook.bids.length} bids, ${orderbook.asks.length} asks`);
+      lastOrderbook = orderbook; // Atualiza o último orderbook válido
+      log('INFO', `📊 Orderbook refreshed: Best Bid: ${orderbook.bids[0][0]}, Best Ask: ${orderbook.asks[0][0]}, Depth: ${orderbook.bids.length} bids, ${orderbook.asks.length} asks`);
       return orderbook;
-    } else throw new Error('Empty orderbook');
-  } catch (e) {
-    log('WARN', `[ORDERBOOK] Fetch failed: ${e.message}`);
-    if (SIMULATE) {
-      const ob = generateSyntheticOrderbook();
-      lastObUpdate = Date.now();
-      log('INFO', `[SIMULATE] Synthetic orderbook generated`);
-      return ob;
+    } else {
+      throw new Error('Empty orderbook response');
     }
-    return null;
+  } catch (e) {
+    log('WARN', `Orderbook fetch failed, using last valid: ${e.message}, Last Update: ${new Date(lastObUpdate).toISOString()}`);
+    if (!lastOrderbook.bids.length && !lastOrderbook.asks.length) {
+      log('ERROR', 'No valid orderbook available, consider initializing or retrying');
+    }
+    return lastOrderbook;
   }
 }
 
@@ -124,7 +128,7 @@ async function tryCancel(orderKey) {
   if (!order) return;
 
   try {
-    log('INFO', `❌ Cancelling ${order.side.toUpperCase()} order ${order.id.substring(0, 8)} @ R$${order.price.toFixed(0)}`);
+    log('INFO', `❌ Cancelling ${order.side.toUpperCase()} order ${order.id.substring(0, 8)} @ R$${order.price.toFixed(0)}, Qty: ${order.qty}`);
     if (SIMULATE) {
       await saveOrderSafe({ ...order, status: 'cancelled' }, 'simulated_cancel');
     } else {
@@ -165,8 +169,9 @@ async function checkOrderStatus(orderKey, side) {
       }
 
       totalFills++;
-      await saveOrderSafe({ ...order, status: 'filled', filledQty: qty }, `simulated_fill ${slippage.toFixed(3)}`);
+      await saveOrderSafe({ ...order, status: 'filled', filledQty: qty, fillPrice: fillPrice.toFixed(2) }, `simulated_fill ${slippage.toFixed(3)}`);
       activeOrders.delete(orderKey);
+      log('INFO', `🎉 Filled ${side.toUpperCase()} order ${order.id.substring(0, 8)} @ R$${fillPrice.toFixed(0)}, Qty: ${qty}`);
       return { status: 'filled', filledQty: qty };
     }
     return { status: 'working', filledQty: 0 };
@@ -174,6 +179,7 @@ async function checkOrderStatus(orderKey, side) {
 
   try {
     const status = await MB.getOrderStatus(order.id);
+    log('DEBUG', `🔍 Order ${order.id.substring(0, 8)} status: ${status.status}, Filled Qty: ${status.filledQty || 0}`);
     if (status.status === 'filled') {
       const qty = parseFloat(status.filledQty);
       const price = parseFloat(status.avgPrice || order.price);
@@ -194,6 +200,7 @@ async function checkOrderStatus(orderKey, side) {
       totalFills++;
       await saveOrderSafe({ ...order, status: 'filled', filledQty: qty, avgPrice: price }, 'live_fill');
       activeOrders.delete(orderKey);
+      log('INFO', `🎉 Filled ${status.side.toUpperCase()} order ${order.id.substring(0, 8)} @ R$${price.toFixed(0)}, Qty: ${qty}`);
       return { status: 'filled', filledQty: qty };
     }
     return { status: status.status, filledQty: status.filledQty || 0 };
@@ -208,16 +215,16 @@ async function runCycle() {
   try {
     cycleCount++;
     stats.cycles = cycleCount;
-    log('DEBUG', `⏳ Starting cycle ${cycleCount}`);
+    log('DEBUG', `⏳ Starting cycle ${cycleCount}, Time: ${new Date().toISOString()}`);
 
     const obAge = (Date.now() - lastObUpdate) / 1000;
-    let orderbook = obAge > OB_REFRESH_SEC || lastObUpdate === 0 ? await fetchOrderbookRest() : null;
-    if (!orderbook) {
-      log('WARN', `⏭️ Cycle ${cycleCount} skipped - no orderbook`);
+    let orderbook = (obAge > OB_REFRESH_SEC || lastObUpdate === 0) ? await fetchOrderbookRest() : lastOrderbook;
+    if (!orderbook.bids.length || !orderbook.asks.length) {
+      log('WARN', `⏭️ Cycle ${cycleCount} skipped - no valid orderbook`);
       return;
     }
-    log('INFO', `📊 Orderbook updated - Best Bid: ${orderbook.bids[0][0]}, Best Ask: ${orderbook.asks[0][0]}`);
 
+    // Calcular bestBid e bestAsk antes de usar
     const bestBid = parseFloat(orderbook.bids[0][0]);
     const bestAsk = parseFloat(orderbook.asks[0][0]);
     if (isNaN(bestBid) || isNaN(bestAsk) || bestBid >= bestAsk) {
@@ -225,21 +232,33 @@ async function runCycle() {
       return;
     }
 
+    log('INFO', `📊 Orderbook updated - Best Bid: ${bestBid}, Best Ask: ${bestAsk}, Mid: ${(bestBid + bestAsk) / 2}, Volume Bid: ${orderbook.bids[0][1]}, Volume Ask: ${orderbook.asks[0][1]}`);
+
     const mid = (bestBid + bestAsk) / 2;
     const volatility = ((bestAsk - bestBid) / mid) * 100;
-    let dynamicSpreadPct = SPREAD_PCT;
-    if (volatility >= 0.7) dynamicSpreadPct = Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
-    else if (volatility >= 0.3) dynamicSpreadPct = 0.006;
 
-    const buyPrice = Math.floor(orderbook.bids[0][0] * (1 + dynamicSpreadPct) * 100) / 100;
-    const sellPrice = Math.ceil(orderbook.asks[0][0] * (1 + dynamicSpreadPct) * 100) / 100;
+    let dynamicSpreadPct = Math.max(0.003, 0.001 + volatility / 100 * 2); // Mínimo 0.3% + 2x volatilidade
+    if (volatility >= 0.5) dynamicSpreadPct = Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
+    log('DEBUG', `📉 Market Analysis - Volatility: ${volatility.toFixed(2)}%, Dynamic Spread: ${dynamicSpreadPct * 100}%, Mid Price: ${mid.toFixed(0)}`);
+
+    const minSpreadPct = 0.002; // Spread mínimo adicional de 0.2%
+    let buyPrice = Math.floor(bestBid * (1 - dynamicSpreadPct - minSpreadPct) * 100) / 100;
+    let sellPrice = Math.ceil(bestAsk * (1 + dynamicSpreadPct + minSpreadPct) * 100) / 100;
+
+    if (buyPrice >= sellPrice) {
+      log('WARN', `⚠️ Spread too tight - Buy Price: ${buyPrice}, Sell Price: ${sellPrice}, Adjusting to natural spread`);
+      const naturalSpreadPct = ((bestAsk - bestBid) / mid) * 100 / 200; // Metade do spread natural
+      dynamicSpreadPct = Math.max(dynamicSpreadPct, naturalSpreadPct); // Ajuste permitido com let
+      buyPrice = Math.floor(bestBid * (1 + dynamicSpreadPct + minSpreadPct) * 100) / 100;
+      sellPrice = Math.ceil(bestAsk * (1 - dynamicSpreadPct - minSpreadPct) * 100) / 100;
+    }
 
     log('INFO', `📈 Cycle ${cycleCount}: Volatility ${volatility.toFixed(2)}%, Spread ${dynamicSpreadPct * 100}%, Buy: ${buyPrice}, Sell: ${sellPrice}`);
 
     // Verificar status das ordens ativas
     for (let key of ['buy', 'sell']) {
-      if (activeOrders.has(key)) {
-        log('DEBUG', `🔍 Checking status for ${key.toUpperCase()} order ${activeOrders.get(key).id.substring(0, 8)}`);
+      if (activeOrders.has(key) && activeOrders.get(key)) {
+        log('DEBUG', `🔍 Checking status for ${key.toUpperCase()} order ${activeOrders.get(key).id.substring(0, 8)}, Price: ${activeOrders.get(key).price}`);
         const statusResult = await checkOrderStatus(key, key);
         log('DEBUG', `📋 Status for ${key.toUpperCase()}: ${statusResult.status}, Filled Qty: ${statusResult.filledQty || 0}`);
         if (statusResult.status === 'filled' || statusResult.status === 'error') {
@@ -266,9 +285,26 @@ async function runCycle() {
 
       log('DEBUG', `📊 ${key.toUpperCase()} order - ID: ${order.id.substring(0, 8)}, Price: ${order.price}, Target: ${targetPrice}, Drift: ${(priceDrift * 100).toFixed(2)}%, Age: ${age} cycles`);
 
-      if (priceDrift > PRICE_TOLERANCE || age >= MAX_ORDER_AGE) {
-        log('INFO', `❌ Cancelling ${key.toUpperCase()} - drift=${(priceDrift * 100).toFixed(2)}% age=${age} cycles`);
+      const hasInterest = orderbook.bids[0][1] > ORDER_SIZE * 5 || orderbook.asks[0][1] > ORDER_SIZE * 5;
+
+      // Lógica de ajuste de preço
+      if (priceDrift > 0.0005 && priceDrift <= PRICE_TOLERANCE && hasInterest) {
+        log('INFO', `🔄 Adjusting ${key.toUpperCase()} order ${order.id.substring(0, 8)} to target price ${targetPrice.toFixed(0)}`);
         await tryCancel(key);
+        const newOrder = await MB.placeOrder(key, targetPrice, ORDER_SIZE);
+        const orderId = newOrder.orderId || `${key}_${Date.now()}`;
+        activeOrders.set(key, { id: orderId, side: key, price: targetPrice, qty: ORDER_SIZE, status: 'working', cyclePlaced: cycleCount, timestamp: Date.now() });
+        await saveOrderSafe(activeOrders.get(key), `market_making_${key}_adjust`);
+      }
+
+      // Decisão de cancelamento
+      if (priceDrift > PRICE_TOLERANCE || age >= MAX_ORDER_AGE) {
+        if (!hasInterest) {
+          log('INFO', `❌ Cancelling ${key.toUpperCase()} - drift=${(priceDrift * 100).toFixed(2)}% age=${age} cycles (low interest)`);
+          await tryCancel(key);
+        } else {
+          log('INFO', `✅ Order ${key.toUpperCase()} OK - drift=${(priceDrift * 100).toFixed(2)}% age=${age} cycles (market interest detected)`);
+        }
       } else {
         log('INFO', `✅ Order ${key.toUpperCase()} OK - drift=${(priceDrift * 100).toFixed(2)}% age=${age} cycles`);
       }
@@ -281,16 +317,16 @@ async function runCycle() {
     // Verificar saldo
     let balances;
     try {
-      balances = await MB.getBalances(); // Corrigido para getBalances
-      log('DEBUG', `💰 Fetched balances successfully - BRL: ${balances.find(b => b.symbol === 'BRL')?.available || 'N/A'}, BTC: ${balances.find(b => b.symbol === 'BTC')?.available || 'N/A'}`);
+      balances = await MB.getBalances();
+      log('DEBUG', `💰 Fetched balances - BRL: ${balances.find(b => b.symbol === 'BRL')?.available || 'N/A'}, BTC: ${balances.find(b => b.symbol === 'BTC')?.available || 'N/A'}, Total BRL: ${balances.find(b => b.symbol === 'BRL')?.total || 'N/A'}, Total BTC: ${balances.find(b => b.symbol === 'BTC')?.total || 'N/A'}`);
     } catch (e) {
       log('ERROR', `❌ Failed to fetch account balance: ${e.message} - Check API_KEY and API_SECRET in .env`);
-      balances = [{ symbol: 'BRL', available: '0' }, { symbol: 'BTC', available: '0' }]; // Fallback seguro
+      balances = [{ symbol: 'BRL', available: '0', total: '0' }, { symbol: 'BTC', available: '0', total: '0' }];
     }
     const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.available || 0);
     const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
-    const buyCost = buyPrice * ORDER_SIZE * 1.003; // Inclui taxa estimada de 0.3%
-    log('DEBUG', `💸 Estimated fee: ${(buyCost - buyPrice * ORDER_SIZE).toFixed(2)} for BUY order`);
+    const buyCost = buyPrice * ORDER_SIZE * 1.003;
+    log('DEBUG', `💸 Buy Cost Calculation - Price: ${buyPrice}, Size: ${ORDER_SIZE}, Fee: ${(buyCost - buyPrice * ORDER_SIZE).toFixed(2)}, Total: ${buyCost.toFixed(2)}`);
     const sellAmount = ORDER_SIZE;
     log('DEBUG', `💰 Checking balances - BRL: ${brlBalance.toFixed(2)}, BTC: ${btcBalance.toFixed(8)}, Buy Cost: ${buyCost.toFixed(2)}, Sell Amount: ${sellAmount}`);
 
@@ -300,9 +336,11 @@ async function runCycle() {
         const orderId = order.orderId || `buy_${Date.now()}`;
         const newOrder = { id: orderId, side: 'buy', price: buyPrice, qty: ORDER_SIZE, status: 'working', cyclePlaced: cycleCount, timestamp: Date.now() };
         activeOrders.set('buy', newOrder);
-        log('INFO', `✅ Placed BUY order ${orderId.substring(0, 8)} @ R$${buyPrice.toFixed(0)} (Cost: ${buyCost.toFixed(2)}, Balance: ${brlBalance.toFixed(2)})`);
+        log('INFO', `✅ Placed BUY order ${orderId.substring(0, 8)} @ R$${buyPrice.toFixed(0)}, Qty: ${ORDER_SIZE}, Cost: ${buyCost.toFixed(2)}, BRL Balance: ${brlBalance.toFixed(2)}`);
         await saveOrderSafe(newOrder, 'market_making_buy');
-      } catch (e) { log('ERROR', `❌ Buy placement failed | ${e.message}`); }
+      } catch (e) {
+        log('ERROR', `❌ Buy placement failed | ${e.message}, BRL Balance: ${brlBalance.toFixed(2)}`);
+      }
     } else if (!activeOrders.has('buy')) {
       log('WARN', `💰 Insufficient BRL balance (${brlBalance.toFixed(2)}) for buy order, required: ${buyCost.toFixed(2)}`);
     }
@@ -313,9 +351,11 @@ async function runCycle() {
         const orderId = order.orderId || `sell_${Date.now()}`;
         const newOrder = { id: orderId, side: 'sell', price: sellPrice, qty: ORDER_SIZE, status: 'working', cyclePlaced: cycleCount, timestamp: Date.now() };
         activeOrders.set('sell', newOrder);
-        log('INFO', `✅ Placed SELL order ${orderId.substring(0, 8)} @ R$${sellPrice.toFixed(0)} (Balance: ${btcBalance.toFixed(8)})`);
+        log('INFO', `✅ Placed SELL order ${orderId.substring(0, 8)} @ R$${sellPrice.toFixed(0)}, Qty: ${ORDER_SIZE}, BTC Balance: ${btcBalance.toFixed(8)}`);
         await saveOrderSafe(newOrder, 'market_making_sell');
-      } catch (e) { log('ERROR', `❌ Sell placement failed | ${e.message}`); }
+      } catch (e) {
+        log('ERROR', `❌ Sell placement failed | ${e.message}, BTC Balance: ${btcBalance.toFixed(8)}`);
+      }
     } else if (!activeOrders.has('sell')) {
       log('WARN', `💰 Insufficient BTC balance (${btcBalance.toFixed(8)}) for sell order, required: ${sellAmount}`);
     }
@@ -327,10 +367,11 @@ async function runCycle() {
     stats.fillRate = ((totalFills / (cycleCount || 1)) * 100).toFixed(1) + '%';
     stats.uptime = `${Math.round((Date.now() - startTime) / 60000)}min`;
     stats.avgSpread = dynamicSpreadPct * 100;
+    log('DEBUG', `📊 Stats Update - Total Orders: ${stats.totalOrders}, Fills: ${stats.filledOrders}, PnL: ${stats.totalPnL}, Fill Rate: ${stats.fillRate}`);
 
     safeStatsLog(`📊 Cycle ${cycleCount} summary`, stats);
   } catch (e) {
-    log('ERROR', `❌ Critical error in cycle ${cycleCount}: ${e.message}`);
+    log('ERROR', `❌ Critical error in cycle ${cycleCount}: ${e.message}, Stack: ${e.stack}`);
   }
 }
 
@@ -342,13 +383,13 @@ async function main() {
     log('SUCCESS', 'DB initialized');
 
     log('INFO', 'Authenticating with Mercado Bitcoin...');
-    await MB.authenticate(); // Inicializa o token e accountId
+    await MB.authenticate();
     log('SUCCESS', 'Authentication completed');
 
     log('INFO', 'Fetching initial orderbook...');
     await fetchOrderbookRest();
 
-    log('INFO', `Starting main loop - cycle every ${CYCLE_SEC}s`);
+    log('INFO', `Starting main loop - cycle every ${CYCLE_SEC}s, Start Time: ${new Date(startTime).toISOString()}`);
     await runCycle();
     setInterval(runCycle, CYCLE_SEC * 1000);
 

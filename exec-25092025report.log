@@ -1,0 +1,5 @@
+nohup: ignoring input
+
+> mb-bot@1.0.0 live
+> SIMULATE=false node bot.js
+

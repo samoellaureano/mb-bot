@@ -1,8 +1,3 @@
-/**
- * mb_client.js - Mercado Bitcoin API v4 Client
- * Compatível com .env.example - usa API_KEY, API_SECRET, PAIR, SIMULATE
- * Versão 1.2.1 - Simulação com avgPrice e filledQty consistentes
- */
 require('dotenv').config();
 const axios = require('axios');
 const crypto = require('crypto');
@@ -23,7 +18,7 @@ const log = (level = 'INFO', ...args) => {
   console.log(`${timestamp} ${prefix.padEnd(8)}`, ...args);
 };
 
-// Armazenamento global do token
+// Armazenamento global do token e account
 let accessToken = null;
 let tokenExpiration = 0;
 let accountId = null;
@@ -101,6 +96,16 @@ class MercadoBitcoinAuth {
       await this.authenticate();
     }
   }
+
+  static getAccessToken() {
+    if (!accessToken) throw new Error('Access token not available. Call authenticate() first.');
+    return accessToken;
+  }
+
+  static getAccountId() {
+    if (!accountId) throw new Error('Account ID not available. Call authenticate() first.');
+    return accountId;
+  }
 }
 
 // =========================================
@@ -123,7 +128,8 @@ async function makeRequest(endpoint, method = 'GET', params = {}, body = null) {
   await rateLimit();
   await MercadoBitcoinAuth.ensureAuthenticated();
 
-  const url = new URL(`${REST_BASE}${endpoint}`);
+  const accountId = MercadoBitcoinAuth.getAccountId(); // Garantir accountId válido
+  const url = new URL(`${REST_BASE}${endpoint.replace('{accountId}', accountId).replace('{symbol}', PAIR.replace('-', ''))}`);
   if (method === 'GET' && Object.keys(params).length > 0) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') url.searchParams.append(key, value.toString());
@@ -132,7 +138,7 @@ async function makeRequest(endpoint, method = 'GET', params = {}, body = null) {
 
   const headers = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${accessToken}`,
+    Authorization: `Bearer ${MercadoBitcoinAuth.getAccessToken()}`,
     'User-Agent': 'MB-Bot/1.2.1'
   };
 
@@ -141,7 +147,7 @@ async function makeRequest(endpoint, method = 'GET', params = {}, body = null) {
   if (SIMULATE) return simulateResponse(endpoint, method, params, body);
 
   try {
-    log('DEBUG', `[${method}] ${endpoint}`);
+    log('DEBUG', `[${method}] ${url.toString()}`);
     if (DEBUG) {
       log('DEBUG', 'CURL:', `curl -X ${method} '${url.toString()}' -H 'Authorization: Bearer ${accessToken}' -H 'User-Agent: MB-Bot/1.2.1'`);
     }
@@ -160,14 +166,12 @@ function simulateResponse(endpoint, method, params, body) {
   const marketPrice = 300000 + Math.sin(now / 15000) * 5000;
   const spread = marketPrice * SPREAD_PCT;
 
-  // placeholders
   let ep = endpoint.replace(/\{accountId\}/g, accountId || 'simulate-account-001');
   ep = ep.replace(/\{symbol\}/g, PAIR);
   ep = ep.replace(/\{orderId\}/g, params?.orderId || 'SIM_ORDER_001');
 
-  // helper: gera avgPrice com pequeno slippage
   const genAvgPrice = (side, basePrice) => {
-    const slippage = (Math.random() - 0.5) * 0.002; // ±0.1%
+    const slippage = (Math.random() - 0.5) * 0.002;
     return side === 'buy' ? (basePrice * (1 + slippage)) : (basePrice * (1 + slippage));
   };
 
@@ -195,12 +199,10 @@ function simulateResponse(endpoint, method, params, body) {
 
     '/accounts/{accountId}/{symbol}/orders': {
       POST: () => {
-        // Ao "executar" uma ordem na simulação, devolvemos filled com avgPrice e filledQty
         const qty = parseFloat(body.qty);
         const price = parseFloat(body.limitPrice) || marketPrice;
         const side = (body.side || 'buy').toLowerCase();
         const avgPrice = genAvgPrice(side, price);
-        // ajustar saldos simulados
         if (side === 'buy') {
           simulatedBalances.BRL = Math.max(0, simulatedBalances.BRL - avgPrice * qty);
           simulatedBalances.BTC += qty;
@@ -221,7 +223,6 @@ function simulateResponse(endpoint, method, params, body) {
         };
       },
       GET: () => {
-        // retorna algumas ordens "abertas" aleatórias (working)
         const numOrders = Math.floor(Math.random() * 3);
         const orders = [];
         for (let i = 0; i < numOrders; i++) {
@@ -245,7 +246,6 @@ function simulateResponse(endpoint, method, params, body) {
     '/accounts/{accountId}/{symbol}/orders/{orderId}': {
       DELETE: () => ({ status: 'cancelled', orderId: params.orderId, message: 'Order cancelled (simulated)' }),
       GET: () => {
-        // quando pedimos status de uma ordem simulada, devolvemos um filled com avgPrice
         const qty = ORDER_SIZE;
         const avgPrice = (marketPrice + spread).toFixed(2);
         return { id: params.orderId, status: 'filled', side: 'sell', qty: qty.toString(), filledQty: qty.toString(), avgPrice: avgPrice, limitPrice: avgPrice, updated_at: Math.floor(now / 1000) };
@@ -267,14 +267,12 @@ function simulateResponse(endpoint, method, params, body) {
 
   const handler = simulations[ep]?.[method];
   if (handler && typeof handler === 'function') return handler(params, body);
-
-  // fallback genérico
   return { success: true, data: null };
 }
 
 // =========================================
 // ===== Trading Functions =================
-async function placeOrder(side, price, quantity = 0.001, stopPrice = 0, cost = 100, externalId = null) {
+async function placeOrder(side, price, quantity = ORDER_SIZE, stopPrice = 0, cost = 100, externalId = null) {
   const MIN_QTY = 0.0000015;
   const qty = Math.max(quantity, MIN_QTY);
   const finalExternalId = externalId || `ORD_${Date.now()}`;
@@ -282,7 +280,6 @@ async function placeOrder(side, price, quantity = 0.001, stopPrice = 0, cost = 1
   log('INFO', `Placing ${side.toUpperCase()} order: ${qty} ${PAIR} at ${price || 'market price'}`);
 
   if (SIMULATE) {
-    // simulateResponse returns filled with avgPrice + filledQty
     return simulateResponse(`/accounts/{accountId}/{symbol}/orders`, 'POST', {}, {
       async: true,
       cost: side === 'buy' ? cost : undefined,
@@ -312,6 +309,7 @@ async function cancelOrder(orderId) {
 
 async function getBalances() {
   if (SIMULATE) return simulateResponse(`/accounts/{accountId}/balances`, 'GET');
+  if (!accountId) throw new Error('Account ID not set. Call authenticate() first.');
   return makeRequest(`/accounts/${accountId}/balances`);
 }
 
@@ -321,23 +319,50 @@ async function getTicker() {
 }
 
 async function getOrderBook(limit = 10) {
-  return makeRequest(`/${PAIR}/orderbook`, 'GET', { limit });
+  if (SIMULATE) return simulateResponse(`/${PAIR}/orderbook`, 'GET', { limit });
+  return makeRequest(`/${PAIR.replace('-', '')}/orderbook`, 'GET', { limit });
 }
 
 async function getOpenOrders() {
-  if (SIMULATE) return simulateResponse(`/accounts/{accountId}/{symbol}/orders`, 'GET');
+  if (SIMULATE) return simulateResponse(`/accounts/{accountId}/${PAIR}/orders`, 'GET');
+  if (!accountId) throw new Error('Account ID not set. Call authenticate() first.');
   return makeRequest(`/accounts/${accountId}/${PAIR}/orders`, 'GET');
 }
 
 async function getOrderStatus(orderId) {
-  if (SIMULATE) return simulateResponse(`/accounts/{accountId}/{symbol}/orders/{orderId}`, 'GET', { orderId });
+  if (SIMULATE) return simulateResponse(`/accounts/{accountId}/${PAIR}/orders/{orderId}`, 'GET', { orderId });
   return makeRequest(`/accounts/${accountId}/${PAIR}/orders/${orderId}`, 'GET');
 }
 
-// ===== NOVO: vender baseado na última ordem finalizada
+async function getOrderHistory(limit = 10, status = 'filled') {
+  if (SIMULATE) {
+    // Histórico simulado → sempre retorna uma venda finalizada
+    return [
+      {
+        id: `SIM_HIST_${Date.now()}`,
+        side: 'sell',
+        status: 'filled',
+        qty: ORDER_SIZE.toString(),
+        limitPrice: (300000 + Math.random() * 1000).toFixed(2),
+        avgPrice: (300000 + Math.random() * 1000).toFixed(2),
+        updated_at: Math.floor(Date.now() / 1000)
+      }
+    ];
+  }
+
+  if (!accountId) throw new Error('Account ID not set. Call authenticate() first.');
+
+  return makeRequest(
+    `/accounts/${accountId}/${PAIR}/orders`,
+    'GET',
+    { limit, status } // usa parâmetros da API
+  );
+}
+
 async function sellAfterLastFilled() {
-  const orders = await getOpenOrders();
-  const lastFilledSell = orders
+  const history = await getOrderHistory(5, 'filled');
+
+  const lastFilledSell = history
     .filter(o => o.side === 'sell' && o.status === 'filled')
     .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))[0];
 
@@ -359,7 +384,7 @@ async function sellAfterLastFilled() {
 
   try {
     const newOrder = await placeOrder('sell', price, qty);
-    log('INFO', 'Nova venda emitida:', newOrder);
+    log('INFO', `Nova venda emitida após venda finalizada:`, newOrder);
   } catch (err) {
     log('ERROR', 'Falha ao emitir nova venda:', err.message);
   }
@@ -370,6 +395,8 @@ async function sellAfterLastFilled() {
 module.exports = {
   authenticate: MercadoBitcoinAuth.authenticate,
   ensureAuthenticated: MercadoBitcoinAuth.ensureAuthenticated,
+  getAccessToken: MercadoBitcoinAuth.getAccessToken,
+  getAccountId: MercadoBitcoinAuth.getAccountId,
   placeOrder,
   cancelOrder,
   getBalances,
@@ -377,6 +404,7 @@ module.exports = {
   getOrderBook,
   getOpenOrders,
   getOrderStatus,
+  getOrderHistory,
   sellAfterLastFilled,
   SIMULATE,
   PAIR,
