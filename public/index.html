@@ -105,6 +105,12 @@
             opacity: 0.4;
         }
 
+        .canceled {
+            opacity: 0.6;
+            background: rgba(255, 152, 0, 0.1); /* Cor opcional para canceled */
+            border-left: 4px solid #FF9800; /* Borda para canceled */
+        }
+
         .order span {
             margin-right: 8px;
             white-space: nowrap;
@@ -219,7 +225,7 @@
                         <h3>📋 Ordens Executadas</h3>
                         <div class="orders">
                             ${data.orders?.length ? data.orders.map(o => `
-                                <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : ''}">
+                                <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : o.status === 'canceled' ? 'canceled' : ''}">
                                     <span>ID: ${o.id}</span>
                                     <span>Side: ${o.side}</span>
                                     <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
