@@ -105,10 +105,10 @@
             opacity: 0.4;
         }
 
-        .canceled {
+        .cancelled {
             opacity: 0.6;
-            background: rgba(255, 152, 0, 0.1); /* Cor opcional para canceled */
-            border-left: 4px solid #FF9800; /* Borda para canceled */
+            background: rgba(255, 152, 0, 0.05);
+            border-left: 4px solid #FF9800;
         }
 
         .order span {
@@ -219,13 +219,36 @@
                         <div class="metric"><span>Spread:</span><span>${data.config.spreadPct ?? 0}%</span></div>
                         <div class="metric"><span>Size:</span><span>${data.config.orderSize ?? 0} BTC</span></div>
                         <div class="metric"><span>Cycle:</span><span>${data.config.cycleSec ?? 0}s</span></div>
+                        <div class="metric"><span>Max Order Age:</span><span>${data.config.maxOrderAgeSecMinHour !== null ? (data.config.maxOrderAgeSecMinHour.ageDay > 0 ? data.config.maxOrderAgeSecMinHour.ageDay + 'd ' : '') + (data.config.maxOrderAgeSecMinHour.ageHour % 24) + 'h ' + (data.config.maxOrderAgeSecMinHour.ageMin % 60) + 'm ' + (data.config.maxOrderAgeSecMinHour.ageSec % 60) + 's' : 'N/A'}</span></div>
+                        <div class="metric"><span>Max Position:</span><span>${data.config.maxPosition ?? 0} BTC</span></div>
+                        <div class="metric"><span>Min Order Size:</span><span>${data.config.minOrderSize ?? 0} BTC</span></div>
+                        <div class="metric"><span>Price Drift:</span><span>${data.config.priceDrift ?? 0}%</span></div>
+                        <div class="metric"><span>Price Drift Boost:</span><span>${data.config.priceDriftBoost ?? 0}%</span></div>
                     </div>
-
                     <div class="card" style="grid-column: 1/-1">
-                        <h3>📋 Ordens Executadas</h3>
+                        <h3>🚀 Ordens Ativas - (${data.activeOrders.length ?? 0})</h3>
+                        <div class="orders">
+                            ${Array.isArray(data.activeOrders) && data.activeOrders.length
+                            ? data.activeOrders.map(o => `
+                                <div class="order ${o.side.toLowerCase()}">
+                                    <span>ID: ${o.id}</span>
+                                    <span>Side: ${o.side}</span>
+                                    <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>Qty: ${o.qty ?? 0}</span>
+                                    <span>Drift: ${formatDrift(data.market.mid, data.market.mid, o.price)}</span>
+                                    <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
+                                    <span>Age: ${o.ageSecMinHour !== null ? (o.ageSecMinHour.ageDay > 0 ? o.ageSecMinHour.ageDay + 'd ' : '') + (o.ageSecMinHour.ageHour % 24) + 'h ' + (o.ageSecMinHour.ageMin % 60) + 'm ' + (o.ageSecMinHour.ageSec % 60) + 's' : 'N/A'}</span>
+                                </div>
+                            `).join('')
+                        : '<div style="text-align:center;color:#aaa">No active orders</div>'
+                    }
+                        </div>
+                    </div>
+                    <div class="card" style="grid-column: 1/-1">
+                        <h3>📋 Ordens Executadas - (${data.orders.length ?? 0})</h3>
                         <div class="orders">
                             ${data.orders?.length ? data.orders.map(o => `
-                                <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : o.status === 'canceled' ? 'canceled' : ''}">
+                                <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : o.status === 'cancelled' ? 'cancelled' : ''}">
                                     <span>ID: ${o.id}</span>
                                     <span>Side: ${o.side}</span>
                                     <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -253,7 +276,7 @@
             }
         }
 
-        setInterval(refresh, 3000);
+        setInterval(refresh, 2 * 1000);
         refresh();
     </script>
 </body>

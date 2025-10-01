@@ -134,9 +134,11 @@ async function getLiveData() {
     try {
       const baseUrl = 'https://api.mercadobitcoin.com.br';
       const pair = mbClient.PAIR.replace('-', '');
-      log('DEBUG', `[ORDERBOOK] curl ${baseUrl}/api/v4/${pair}/orderbook?limit=10 header 'Authorization: Bearer ${mbClient.getAccessToken()}'`);
+      if(DEBUG) {
+        log('DEBUG', `[ORDERBOOK] curl ${baseUrl}/api/v4/${pair}/orderbook?limit=10 header 'Authorization: Bearer ${mbClient.getAccessToken()}'`);
+      }
       const response = await axios.get(`${baseUrl}/api/v4/${pair}/orderbook?limit=10`, {
-        timeout: 8000,
+        timeout: 10000,
         headers: {
           'User-Agent': 'MB-Dashboard/1.0.0',
           'Authorization': `Bearer ${mbClient.getAccessToken()}`
@@ -226,7 +228,8 @@ async function getLiveData() {
     });
 
     // Dados adicionais
-    const activeOrder = correctedOrders.find(o => o.status === 'working') || (orders.length > 0 ? correctedOrders[0] : null);
+    //activeOrders trazer todas as ordens working, não só a primeira
+    const activeOrders = correctedOrders.filter(o => o.status === 'working');
     const lastCancelledOrder = orders.find(o => o.status === 'cancelled');
     const buyCost = bid * parseFloat(process.env.ORDER_SIZE || '0.00002') * 1.003;
     const canBuy = balances.find(b => b.symbol === 'BRL')?.available >= buyCost;
@@ -253,6 +256,23 @@ async function getLiveData() {
         buyCost: buyCost.toFixed(2),
         canBuy: canBuy
       },
+      activeOrders: activeOrders.map(order => ({
+        ...order,
+        ageSecMinHour: order.timestamp ? (() => {
+          const ageMs = now - new Date(order.timestamp).getTime();
+          const ageSec = Math.floor(ageMs / 1000);
+          const ageMin = Math.floor(ageSec / 60);
+          const ageHour = Math.floor(ageMin / 60);
+          const ageDay = Math.floor(ageHour / 24);
+          return {
+            ageSec: ageSec,
+            ageMin: ageMin,
+            ageHour: ageHour,
+            ageDay: ageDay
+          };
+        })() : null,
+        drift: order.side === 'buy' ? (mid - order.price).toFixed(2) : (order.price - mid).toFixed(2)
+      })),
       orders: correctedOrders,
       stats: {
         cycles: 0,
@@ -269,7 +289,26 @@ async function getLiveData() {
         simulate: false,
         spreadPct: (parseFloat(process.env.SPREAD_PCT || 0.002) * 100).toFixed(1),
         orderSize: process.env.ORDER_SIZE || '0.00002',
-        cycleSec: process.env.CYCLE_SEC || '5'
+        cycleSec: process.env.CYCLE_SEC || '5',
+        maxOrderAgeSecMinHour: (() => {
+          const maxAge = parseInt(process.env.MAX_ORDER_AGE || '300');
+          const ageSec = maxAge;
+          const ageMin = Math.floor(ageSec / 60);
+          const ageHour = Math.floor(ageMin / 60);
+          const ageDay = Math.floor(ageHour / 24);
+          return {
+            ageSec: ageSec,
+            ageMin: ageMin,
+            ageHour: ageHour,
+            ageDay: ageDay
+          };
+        })(),
+        maxDailyVolume: process.env.MAX_DAILY_VOLUME || '0.01',
+        maxPosition: process.env.MAX_POSITION || '0.0003',
+        minOrderSize: process.env.MIN_ORDER_SIZE || '0.00001',
+        emergencyStopPnL: process.env.EMERGENCY_STOP_PNL || '-10',
+        priceDrift: (parseFloat(process.env.PRICE_DRIFT_PCT || 0.0003) * 100).toFixed(2),
+        priceDriftBoost: (parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || 0.3) * 100).toFixed(2),
       },
       debug: {
         marketInterest: marketInterest,

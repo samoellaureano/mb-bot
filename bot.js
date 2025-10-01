@@ -14,7 +14,11 @@ const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.002');
 const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.0001');
 const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '5'));
 const PRICE_TOLERANCE = parseFloat(process.env.PRICE_TOLERANCE || '0.001');
-const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '5'); // em ciclos
+const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '5');
+const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003');
+const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0');
+const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.001'); // Reduzido de 0.002
+
 
 // Validate critical config
 if (!REST_BASE.startsWith('http')) {
@@ -70,23 +74,6 @@ const saveOrderSafe = async (order, note) => {
   } catch (e) {
     log('WARN', `Failed to save order ${order.id}:`, e.message);
   }
-};
-
-const generateSyntheticOrderbook = () => {
-  const mid = 300000 + Math.sin(cycleCount * 0.1) * 1000;
-  const spread = mid * SPREAD_PCT;
-  return {
-    bids: [
-      [(mid - spread * 0.8).toFixed(2), (ORDER_SIZE * 2).toFixed(8)],
-      [(mid - spread * 1.2).toFixed(2), (ORDER_SIZE * 3).toFixed(8)],
-      [(mid - spread * 1.8).toFixed(2), (ORDER_SIZE * 1.5).toFixed(8)]
-    ],
-    asks: [
-      [(mid + spread * 0.8).toFixed(2), (ORDER_SIZE * 2).toFixed(8)],
-      [(mid + spread * 1.2).toFixed(2), (ORDER_SIZE * 3).toFixed(8)],
-      [(mid + spread * 1.8).toFixed(2), (ORDER_SIZE * 1.5).toFixed(8)]
-    ]
-  };
 };
 
 // -------------------- ORDERBOOK --------------------
@@ -237,20 +224,36 @@ async function runCycle() {
     const mid = (bestBid + bestAsk) / 2;
     const volatility = ((bestAsk - bestBid) / mid) * 100;
 
-    let dynamicSpreadPct = Math.max(0.003, 0.001 + volatility / 100 * 2); // Mínimo 0.3% + 2x volatilidade
-    if (volatility >= 0.5) dynamicSpreadPct = Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
+    let dynamicSpreadPct = Math.max(0.0005, 0.0005 + volatility / 200); // Mínimo 0.05%, mais sensível a vol baixa
+    if (volatility >= 0.5) dynamicSpreadPct = Math.min(0.005, parseFloat(process.env.MAX_SPREAD_PCT || 0.01)); // 0.5% no máximo
+
     log('DEBUG', `📉 Market Analysis - Volatility: ${volatility.toFixed(2)}%, Dynamic Spread: ${dynamicSpreadPct * 100}%, Mid Price: ${mid.toFixed(0)}`);
 
-    const minSpreadPct = 0.002; // Spread mínimo adicional de 0.2%
-    let buyPrice = Math.floor(bestBid * (1 - dynamicSpreadPct - minSpreadPct) * 100) / 100;
-    let sellPrice = Math.ceil(bestAsk * (1 + dynamicSpreadPct + minSpreadPct) * 100) / 100;
+    let minSpreadPct = MIN_SPREAD_PCT * (volatility < 0.1 ? 0.5 : 1); // Reduz minSpread em baixa vol (metade se vol<0.1%)
+
+    const INVENTORY_THRESHOLD = 0.0002;
+    const BIAS_FACTOR = 0.0005;
+    let buyBias = 0;
+    let sellBias = 0;
+    if (btcPosition > INVENTORY_THRESHOLD) {
+      buyBias = -BIAS_FACTOR; // lower buyPrice to afasta buy
+      sellBias = -BIAS_FACTOR; // lower sellPrice to aperto sell
+      log('DEBUG', `📉 Inventory high (${btcPosition.toFixed(8)} BTC) - Bias: Buy ${(buyBias * 100).toFixed(2)}%, Sell ${(sellBias * 100).toFixed(2)}%`);
+    } else if (btcPosition < -INVENTORY_THRESHOLD) {
+      buyBias = BIAS_FACTOR; // higher buyPrice to aperto buy
+      sellBias = BIAS_FACTOR; // higher sellPrice to afasta sell
+      log('DEBUG', `📉 Inventory low (${btcPosition.toFixed(8)} BTC) - Bias: Buy ${(buyBias * 100).toFixed(2)}%, Sell ${(sellBias * 100).toFixed(2)}%`);
+    }
+
+    let buyPrice = Math.floor(bestBid * (1 - dynamicSpreadPct - minSpreadPct + buyBias) * 100) / 100;
+    let sellPrice = Math.ceil(bestAsk * (1 + dynamicSpreadPct + minSpreadPct + sellBias) * 100) / 100;
 
     if (buyPrice >= sellPrice) {
       log('WARN', `⚠️ Spread too tight - Buy Price: ${buyPrice}, Sell Price: ${sellPrice}, Adjusting to natural spread`);
       const naturalSpreadPct = ((bestAsk - bestBid) / mid) * 100 / 200; // Metade do spread natural
-      dynamicSpreadPct = Math.max(dynamicSpreadPct, naturalSpreadPct); // Ajuste permitido com let
-      buyPrice = Math.floor(bestBid * (1 + dynamicSpreadPct + minSpreadPct) * 100) / 100;
-      sellPrice = Math.ceil(bestAsk * (1 - dynamicSpreadPct - minSpreadPct) * 100) / 100;
+      dynamicSpreadPct = Math.max(dynamicSpreadPct, naturalSpreadPct);
+      buyPrice = parseFloat((bestBid * (1 - dynamicSpreadPct)).toFixed(2));
+      sellPrice = parseFloat((bestAsk * (1 + dynamicSpreadPct)).toFixed(2));
     }
 
     log('INFO', `📈 Cycle ${cycleCount}: Volatility ${volatility.toFixed(2)}%, Spread ${dynamicSpreadPct * 100}%, Buy: ${buyPrice}, Sell: ${sellPrice}`);
@@ -268,46 +271,57 @@ async function runCycle() {
       }
     }
 
-    // Cancelamento inteligente
+    // Config extra
+    const MIN_ORDER_CYCLES = 2; // mínimo de ciclos antes de ajustar ou cancelar
+    const ADJUST_STEP = 0.0002; // percentual do ajuste gradual
+    const MAX_ORDER_AGE = 10; // Aumentado para reduzir cancels
+    const PRICE_TOLERANCE = 0.002; // Aumentado para mais tolerância
+
+    // Cancelamento inteligente PROATIVO
     for (let key of ['buy', 'sell']) {
-      log('DEBUG', `⚠️ Checking ${key.toUpperCase()} order for cancellation...`);
-      log('DEBUG', `⚠️ Active Orders: ${JSON.stringify(Array.from(activeOrders.entries()))}`);
+      log('DEBUG', `⚠️ Checking ${key.toUpperCase()} order for pro-active adjustment...`);
 
       if (!activeOrders.has(key)) {
-        log('DEBUG', `⏳ No ${key.toUpperCase()} order to cancel`);
+        log('DEBUG', `⏳ No ${key.toUpperCase()} order to process`);
         continue;
       }
 
       const order = activeOrders.get(key);
       const targetPrice = key === 'buy' ? buyPrice : sellPrice;
-      const priceDrift = Math.abs((order.price - targetPrice) / targetPrice);
+      const priceDrift = (targetPrice - order.price) / targetPrice;
       const age = cycleCount - (order.cyclePlaced || cycleCount);
+      const hasInterest = orderbook.bids[0][1] > ORDER_SIZE * 2 || orderbook.asks[0][1] > ORDER_SIZE * 2;
 
       log('DEBUG', `📊 ${key.toUpperCase()} order - ID: ${order.id.substring(0, 8)}, Price: ${order.price}, Target: ${targetPrice}, Drift: ${(priceDrift * 100).toFixed(2)}%, Age: ${age} cycles`);
 
-      const hasInterest = orderbook.bids[0][1] > ORDER_SIZE * 5 || orderbook.asks[0][1] > ORDER_SIZE * 5;
+      // --- Ajuste gradual do preço com drift boost da variável env ---
+      const adjustedDrift = PRICE_DRIFT * (1 + PRICE_DRIFT_BOOST) * 2; // dobro do drift
+      const ADJUST_STEP_AGGRESSIVE = ADJUST_STEP * 2; // ajuste maior
+      if (age >= MIN_ORDER_CYCLES && Math.abs(priceDrift) > adjustedDrift) {
+        const adjustment = targetPrice * Math.sign(priceDrift) * Math.min(Math.abs(priceDrift), ADJUST_STEP_AGGRESSIVE);
+        const newPrice = order.price + adjustment;
 
-      // Lógica de ajuste de preço
-      if (priceDrift > 0.0005 && priceDrift <= PRICE_TOLERANCE && hasInterest) {
-        log('INFO', `🔄 Adjusting ${key.toUpperCase()} order ${order.id.substring(0, 8)} to target price ${targetPrice.toFixed(0)}`);
+        log('INFO', `🔄 Gradually adjusting ${key.toUpperCase()} order ${order.id.substring(0, 8)}: ${order.price.toFixed(0)} → ${newPrice.toFixed(0)} (Drift Boost: ${(PRICE_DRIFT_BOOST * 100).toFixed(0)}%)`);
+
         await tryCancel(key);
-        const newOrder = await MB.placeOrder(key, targetPrice, ORDER_SIZE);
+        const newOrder = await MB.placeOrder(key, newPrice, ORDER_SIZE);
         const orderId = newOrder.orderId || `${key}_${Date.now()}`;
-        activeOrders.set(key, { id: orderId, side: key, price: targetPrice, qty: ORDER_SIZE, status: 'working', cyclePlaced: cycleCount, timestamp: Date.now() });
+        activeOrders.set(key, { id: orderId, side: key, price: newPrice, qty: ORDER_SIZE, status: 'working', cyclePlaced: cycleCount, timestamp: Date.now() });
         await saveOrderSafe(activeOrders.get(key), `market_making_${key}_adjust`);
       }
 
-      // Decisão de cancelamento
-      if (priceDrift > PRICE_TOLERANCE || age >= MAX_ORDER_AGE) {
-        if (!hasInterest) {
-          log('INFO', `❌ Cancelling ${key.toUpperCase()} - drift=${(priceDrift * 100).toFixed(2)}% age=${age} cycles (low interest)`);
-          await tryCancel(key);
-        } else {
-          log('INFO', `✅ Order ${key.toUpperCase()} OK - drift=${(priceDrift * 100).toFixed(2)}% age=${age} cycles (market interest detected)`);
-        }
-      } else {
-        log('INFO', `✅ Order ${key.toUpperCase()} OK - drift=${(priceDrift * 100).toFixed(2)}% age=${age} cycles`);
+      // --- Cancelamento inteligente ---
+      const shouldCancel = (Math.abs(priceDrift) > PRICE_TOLERANCE || age >= MAX_ORDER_AGE) && age >= MIN_ORDER_CYCLES;
+      if (shouldCancel && !hasInterest) {
+        log('INFO', `❌ Cancelling ${key.toUpperCase()} - drift=${(priceDrift * 100).toFixed(2)}%, age=${age} cycles (low interest)`);
+        await tryCancel(key);
+        continue;
       }
+
+      if (hasInterest && Math.abs(priceDrift) < 0.001) continue; // Manter se liquidez alta e drift baixo
+
+      // --- Ordem OK ---
+      log('INFO', `✅ Order ${key.toUpperCase()} OK - drift=${(priceDrift * 100).toFixed(2)}%, age=${age} cycles`);
     }
 
     // Place new orders
@@ -329,6 +343,7 @@ async function runCycle() {
     log('DEBUG', `💸 Buy Cost Calculation - Price: ${buyPrice}, Size: ${ORDER_SIZE}, Fee: ${(buyCost - buyPrice * ORDER_SIZE).toFixed(2)}, Total: ${buyCost.toFixed(2)}`);
     const sellAmount = ORDER_SIZE;
     log('DEBUG', `💰 Checking balances - BRL: ${brlBalance.toFixed(2)}, BTC: ${btcBalance.toFixed(8)}, Buy Cost: ${buyCost.toFixed(2)}, Sell Amount: ${sellAmount}`);
+    log('INFO', `📊 Inventory: BTC ${btcPosition.toFixed(8)}, Avg Cost ${(btcPosition > 0 ? totalCost / btcPosition : 0).toFixed(0)}, PnL ${totalPnL.toFixed(2)}`);
 
     if (!activeOrders.has('buy') && buyStatus.status !== 'filled' && brlBalance >= buyCost) {
       try {
