@@ -132,7 +132,7 @@ async function getLiveData() {
     // Buscar orderbook com autenticação
     let orderbook = null;
     try {
-      const baseUrl = 'https://api.mercadobitcoin.com.br';
+      const baseUrl = 'https://api.mercadobitcoin.net';
       const pair = mbClient.PAIR.replace('-', '');
       if(DEBUG) {
         log('DEBUG', `[ORDERBOOK] curl ${baseUrl}/api/v4/${pair}/orderbook?limit=10 header 'Authorization: Bearer ${mbClient.getAccessToken()}'`);

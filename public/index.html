@@ -20,8 +20,29 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+
+        .left-column {
+            flex: 1;
+            max-width: 45%;
+        }
+
+        .right-column {
+            flex: 1;
+            max-width: 55%;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            /* Barra vertical */
+            padding-left: 20px;
+            overflow-y: auto;
+            /* Barra de rolagem apenas para ordens */
+            max-height: calc(100vh - 100px);
+            /* Limite de altura para ativar scroll se necessário */
+            display: grid;
+            gap: inherit;
         }
 
         .header {
@@ -147,14 +168,32 @@
 </head>
 
 <body>
+    <div class="header">
+        <h1>🦙 MB Bot Dashboard</h1>
+        <div id="status" class="status">Loading...</div>
+    </div>
     <div class="container">
-        <div class="header">
-            <h1>🦙 MB Bot Dashboard</h1>
-            <div id="status" class="status">Loading...</div>
+
+        <div class="left-column">
+            <div class="grid" id="grid">
+                <!-- Dynamic content for indicators -->
+            </div>
         </div>
 
-        <div class="grid" id="grid">
-            <!-- Dynamic content -->
+        <div class="right-column">
+            <div class="card">
+                <h3>🚀 Ordens Ativas - (<span id="active-count">0</span>)</h3>
+                <div class="orders" id="active-orders">
+                    <!-- Dynamic active orders -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📋 Ordens Executadas - (<span id="executed-count">0</span>)</h3>
+                <div class="orders" id="executed-orders">
+                    <!-- Dynamic executed orders -->
+                </div>
+            </div>
         </div>
     </div>
 
@@ -176,13 +215,15 @@
                 if (data.error) {
                     document.getElementById('status').innerHTML = `<span class="status error">❌ ${data.error}</span>`;
                     document.getElementById('grid').innerHTML = '<div class="error">Error loading data</div>';
+                    document.getElementById('active-orders').innerHTML = '';
+                    document.getElementById('executed-orders').innerHTML = '';
                     return;
                 }
 
                 const modeClass = data.mode.includes('SIMULATE') ? 'sim' : 'live';
                 document.getElementById('status').innerHTML = `<span class="status ${modeClass}">${data.mode}</span>`;
 
-                // Construir grid
+                // Construir grid para indicators (esquerda)
                 document.getElementById('grid').innerHTML = `
                     <div class="card">
                         <h3>📈 Market</h3>
@@ -225,40 +266,6 @@
                         <div class="metric"><span>Price Drift:</span><span>${data.config.priceDrift ?? 0}%</span></div>
                         <div class="metric"><span>Price Drift Boost:</span><span>${data.config.priceDriftBoost ?? 0}%</span></div>
                     </div>
-                    <div class="card" style="grid-column: 1/-1">
-                        <h3>🚀 Ordens Ativas - (${data.activeOrders.length ?? 0})</h3>
-                        <div class="orders">
-                            ${Array.isArray(data.activeOrders) && data.activeOrders.length
-                            ? data.activeOrders.map(o => `
-                                <div class="order ${o.side.toLowerCase()}">
-                                    <span>ID: ${o.id}</span>
-                                    <span>Side: ${o.side}</span>
-                                    <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                    <span>Qty: ${o.qty ?? 0}</span>
-                                    <span>Drift: ${formatDrift(data.market.mid, data.market.mid, o.price)}</span>
-                                    <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
-                                    <span>Age: ${o.ageSecMinHour !== null ? (o.ageSecMinHour.ageDay > 0 ? o.ageSecMinHour.ageDay + 'd ' : '') + (o.ageSecMinHour.ageHour % 24) + 'h ' + (o.ageSecMinHour.ageMin % 60) + 'm ' + (o.ageSecMinHour.ageSec % 60) + 's' : 'N/A'}</span>
-                                </div>
-                            `).join('')
-                        : '<div style="text-align:center;color:#aaa">No active orders</div>'
-                    }
-                        </div>
-                    </div>
-                    <div class="card" style="grid-column: 1/-1">
-                        <h3>📋 Ordens Executadas - (${data.orders.length ?? 0})</h3>
-                        <div class="orders">
-                            ${data.orders?.length ? data.orders.map(o => `
-                                <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : o.status === 'cancelled' ? 'cancelled' : ''}">
-                                    <span>ID: ${o.id}</span>
-                                    <span>Side: ${o.side}</span>
-                                    <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                    <span>Qty: ${o.qty ?? 0}</span>
-                                    <span>Status: ${o.status ?? 'N/A'}</span>
-                                    <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
-                                </div>
-                            `).join('') : '<div style="text-align:center;color:#aaa">No open orders</div>'}
-                        </div>
-                    </div>
 
                     <div class="card">
                         <h3>🔍 Debug</h3>
@@ -267,11 +274,42 @@
                     </div>
                 `;
 
+                // Ordens Ativas (direita)
+                document.getElementById('active-count').textContent = data.activeOrders.length ?? 0;
+                document.getElementById('active-orders').innerHTML = Array.isArray(data.activeOrders) && data.activeOrders.length
+                    ? data.activeOrders.map(o => `
+                        <div class="order ${o.side.toLowerCase()}">
+                            <span>ID: ${o.id}</span>
+                            <span>Side: ${o.side}</span>
+                            <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span>Qty: ${o.qty ?? 0}</span>
+                            <span>Drift: ${formatDrift(data.market.mid, data.market.mid, o.price)}</span>
+                            <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
+                            <span>Age: ${o.ageSecMinHour !== null ? (o.ageSecMinHour.ageDay > 0 ? o.ageSecMinHour.ageDay + 'd ' : '') + (o.ageSecMinHour.ageHour % 24) + 'h ' + (o.ageSecMinHour.ageMin % 60) + 'm ' + (o.ageSecMinHour.ageSec % 60) + 's' : 'N/A'}</span>
+                        </div>
+                    `).join('')
+                    : '<div style="text-align:center;color:#aaa">No active orders</div>';
+
+                // Ordens Executadas (direita, abaixo das ativas)
+                document.getElementById('executed-count').textContent = data.orders.length ?? 0;
+                document.getElementById('executed-orders').innerHTML = data.orders?.length ? data.orders.map(o => `
+                    <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : o.status === 'cancelled' ? 'cancelled' : ''}">
+                        <span>ID: ${o.id}</span>
+                        <span>Side: ${o.side}</span>
+                        <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>Qty: ${o.qty ?? 0}</span>
+                        <span>Status: ${o.status ?? 'N/A'}</span>
+                        <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
+                    </div>
+                `).join('') : '<div style="text-align:center;color:#aaa">No open orders</div>';
+
                 console.log('Data recebida:', data);
 
             } catch (e) {
                 document.getElementById('status').innerHTML = '<span class="status error">Network Error</span>';
                 document.getElementById('grid').innerHTML = '<div class="error">Failed to load data</div>';
+                document.getElementById('active-orders').innerHTML = '';
+                document.getElementById('executed-orders').innerHTML = '';
                 console.error('Erro na requisição:', e);
             }
         }

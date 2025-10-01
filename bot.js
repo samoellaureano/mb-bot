@@ -230,19 +230,23 @@ async function runCycle() {
     log('DEBUG', `📉 Market Analysis - Volatility: ${volatility.toFixed(2)}%, Dynamic Spread: ${dynamicSpreadPct * 100}%, Mid Price: ${mid.toFixed(0)}`);
 
     let minSpreadPct = MIN_SPREAD_PCT * (volatility < 0.1 ? 0.5 : 1); // Reduz minSpread em baixa vol (metade se vol<0.1%)
+    log('DEBUG', `Calculated minSpreadPct: ${minSpreadPct * 100}% (based on volatility ${volatility.toFixed(2)}% < 0.1? ${volatility < 0.1})`);
 
     const INVENTORY_THRESHOLD = 0.0002;
     const BIAS_FACTOR = 0.0005;
     let buyBias = 0;
     let sellBias = 0;
+    log('DEBUG', `Checking inventory bias - btcPosition: ${btcPosition.toFixed(8)}, threshold: ${INVENTORY_THRESHOLD}`);
     if (btcPosition > INVENTORY_THRESHOLD) {
       buyBias = -BIAS_FACTOR; // lower buyPrice to afasta buy
       sellBias = -BIAS_FACTOR; // lower sellPrice to aperto sell
-      log('DEBUG', `📉 Inventory high (${btcPosition.toFixed(8)} BTC) - Bias: Buy ${(buyBias * 100).toFixed(2)}%, Sell ${(sellBias * 100).toFixed(2)}%`);
+      log('DEBUG', `📉 Inventory high (${btcPosition.toFixed(8)} BTC) - Applying bias: Buy ${(buyBias * 100).toFixed(2)}%, Sell ${(sellBias * 100).toFixed(2)}%`);
     } else if (btcPosition < -INVENTORY_THRESHOLD) {
       buyBias = BIAS_FACTOR; // higher buyPrice to aperto buy
       sellBias = BIAS_FACTOR; // higher sellPrice to afasta sell
-      log('DEBUG', `📉 Inventory low (${btcPosition.toFixed(8)} BTC) - Bias: Buy ${(buyBias * 100).toFixed(2)}%, Sell ${(sellBias * 100).toFixed(2)}%`);
+      log('DEBUG', `📉 Inventory low (${btcPosition.toFixed(8)} BTC) - Applying bias: Buy ${(buyBias * 100).toFixed(2)}%, Sell ${(sellBias * 100).toFixed(2)}%`);
+    } else {
+      log('DEBUG', `Inventory within threshold - No bias applied`);
     }
 
     let buyPrice = Math.floor(bestBid * (1 - dynamicSpreadPct - minSpreadPct + buyBias) * 100) / 100;
@@ -254,6 +258,7 @@ async function runCycle() {
       dynamicSpreadPct = Math.max(dynamicSpreadPct, naturalSpreadPct);
       buyPrice = parseFloat((bestBid * (1 - dynamicSpreadPct)).toFixed(2));
       sellPrice = parseFloat((bestAsk * (1 + dynamicSpreadPct)).toFixed(2));
+      log('DEBUG', `Adjusted dynamicSpreadPct to ${dynamicSpreadPct * 100}% (naturalSpreadPct: ${naturalSpreadPct * 100}%)`);
     }
 
     log('INFO', `📈 Cycle ${cycleCount}: Volatility ${volatility.toFixed(2)}%, Spread ${dynamicSpreadPct * 100}%, Buy: ${buyPrice}, Sell: ${sellPrice}`);
@@ -291,34 +296,45 @@ async function runCycle() {
       const priceDrift = (targetPrice - order.price) / targetPrice;
       const age = cycleCount - (order.cyclePlaced || cycleCount);
       const hasInterest = orderbook.bids[0][1] > ORDER_SIZE * 2 || orderbook.asks[0][1] > ORDER_SIZE * 2;
+      log('DEBUG', `hasInterest calculation: Bid volume ${orderbook.bids[0][1]} > ${ORDER_SIZE * 2}? ${orderbook.bids[0][1] > ORDER_SIZE * 2}, Ask volume ${orderbook.asks[0][1]} > ${ORDER_SIZE * 2}? ${orderbook.asks[0][1] > ORDER_SIZE * 2}, Result: ${hasInterest}`);
 
       log('DEBUG', `📊 ${key.toUpperCase()} order - ID: ${order.id.substring(0, 8)}, Price: ${order.price}, Target: ${targetPrice}, Drift: ${(priceDrift * 100).toFixed(2)}%, Age: ${age} cycles`);
 
       // --- Ajuste gradual do preço com drift boost da variável env ---
       const adjustedDrift = PRICE_DRIFT * (1 + PRICE_DRIFT_BOOST) * 2; // dobro do drift
+      log('DEBUG', `Adjustment check - adjustedDrift: ${adjustedDrift}, age >= ${MIN_ORDER_CYCLES}? ${age >= MIN_ORDER_CYCLES}, |drift| > adjustedDrift? ${Math.abs(priceDrift) > adjustedDrift} (|${priceDrift}| > ${adjustedDrift})`);
       const ADJUST_STEP_AGGRESSIVE = ADJUST_STEP * 2; // ajuste maior
       if (age >= MIN_ORDER_CYCLES && Math.abs(priceDrift) > adjustedDrift) {
         const adjustment = targetPrice * Math.sign(priceDrift) * Math.min(Math.abs(priceDrift), ADJUST_STEP_AGGRESSIVE);
         const newPrice = order.price + adjustment;
 
-        log('INFO', `🔄 Gradually adjusting ${key.toUpperCase()} order ${order.id.substring(0, 8)}: ${order.price.toFixed(0)} → ${newPrice.toFixed(0)} (Drift Boost: ${(PRICE_DRIFT_BOOST * 100).toFixed(0)}%)`);
+        log('INFO', `🔄 Gradually adjusting ${key.toUpperCase()} order ${order.id.substring(0, 8)}: ${order.price.toFixed(0)} → ${newPrice.toFixed(0)} (Drift Boost: ${(PRICE_DRIFT_BOOST * 100).toFixed(0)}%, Adjustment amount: ${adjustment.toFixed(2)})`);
 
         await tryCancel(key);
         const newOrder = await MB.placeOrder(key, newPrice, ORDER_SIZE);
         const orderId = newOrder.orderId || `${key}_${Date.now()}`;
         activeOrders.set(key, { id: orderId, side: key, price: newPrice, qty: ORDER_SIZE, status: 'working', cyclePlaced: cycleCount, timestamp: Date.now() });
         await saveOrderSafe(activeOrders.get(key), `market_making_${key}_adjust`);
+      } else {
+        log('DEBUG', `No adjustment needed for ${key.toUpperCase()} order`);
       }
 
       // --- Cancelamento inteligente ---
+      log('DEBUG', `Cancel check - |drift| > ${PRICE_TOLERANCE}? ${Math.abs(priceDrift) > PRICE_TOLERANCE}, age >= ${MAX_ORDER_AGE}? ${age >= MAX_ORDER_AGE}, age >= ${MIN_ORDER_CYCLES}? ${age >= MIN_ORDER_CYCLES}, shouldCancel: ${ (Math.abs(priceDrift) > PRICE_TOLERANCE || age >= MAX_ORDER_AGE) && age >= MIN_ORDER_CYCLES }, !hasInterest: ${!hasInterest}`);
       const shouldCancel = (Math.abs(priceDrift) > PRICE_TOLERANCE || age >= MAX_ORDER_AGE) && age >= MIN_ORDER_CYCLES;
       if (shouldCancel && !hasInterest) {
         log('INFO', `❌ Cancelling ${key.toUpperCase()} - drift=${(priceDrift * 100).toFixed(2)}%, age=${age} cycles (low interest)`);
         await tryCancel(key);
         continue;
+      } else {
+        log('DEBUG', `No cancel needed for ${key.toUpperCase()} order (shouldCancel: ${shouldCancel}, hasInterest: ${hasInterest})`);
       }
 
-      if (hasInterest && Math.abs(priceDrift) < 0.001) continue; // Manter se liquidez alta e drift baixo
+      log('DEBUG', `Keep order check - hasInterest: ${hasInterest}, |drift| < 0.001? ${Math.abs(priceDrift) < 0.001}`);
+      if (hasInterest && Math.abs(priceDrift) < 0.001) {
+        log('DEBUG', `Keeping ${key.toUpperCase()} order due to high interest and low drift`);
+        continue;
+      } // Manter se liquidez alta e drift baixo
 
       // --- Ordem OK ---
       log('INFO', `✅ Order ${key.toUpperCase()} OK - drift=${(priceDrift * 100).toFixed(2)}%, age=${age} cycles`);
@@ -345,6 +361,7 @@ async function runCycle() {
     log('DEBUG', `💰 Checking balances - BRL: ${brlBalance.toFixed(2)}, BTC: ${btcBalance.toFixed(8)}, Buy Cost: ${buyCost.toFixed(2)}, Sell Amount: ${sellAmount}`);
     log('INFO', `📊 Inventory: BTC ${btcPosition.toFixed(8)}, Avg Cost ${(btcPosition > 0 ? totalCost / btcPosition : 0).toFixed(0)}, PnL ${totalPnL.toFixed(2)}`);
 
+    log('DEBUG', `Buy placement check - hasActiveBuy: ${activeOrders.has('buy')}, buyStatus: ${buyStatus.status}, brlBalance >= buyCost? ${brlBalance >= buyCost} (${brlBalance.toFixed(2)} >= ${buyCost.toFixed(2)})`);
     if (!activeOrders.has('buy') && buyStatus.status !== 'filled' && brlBalance >= buyCost) {
       try {
         const order = await MB.placeOrder('buy', buyPrice, ORDER_SIZE);
@@ -358,8 +375,11 @@ async function runCycle() {
       }
     } else if (!activeOrders.has('buy')) {
       log('WARN', `💰 Insufficient BRL balance (${brlBalance.toFixed(2)}) for buy order, required: ${buyCost.toFixed(2)}`);
+    } else {
+      log('DEBUG', `No new BUY order placed (active or filled status)`);
     }
 
+    log('DEBUG', `Sell placement check - hasActiveSell: ${activeOrders.has('sell')}, sellStatus: ${sellStatus.status}, btcBalance >= sellAmount? ${btcBalance >= sellAmount} (${btcBalance.toFixed(8)} >= ${sellAmount})`);
     if (!activeOrders.has('sell') && sellStatus.status !== 'filled' && btcBalance >= sellAmount) {
       try {
         const order = await MB.placeOrder('sell', sellPrice, ORDER_SIZE);
@@ -373,6 +393,8 @@ async function runCycle() {
       }
     } else if (!activeOrders.has('sell')) {
       log('WARN', `💰 Insufficient BTC balance (${btcBalance.toFixed(8)}) for sell order, required: ${sellAmount}`);
+    } else {
+      log('DEBUG', `No new SELL order placed (active or filled status)`);
     }
 
     // Update stats
