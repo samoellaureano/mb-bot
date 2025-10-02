@@ -1,322 +1,238 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pt-br">
 <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MB Bot Dashboard</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #1a1a2e;
-            color: #fff;
-            padding: 20px;
-        }
+    <!-- Tailwind CSS (modo CDN, não recomendado para produção) -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            gap: 20px;
-        }
+    <!-- Chart.js e plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Removido chartjs-chart-financial, pois não é mais necessário -->
 
-        .left-column {
-            flex: 1;
-            max-width: 45%;
-        }
-
-        .right-column {
-            flex: 1;
-            max-width: 55%;
-            border-left: 1px solid rgba(255, 255, 255, 0.2);
-            /* Barra vertical */
-            padding-left: 20px;
-            overflow-y: auto;
-            /* Barra de rolagem apenas para ordens */
-            max-height: calc(100vh - 100px);
-            /* Limite de altura para ativar scroll se necessário */
-            display: grid;
-            gap: inherit;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .metric {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-        }
-
-        .price {
-            font-size: 2em;
-            text-align: center;
-            color: #4CAF50;
-            margin: 10px 0;
-        }
-
-        .status {
-            padding: 10px;
-            border-radius: 20px;
-            text-align: center;
-            margin: 10px;
-        }
-
-        .live {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
-        }
-
-        .sim {
-            background: rgba(255, 152, 0, 0.2);
-            color: #FF9800;
-        }
-
-        .orders {
-            margin-top: 10px;
-        }
-
-        .order {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px;
-            margin: 2px 0;
-            border-radius: 6px;
-            font-size: 0.9em;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            flex-direction: column;
-            opacity: 1;
-            transition: opacity 0.3s;
-            border-left: 4px solid #ccc;
-        }
-
-        .buy {
-            border-left: 4px solid #4CAF50;
-            background: rgba(76, 175, 80, 0.1);
-        }
-
-        .sell {
-            border-left: 4px solid #f44336;
-            background: rgba(244, 67, 54, 0.1);
-        }
-
-        .filled {
-            opacity: 0.4;
-        }
-
-        .cancelled {
-            opacity: 0.6;
-            background: rgba(255, 152, 0, 0.05);
-            border-left: 4px solid #FF9800;
-        }
-
-        .order span {
-            margin-right: 8px;
-            white-space: nowrap;
-        }
-
-        .drift-positive {
-            color: #4CAF50;
-            font-weight: bold;
-        }
-
-        .drift-negative {
-            color: #f44336;
-            font-weight: bold;
-        }
-
-        .refresh {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            border-radius: 20px;
-            color: white;
-            cursor: pointer;
-        }
-
-        .error {
-            color: #f44336;
-            text-align: center;
-            padding: 20px;
-        }
-    </style>
+    <!-- date-fns e adapter para Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
+<body class="bg-gray-900 text-white font-sans">
+<div class="container mx-auto p-6">
 
-<body>
-    <div class="header">
-        <h1>🦙 MB Bot Dashboard</h1>
-        <div id="status" class="status">Loading...</div>
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">📊 MB Bot Dashboard</h1>
+        <span id="mode" class="px-3 py-1 bg-blue-600 rounded-full text-sm">Modo: --</span>
     </div>
-    <div class="container">
 
-        <div class="left-column">
-            <div class="grid" id="grid">
-                <!-- Dynamic content for indicators -->
-            </div>
+    <!-- Cards -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <p class="text-gray-400">Último Preço</p>
+            <h2 id="lastPrice" class="text-xl font-bold">--</h2>
         </div>
-
-        <div class="right-column">
-            <div class="card">
-                <h3>🚀 Ordens Ativas - (<span id="active-count">0</span>)</h3>
-                <div class="orders" id="active-orders">
-                    <!-- Dynamic active orders -->
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>📋 Ordens Executadas - (<span id="executed-count">0</span>)</h3>
-                <div class="orders" id="executed-orders">
-                    <!-- Dynamic executed orders -->
-                </div>
-            </div>
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <p class="text-gray-400">Spread</p>
+            <h2 id="spread" class="text-xl font-bold">--</h2>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <p class="text-gray-400">Volatilidade</p>
+            <h2 id="volatility" class="text-xl font-bold">--</h2>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <p class="text-gray-400">PnL</p>
+            <h2 id="pnl" class="text-xl font-bold text-green-400">--</h2>
         </div>
     </div>
 
-    <button class="refresh" onclick="refresh()">🔄 Refresh</button>
+    <!-- Conteúdo principal -->
+    <div class="grid grid-cols-2 gap-6">
+        <!-- Tabela de Ordens -->
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <h2 class="text-lg font-bold mb-4">Ordens Ativas</h2>
+            <table class="w-full text-sm">
+                <thead>
+                <tr class="text-gray-400">
+                    <th class="text-left">Side</th>
+                    <th class="text-left">ID</th>
+                    <th class="text-left">Preço</th>
+                    <th class="text-left">Qtd</th>
+                    <th class="text-left">Status</th>
+                    <th class="text-left">Drift</th>
+                    <th class="text-left">Age</th>
+                </tr>
+                </thead>
+                <tbody id="ordersTable"></tbody>
+            </table>
+        </div>
 
-    <script>
-        function formatDrift(drift, mid, orderPrice) {
-            if (!drift || !mid || !orderPrice) return 'N/A';
-            const driftPercent = ((orderPrice - mid) / mid * 100).toFixed(2);
-            const cls = parseFloat(driftPercent) < -0.05 ? 'drift-negative' : 'drift-positive';
-            return `<span class="${cls}">${driftPercent}%</span>`;
+        <!-- Saldos -->
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <h2 class="text-lg font-bold mb-4">Saldos</h2>
+            <ul class="space-y-2 text-sm">
+                <li>BRL: <span id="brl">--</span></li>
+                <li>BTC: <span id="btc">--</span></li>
+                <li>Total: <span id="total">--</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Gráficos + Config -->
+    <div class="grid grid-cols-2 gap-6 mt-6">
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <h2 class="text-lg font-bold mb-4">Evolução do PnL</h2>
+            <canvas id="pnlChart"></canvas>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <h2 class="text-lg font-bold mb-4">Config & Tendência</h2>
+            <ul class="space-y-2 text-sm">
+                <li>Ordem mínima: <span id="orderSize">--</span></li>
+                <li>Spread alvo: <span id="targetSpread">--</span></li>
+                <li>Intervalo ciclo: <span id="cycleSec">--</span></li>
+                <li>Tendência: <span id="trend" class="font-bold">--</span></li>
+                <li>Stop-Loss: <span id="stopLoss">--</span></li>
+                <li>Take-Profit: <span id="takeProfit">--</span></li>
+                <li>Volume Mínimo: <span id="minVolume">--</span></li>
+                <li>Limite de Volatilidade: <span id="volatilityLimit">--</span></li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const priceHistory = [];
+
+    async function loadData() {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+
+        // Atualiza modo
+        document.getElementById('mode').textContent = "Modo: " + (data.config.simulate ? "Simulação" : "Live");
+        document.getElementById('mode').className = data.config.simulate ? "px-3 py-1 bg-yellow-600 rounded-full text-sm" : "px-3 py-1 bg-green-600 rounded-full text-sm";
+
+        // Atualiza cards
+        let lastPrice = parseFloat(data.market.last) || 0;
+        lastPrice = lastPrice.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('lastPrice').textContent = "R$ " + lastPrice;
+        document.getElementById('spread').textContent = data.market.spread + "%";
+        document.getElementById('volatility').textContent = data.market.volatility;
+        document.getElementById('pnl').textContent = data.stats.totalPnL;
+
+        // Atualiza saldos
+        document.getElementById('brl').textContent = "R$ " + parseFloat(data.balances.brl).toFixed(2);
+        document.getElementById('btc').textContent = parseFloat(data.balances.btc).toFixed(8) + " BTC";
+        document.getElementById('total').textContent = "R$ " + parseFloat(data.balances.total).toFixed(2);
+
+        // Atualiza tabela de ordens
+        const tbody = document.getElementById('ordersTable');
+        tbody.innerHTML = '';
+        data.activeOrders.forEach(order => {
+            const age = order.ageSecMinHour;
+            const ageStr = `${String(age.ageHour).padStart(2, '0')}:${String(age.ageMin % 60).padStart(2, '0')}:${String(age.ageSec % 60).padStart(2, '0')}`;
+            const priceFormatted = parseFloat(order.price).toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            order.price = "R$ " + priceFormatted;
+            order.qty = parseFloat(order.qty).toFixed(6);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="${order.side === 'buy' ? 'text-green-400' : 'text-red-400'}">${order.side}</td>
+                <td>${order.id}</td>
+                <td>${order.price}</td>
+                <td>${order.qty}</td>
+                <td>${order.status}</td>
+                <td>${order.drift}</td>
+                <td>${ageStr}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Atualiza gráfico PnL
+        pnlChart.data.labels.push(new Date().toLocaleTimeString());
+        pnlChart.data.datasets[0].data.push(parseFloat(data.stats.totalPnL));
+        pnlChart.data.datasets[1].data.push(parseFloat(data.market.last));
+        if (pnlChart.data.labels.length > 50) {
+            pnlChart.data.labels.shift();
+            pnlChart.data.datasets[0].data.shift();
+            pnlChart.data.datasets[1].data.shift();
+        }
+        pnlChart.update();
+
+        // Config & tendência
+        document.getElementById('orderSize').textContent = data.config.orderSize;
+        document.getElementById('targetSpread').textContent = data.config.spreadPct;
+        document.getElementById('cycleSec').textContent = data.config.cycleSec + "s";
+
+        priceHistory.push(data.market.last);
+        if (priceHistory.length > 20) priceHistory.shift();
+
+        const avg = priceHistory.reduce((a, b) => a + b, 0) / priceHistory.length;
+        const trendEl = document.getElementById('trend');
+        if (data.market.last > avg * 1.002) {
+            trendEl.textContent = "Alta 📈";
+            trendEl.className = "text-green-400 font-bold";
+        } else if (data.market.last < avg * 0.998) {
+            trendEl.textContent = "Baixa 📉";
+            trendEl.className = "text-red-400 font-bold";
+        } else {
+            trendEl.textContent = "Neutra ➡️";
+            trendEl.className = "text-gray-400 font-bold";
         }
 
-        async function refresh() {
-            try {
-                const res = await fetch('/api/status?refresh=true');
-                const data = await res.json();
+        // Novas configurações adicionadas
+        document.getElementById('stopLoss').textContent = data.config.stopLoss ? data.config.stopLoss + "%" : "N/A";
+        document.getElementById('takeProfit').textContent = data.config.takeProfit ? data.config.takeProfit + "%" : "N/A";
+        document.getElementById('minVolume').textContent = data.config.minVolume ? data.config.minVolume + " BTC" : "N/A";
+        document.getElementById('volatilityLimit').textContent = data.config.volatilityLimit ? data.config.volatilityLimit + "%" : "N/A";
+    }
 
-                if (data.error) {
-                    document.getElementById('status').innerHTML = `<span class="status error">❌ ${data.error}</span>`;
-                    document.getElementById('grid').innerHTML = '<div class="error">Error loading data</div>';
-                    document.getElementById('active-orders').innerHTML = '';
-                    document.getElementById('executed-orders').innerHTML = '';
-                    return;
+    const pnlChart = new Chart(document.getElementById('pnlChart'), {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: "PnL (R$)",
+                    borderColor: "#4ade80",
+                    backgroundColor: "rgba(74,222,128,0.2)",
+                    fill: true,
+                    data: [],
+                    tension: 0.3,
+                    pointRadius: 3,
+                    yAxisID: 'y'
+                },
+                {
+                    label: "BTC Price (R$)",
+                    borderColor: "#60a5fa",
+                    backgroundColor: "rgba(96,165,250,0.2)",
+                    fill: true,
+                    data: [],
+                    tension: 0.3,
+                    pointRadius: 3,
+                    yAxisID: 'y1'
                 }
-
-                const modeClass = data.mode.includes('SIMULATE') ? 'sim' : 'live';
-                document.getElementById('status').innerHTML = `<span class="status ${modeClass}">${data.mode}</span>`;
-
-                // Construir grid para indicators (esquerda)
-                document.getElementById('grid').innerHTML = `
-                    <div class="card">
-                        <h3>📈 Market</h3>
-                        <div class="price">R$ ${parseFloat(data.market.last ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        <div class="metric"><span>Bid:</span><span>R$ ${parseFloat(data.market.bid ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                        <div class="metric"><span>Ask:</span><span>R$ ${parseFloat(data.market.ask ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                        <div class="metric"><span>Mid:</span><span>R$ ${parseFloat(data.market.mid ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                        <div class="metric"><span>Volatility:</span><span>${data.market.volatility ?? 'N/A'}</span></div>
-                        <div class="metric"><span>Spread:</span><span>${data.market.spread ?? 'N/A'}%</span></div>
-                    </div>
-
-                    <div class="card">
-                        <h3>💰 Balances</h3>
-                        <div class="metric"><span>BRL Available:</span><span>R$ ${parseFloat(data.balances.brlAvailable ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                        <div class="metric"><span>BTC Available:</span><span>${parseFloat(data.balances.btcAvailable ?? 0).toFixed(8)}</span></div>
-                        <div class="metric"><span>Total Value:</span><span>R$ ${parseFloat(data.balances.total ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                        <div class="metric"><span>Buy Cost:</span><span>R$ ${parseFloat(data.balances.buyCost ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                        <div class="metric"><span>Can Buy:</span><span>${data.balances.canBuy ? 'Yes' : 'No'}</span></div>
-                    </div>
-
-                    <div class="card">
-                        <h3>📊 Stats</h3>
-                        <div class="metric"><span>Cycles:</span><span>${data.stats.cycles ?? 0}</span></div>
-                        <div class="metric"><span>Uptime:</span><span>${data.stats.uptime ?? 'N/A'}</span></div>
-                        <div class="metric"><span>Fills:</span><span>${data.stats.fills ?? 0}</span></div>
-                        <div class="metric"><span>Cancels:</span><span>${data.stats.cancels ?? 0}</span></div>
-                        <div class="metric"><span>P&L:</span><span style="color:${(parseFloat(data.stats.totalPnL ?? 0) >= 0) ? '#4CAF50' : '#f44336'}">R$ ${parseFloat(data.stats.totalPnL ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                        <div class="metric"><span>Fill Rate:</span><span>${data.stats.fillRate ?? 'N/A'}</span></div>
-                        <div class="metric"><span>Dynamic Spread:</span><span>${data.stats.dynamicSpread ?? 'N/A'}</span></div>
-                    </div>
-
-                    <div class="card">
-                        <h3>⚙️ Config</h3>
-                        <div class="metric"><span>Spread:</span><span>${data.config.spreadPct ?? 0}%</span></div>
-                        <div class="metric"><span>Size:</span><span>${data.config.orderSize ?? 0} BTC</span></div>
-                        <div class="metric"><span>Cycle:</span><span>${data.config.cycleSec ?? 0}s</span></div>
-                        <div class="metric"><span>Max Order Age:</span><span>${data.config.maxOrderAgeSecMinHour !== null ? (data.config.maxOrderAgeSecMinHour.ageDay > 0 ? data.config.maxOrderAgeSecMinHour.ageDay + 'd ' : '') + (data.config.maxOrderAgeSecMinHour.ageHour % 24) + 'h ' + (data.config.maxOrderAgeSecMinHour.ageMin % 60) + 'm ' + (data.config.maxOrderAgeSecMinHour.ageSec % 60) + 's' : 'N/A'}</span></div>
-                        <div class="metric"><span>Max Position:</span><span>${data.config.maxPosition ?? 0} BTC</span></div>
-                        <div class="metric"><span>Min Order Size:</span><span>${data.config.minOrderSize ?? 0} BTC</span></div>
-                        <div class="metric"><span>Price Drift:</span><span>${data.config.priceDrift ?? 0}%</span></div>
-                        <div class="metric"><span>Price Drift Boost:</span><span>${data.config.priceDriftBoost ?? 0}%</span></div>
-                    </div>
-
-                    <div class="card">
-                        <h3>🔍 Debug</h3>
-                        <div class="metric"><span>Market Interest:</span><span>${data.debug.marketInterest ? 'Yes' : 'No'}</span></div>
-                        <div class="metric"><span>Last OB Update:</span><span>${data.debug.lastObUpdate ?? 'N/A'}</span></div>
-                    </div>
-                `;
-
-                // Ordens Ativas (direita)
-                document.getElementById('active-count').textContent = data.activeOrders.length ?? 0;
-                document.getElementById('active-orders').innerHTML = Array.isArray(data.activeOrders) && data.activeOrders.length
-                    ? data.activeOrders.map(o => `
-                        <div class="order ${o.side.toLowerCase()}">
-                            <span>ID: ${o.id}</span>
-                            <span>Side: ${o.side}</span>
-                            <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                            <span>Qty: ${o.qty ?? 0}</span>
-                            <span>Drift: ${formatDrift(data.market.mid, data.market.mid, o.price)}</span>
-                            <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
-                            <span>Age: ${o.ageSecMinHour !== null ? (o.ageSecMinHour.ageDay > 0 ? o.ageSecMinHour.ageDay + 'd ' : '') + (o.ageSecMinHour.ageHour % 24) + 'h ' + (o.ageSecMinHour.ageMin % 60) + 'm ' + (o.ageSecMinHour.ageSec % 60) + 's' : 'N/A'}</span>
-                        </div>
-                    `).join('')
-                    : '<div style="text-align:center;color:#aaa">No active orders</div>';
-
-                // Ordens Executadas (direita, abaixo das ativas)
-                document.getElementById('executed-count').textContent = data.orders.length ?? 0;
-                document.getElementById('executed-orders').innerHTML = data.orders?.length ? data.orders.map(o => `
-                    <div class="order ${o.side.toLowerCase()} ${o.status === 'filled' ? 'filled' : o.status === 'cancelled' ? 'cancelled' : ''}">
-                        <span>ID: ${o.id}</span>
-                        <span>Side: ${o.side}</span>
-                        <span>Price: R$ ${parseFloat(o.price ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        <span>Qty: ${o.qty ?? 0}</span>
-                        <span>Status: ${o.status ?? 'N/A'}</span>
-                        <span>Time: ${o.timestamp ? new Date(o.timestamp).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : 'N/A'}</span>
-                    </div>
-                `).join('') : '<div style="text-align:center;color:#aaa">No open orders</div>';
-
-                console.log('Data recebida:', data);
-
-            } catch (e) {
-                document.getElementById('status').innerHTML = '<span class="status error">Network Error</span>';
-                document.getElementById('grid').innerHTML = '<div class="error">Failed to load data</div>';
-                document.getElementById('active-orders').innerHTML = '';
-                document.getElementById('executed-orders').innerHTML = '';
-                console.error('Erro na requisição:', e);
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {legend: {display: true}, tooltip: {mode: 'index', intersect: false}},
+            scales: {
+                y: {type: 'linear', position: 'left', title: {display: true, text: 'PnL (R$)'}},
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    title: {display: true, text: 'BTC Price (R$)'},
+                    grid: {drawOnChartArea: false}
+                },
+                x: {display: true, title: {display: true, text: 'Hora'}}
             }
         }
+    });
 
-        setInterval(refresh, 2 * 1000);
-        refresh();
-    </script>
+    setInterval(loadData, 10 * 1000);
+    loadData();
+</script>
 </body>
-
 </html>

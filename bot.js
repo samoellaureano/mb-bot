@@ -10,15 +10,16 @@ const db = require('./db');
 const SIMULATE = process.env.SIMULATE === 'true';
 const REST_BASE = process.env.REST_BASE || 'https://api.mercadobitcoin.net/api/v4';
 const PAIR = process.env.PAIR || 'BTC-BRL';
-const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.002');
-const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.0001');
-const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '5'));
-const PRICE_TOLERANCE = parseFloat(process.env.PRICE_TOLERANCE || '0.001');
-const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '5');
+const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.002'); // Pode aumentar para 0.005 se necessário
+const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.00007');
+const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15')); // Ajustado para 15sparseInt(process.env.MAX_ORDER_AGE || '5');
 const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003');
 const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0');
-const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.001'); // Reduzido de 0.002
-
+const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.001');
+const STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '2.0');
+const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '5.0');
+const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005000');
+const VOLATILITY_LIMIT_PCT = parseFloat(process.env.VOLATILITY_LIMIT_PCT || '1.0');
 
 // Validate critical config
 if (!REST_BASE.startsWith('http')) {
@@ -48,10 +49,11 @@ let cycleCount = 0;
 let activeOrders = new Map();
 let totalFills = 0;
 let totalPnL = 0.0;
-let btcPosition = 0;   // posição líquida em BTC
-let totalCost = 0;     // custo acumulado em BRL
+let btcPosition = 0;
+let totalCost = 0;
 let lastObUpdate = 0;
 let lastOrderbook = {bids: [], asks: []};
+let marketTrend = 'Neutra';
 const OB_REFRESH_SEC = 10;
 const startTime = Date.now();
 
@@ -82,8 +84,7 @@ async function fetchOrderbookRest() {
         const url = `${REST_BASE}/${PAIR}/orderbook?limit=10`;
         log('DEBUG', `Fetching orderbook from: ${url}`);
         const response = await axios.get(url, {
-            timeout: 15000,
-            headers: {'User-Agent': 'MB-Bot/1.0.0'}
+            timeout: 15000, headers: {'User-Agent': 'MB-Bot/1.0.0'}
         });
         const data = response.data;
 
@@ -157,10 +158,7 @@ async function checkOrderStatus(orderKey, side) {
 
             totalFills++;
             await saveOrderSafe({
-                ...order,
-                status: 'filled',
-                filledQty: qty,
-                fillPrice: fillPrice.toFixed(2)
+                ...order, status: 'filled', filledQty: qty, fillPrice: fillPrice.toFixed(2)
             }, `simulated_fill ${slippage.toFixed(3)}`);
             activeOrders.delete(orderKey);
             log('INFO', `🎉 Filled ${side.toUpperCase()} order ${order.id.substring(0, 8)} @ R$${fillPrice.toFixed(0)}, Qty: ${qty}`);
@@ -229,13 +227,20 @@ async function runCycle() {
         const mid = (bestBid + bestAsk) / 2;
         const volatility = ((bestAsk - bestBid) / mid) * 100;
 
-        // --- AJUSTE DE SPREAD DINÂMICO ---
-        let dynamicSpreadPct = Math.max(0.0005, 0.0005 + volatility / 200);
-        if (volatility >= 0.5) dynamicSpreadPct = Math.min(0.005, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
-        log('DEBUG', `📉 Market Analysis - Volatility: ${volatility.toFixed(2)}%, Dynamic Spread: ${dynamicSpreadPct * 100}%, Mid Price: ${mid.toFixed(0)}`);
+        // Atualizar tendência com base na volatilidade
+        if (volatility > VOLATILITY_LIMIT_PCT) {
+            marketTrend = 'Alta';
+        } else if (volatility < -VOLATILITY_LIMIT_PCT) {
+            marketTrend = 'Baixa';
+        } else {
+            marketTrend = 'Neutra';
+        }
+        log('INFO', `📈 Tendência atual: ${marketTrend} (Volatilidade: ${volatility.toFixed(2)}%)`);
 
-        let minSpreadPct = MIN_SPREAD_PCT * (volatility < 0.1 ? 0.5 : 1);
-        log('DEBUG', `Calculated minSpreadPct: ${minSpreadPct * 100}% (based on volatility ${volatility.toFixed(2)}% < 0.1? ${volatility < 0.1})`);
+        // --- AJUSTE DE SPREAD DINÂMICO ---
+        let dynamicSpreadPct = Math.max(MIN_SPREAD_PCT, SPREAD_PCT); // Começa com o spread alvo de 0.2%
+        if (volatility >= VOLATILITY_LIMIT_PCT) dynamicSpreadPct = Math.min(0.005, parseFloat(process.env.MAX_SPREAD_PCT || 0.01));
+        log('DEBUG', `📉 Market Analysis - Volatility: ${volatility.toFixed(2)}%, Dynamic Spread: ${dynamicSpreadPct * 100}%, Mid Price: ${mid.toFixed(0)}`);
 
         const INVENTORY_THRESHOLD = 0.0002;
         const BIAS_FACTOR = 0.0005;
@@ -254,8 +259,8 @@ async function runCycle() {
             log('DEBUG', `Inventory within threshold - No bias applied`);
         }
 
-        let buyPrice = Math.floor(bestBid * (1 - dynamicSpreadPct - minSpreadPct + buyBias) * 100) / 100;
-        let sellPrice = Math.ceil(bestAsk * (1 + dynamicSpreadPct + minSpreadPct + sellBias) * 100) / 100;
+        let buyPrice = Math.floor(bestBid * (1 - dynamicSpreadPct + buyBias) * 100) / 100;
+        let sellPrice = Math.ceil(bestAsk * (1 + dynamicSpreadPct + sellBias) * 100) / 100;
 
         if (buyPrice >= sellPrice) {
             log('WARN', `⚠️ Spread too tight - Buy Price: ${buyPrice}, Sell Price: ${sellPrice}, Adjusting to natural spread`);
@@ -302,10 +307,9 @@ async function runCycle() {
             const age = cycleCount - (order.cyclePlaced || cycleCount);
             const hasInterest = orderbook.bids[0][1] > ORDER_SIZE * 2 || orderbook.asks[0][1] > ORDER_SIZE * 2;
             log('DEBUG', `hasInterest calculation: Bid volume ${orderbook.bids[0][1]} > ${ORDER_SIZE * 2}? ${orderbook.bids[0][1] > ORDER_SIZE * 2}, Ask volume ${orderbook.asks[0][1]} > ${ORDER_SIZE * 2}? ${orderbook.asks[0][1] > ORDER_SIZE * 2}, Result: ${hasInterest}`);
-
             log('DEBUG', `📊 ${key.toUpperCase()} order - ID: ${order.id.substring(0, 8)}, Price: ${order.price}, Target: ${targetPrice}, Drift: ${(priceDrift * 100).toFixed(2)}%, Age: ${age} cycles`);
 
-            // --- Ajuste gradual do preço com drift boost da variável env ---
+            // --- Ajuste gradual do preço com drift boost ---
             const adjustedDrift = PRICE_DRIFT * (1 + PRICE_DRIFT_BOOST) * 2;
             log('DEBUG', `Adjustment check - adjustedDrift: ${adjustedDrift}, age >= ${MIN_ORDER_CYCLES}? ${age >= MIN_ORDER_CYCLES}, |drift| > adjustedDrift? ${Math.abs(priceDrift) > adjustedDrift} (|${priceDrift}| > ${adjustedDrift})`);
             const ADJUST_STEP_AGGRESSIVE = ADJUST_STEP * 2;
@@ -366,8 +370,22 @@ async function runCycle() {
         log('DEBUG', `💰 Checking balances - BRL: ${brlBalance.toFixed(2)}, BTC: ${btcBalance.toFixed(8)}, Buy Cost: ${buyCost.toFixed(2)}, Sell Amount: ${sellAmount}`);
         log('INFO', `📊 Inventory: BTC ${btcPosition.toFixed(8)}, Avg Cost ${(btcPosition > 0 ? totalCost / btcPosition : 0).toFixed(0)}, PnL ${totalPnL.toFixed(2)}`);
 
+        // Aplicar Stop-Loss e Take-Profit
+        const currentPnL = totalPnL;
+        const avgCost = btcPosition > 0 ? totalCost / btcPosition : mid;
+        if (currentPnL <= -avgCost * STOP_LOSS_PCT / 100) {
+            log('WARN', `⚠️ Stop-Loss triggered: PnL ${currentPnL.toFixed(2)} <= -${avgCost.toFixed(0)} * ${STOP_LOSS_PCT}%`);
+            for (let key of activeOrders.keys()) await tryCancel(key);
+            return;
+        }
+        if (currentPnL >= avgCost * TAKE_PROFIT_PCT / 100) {
+            log('INFO', `🎉 Take-Profit triggered: PnL ${currentPnL.toFixed(2)} >= ${avgCost.toFixed(0)} * ${TAKE_PROFIT_PCT}%`);
+            for (let key of activeOrders.keys()) await tryCancel(key);
+            return;
+        }
+
         log('DEBUG', `Buy placement check - hasActiveBuy: ${activeOrders.has('buy')}, buyStatus: ${buyStatus.status}, brlBalance >= buyCost? ${brlBalance >= buyCost} (${brlBalance.toFixed(2)} >= ${buyCost.toFixed(2)})`);
-        if (!activeOrders.has('buy') && buyStatus.status !== 'filled' && brlBalance >= buyCost) {
+        if (!activeOrders.has('buy') && buyStatus.status !== 'filled' && brlBalance >= buyCost && ORDER_SIZE >= MIN_VOLUME) {
             try {
                 const order = await MB.placeOrder('buy', buyPrice, ORDER_SIZE);
                 const orderId = order.orderId || `buy_${Date.now()}`;
@@ -386,13 +404,13 @@ async function runCycle() {
                 log('ERROR', `❌ Buy placement failed | ${e.message}, BRL Balance: ${brlBalance.toFixed(2)}`);
             }
         } else if (!activeOrders.has('buy')) {
-            log('WARN', `💰 Insufficient BRL balance (${brlBalance.toFixed(2)}) for buy order, required: ${buyCost.toFixed(2)}`);
+            log('WARN', `💰 Insufficient BRL balance (${brlBalance.toFixed(2)}) for buy order, required: ${buyCost.toFixed(2)} or ORDER_SIZE ${ORDER_SIZE} < MIN_VOLUME ${MIN_VOLUME}`);
         } else {
             log('DEBUG', `No new BUY order placed (active or filled status)`);
         }
 
         log('DEBUG', `Sell placement check - hasActiveSell: ${activeOrders.has('sell')}, sellStatus: ${sellStatus.status}, btcBalance >= sellAmount? ${btcBalance >= sellAmount} (${btcBalance.toFixed(8)} >= ${sellAmount})`);
-        if (!activeOrders.has('sell') && sellStatus.status !== 'filled' && btcBalance >= sellAmount) {
+        if (!activeOrders.has('sell') && sellStatus.status !== 'filled' && btcBalance >= sellAmount && ORDER_SIZE >= MIN_VOLUME) {
             try {
                 const order = await MB.placeOrder('sell', sellPrice, ORDER_SIZE);
                 const orderId = order.orderId || `sell_${Date.now()}`;
@@ -411,7 +429,7 @@ async function runCycle() {
                 log('ERROR', `❌ Sell placement failed | ${e.message}, BTC Balance: ${btcBalance.toFixed(8)}`);
             }
         } else if (!activeOrders.has('sell')) {
-            log('WARN', `💰 Insufficient BTC balance (${btcBalance.toFixed(8)}) for sell order, required: ${sellAmount}`);
+            log('WARN', `💰 Insufficient BTC balance (${btcBalance.toFixed(8)}) for sell order, required: ${sellAmount} or ORDER_SIZE ${ORDER_SIZE} < MIN_VOLUME ${MIN_VOLUME}`);
         } else {
             log('DEBUG', `No new SELL order placed (active or filled status)`);
         }
@@ -444,6 +462,21 @@ async function main() {
 
         log('INFO', 'Fetching initial orderbook...');
         await fetchOrderbookRest();
+
+        async function syncWithDashboard() {
+            try {
+                const response = await axios.get('http://localhost:3001/api/status');
+                const data = response.data;
+                if (data && data.stats && data.stats.totalPnL) {
+                    totalPnL = parseFloat(data.stats.totalPnL);
+                    log('INFO', `📊 Synchronized PnL with dashboard: ${totalPnL}`);
+                }
+            } catch (e) {
+                log('WARN', `Failed to sync with dashboard: ${e.message}`);
+            }
+        }
+
+        await syncWithDashboard();
 
         log('INFO', `Starting main loop - cycle every ${CYCLE_SEC}s, Start Time: ${new Date(startTime).toISOString()}`);
         await runCycle();
