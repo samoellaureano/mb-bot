@@ -2,7 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs').promises; // Usar promessas para manipulação assíncrona
 const mbClient = require('./mb_client');
 const axios = require('axios');
 
@@ -11,6 +11,8 @@ const SIMULATE = mbClient.SIMULATE;
 const PORT = parseInt(process.env.PORT) || 3001;
 const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 30000; // 30 segundos
 const DEBUG = process.env.DEBUG === 'true';
+const PNL_HISTORY_FILE = path.join(__dirname, 'pnl_history.json');
+const MAX_PNL_HISTORY_POINTS = 864; // Limite de 24h com intervalos de 10min
 
 // Logging
 const log = (level, message, data) => {
@@ -20,6 +22,17 @@ const log = (level, message, data) => {
 };
 
 log('INFO', `Starting Dashboard - SIMULATE=${SIMULATE}, PORT=${PORT}`);
+
+// Função auxiliar para calcular idade
+const computeAge = (timestamp) => {
+    const now = Date.now();
+    const ageMs = now - new Date(timestamp).getTime();
+    const ageSec = Math.floor(ageMs / 1000);
+    const ageMin = Math.floor(ageSec / 60);
+    const ageHour = Math.floor(ageMin / 60);
+    const ageDay = Math.floor(ageHour / 24);
+    return {ageSec, ageMin, ageHour, ageDay};
+};
 
 // Express app
 const app = express();
@@ -45,16 +58,72 @@ const serverStartTime = Date.now();
 // Cache
 let cache = {timestamp: 0, data: null, valid: false};
 
-// ===== Função auxiliar para calcular idade =====
-const computeAge = (timestamp) => {
-    const now = Date.now();
-    const ageMs = now - new Date(timestamp).getTime();
-    const ageSec = Math.floor(ageMs / 1000);
-    const ageMin = Math.floor(ageSec / 60);
-    const ageHour = Math.floor(ageMin / 60);
-    const ageDay = Math.floor(ageHour / 24);
-    return {ageSec, ageMin, ageHour, ageDay};
-};
+// Load or initialize PNL history
+let pnlHistory = [];
+let pnlTimestamps = [];
+
+async function loadPnlHistory() {
+    try {
+        await fs.access(PNL_HISTORY_FILE);
+        const data = await fs.readFile(PNL_HISTORY_FILE, 'utf8');
+        const loadedData = JSON.parse(data);
+
+        if (Array.isArray(loadedData) && loadedData.length > 0) {
+            if (loadedData[0].hasOwnProperty('value') && loadedData[0].hasOwnProperty('timestamp')) {
+                // Carrega como array de objetos { value, timestamp }
+                const validData = loadedData
+                    .filter(item => typeof item.value === 'number' && typeof item.timestamp === 'string')
+                    .map(item => ({
+                        value: parseFloat(item.value),
+                        timestamp: item.timestamp
+                    }));
+                // Remove duplicatas e ordena cronologicamente
+                const uniqueData = Array.from(new Map(validData.map(item => [item.timestamp, item])).values())
+                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                pnlHistory = uniqueData.map(item => item.value);
+                pnlTimestamps = uniqueData.map(item => item.timestamp);
+            } else {
+                // Compatibilidade com formato antigo
+                pnlHistory = Array.isArray(loadedData) ? loadedData.map(val => (typeof val === 'number' ? parseFloat(val) : 0)) : [];
+                pnlTimestamps = Array(pnlHistory.length).fill(new Date().toISOString());
+                log('WARN', `Converted old PNL history format to include timestamps at ${PNL_HISTORY_FILE}`);
+            }
+        } else {
+            throw new Error('Invalid PNL history data structure');
+        }
+
+        // Limita o número de pontos
+        pnlHistory = pnlHistory.slice(-MAX_PNL_HISTORY_POINTS);
+        pnlTimestamps = pnlTimestamps.slice(-MAX_PNL_HISTORY_POINTS);
+
+        log('INFO', `Loaded PNL history with ${pnlHistory.length} points from ${PNL_HISTORY_FILE}`);
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            log('INFO', `No PNL history file found at ${PNL_HISTORY_FILE}, initializing empty history`);
+            pnlHistory = [];
+            pnlTimestamps = [];
+            await savePnlHistory();
+        } else {
+            log('ERROR', `Failed to load PNL history: ${err.message}`);
+            pnlHistory = [];
+            pnlTimestamps = [];
+            await savePnlHistory();
+        }
+    }
+}
+
+async function savePnlHistory() {
+    try {
+        const historyData = pnlHistory.map((value, index) => ({
+            value: parseFloat(value.toFixed(8)),
+            timestamp: pnlTimestamps[index] || new Date().toISOString()
+        }));
+        await fs.writeFile(PNL_HISTORY_FILE, JSON.stringify(historyData, null, 2));
+        log('DEBUG', `Saved PNL history with ${pnlHistory.length} points to ${PNL_HISTORY_FILE}`);
+    } catch (err) {
+        log('ERROR', `Failed to save PNL history: ${err.message}`);
+    }
+}
 
 // ===== Função para gerar dados simulados =====
 function generateSimulatedData() {
@@ -107,12 +176,43 @@ function generateSimulatedData() {
         ageSecMinHour: computeAge(new Date(now - (i + 1) * 60000).toISOString())
     }));
 
-    const pnlHistory = [];
-    let pnlValue = 0;
-    for (let i = 0; i < 30; i++) {
-        pnlValue += (Math.random() - 0.5) * 0.1;
-        pnlHistory.push(parseFloat(pnlValue.toFixed(2)));
-    }
+    // Calcular PnL com base nas ordens filled
+    let btcPosition = 0;
+    let totalCost = 0;
+    let totalPnL = 0;
+    const newPnlHistoryWithTimestamps = [];
+    executedOrders.filter(o => o.status === 'filled')
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+        .forEach(o => {
+            const qty = parseFloat(o.qty);
+            const price = parseFloat(o.price);
+            if (o.side === 'buy') {
+                btcPosition += qty;
+                totalCost += qty * price;
+            } else if (o.side === 'sell' && btcPosition > 0) {
+                const avgBuyPrice = totalCost / btcPosition;
+                const profit = (price - avgBuyPrice) * qty;
+                totalPnL += profit;
+                btcPosition -= qty;
+                totalCost -= avgBuyPrice * qty;
+            }
+            newPnlHistoryWithTimestamps.push({value: parseFloat(totalPnL.toFixed(8)), timestamp: o.timestamp});
+        });
+
+    // Adicionar o PnL atual
+    const currentPnlEntry = {value: parseFloat(totalPnL.toFixed(8)), timestamp: new Date().toISOString()};
+    newPnlHistoryWithTimestamps.push(currentPnlEntry);
+
+    // Combinar com o histórico existente, remover duplicatas e ordenar
+    const combinedData = [
+        ...newPnlHistoryWithTimestamps,
+        ...pnlHistory.map((value, index) => ({value, timestamp: pnlTimestamps[index]}))
+    ].filter(item => typeof item.value === 'number' && typeof item.timestamp === 'string');
+    const uniqueData = Array.from(new Map(combinedData.map(item => [item.timestamp, item])).values())
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    pnlHistory = uniqueData.map(item => item.value).slice(-MAX_PNL_HISTORY_POINTS);
+    pnlTimestamps = uniqueData.map(item => item.timestamp).slice(-MAX_PNL_HISTORY_POINTS);
+    savePnlHistory().then(r => log('DEBUG', 'Simulated PnL history saved'));
 
     const bids = Array.from({length: 5}, (_, i) => parseFloat((mid - (i + 1) * 50 - Math.random() * 20).toFixed(2)));
     const asks = Array.from({length: 5}, (_, i) => parseFloat((mid + (i + 1) * 50 + Math.random() * 20).toFixed(2)));
@@ -143,11 +243,12 @@ function generateSimulatedData() {
         stats: {
             cycles: 384,
             uptime: "51min",
-            fills: 30,
+            fills: executedOrders.filter(o => o.status === 'filled').length,
             totalOrders: 100,
-            cancels: 68,
-            totalPnL: pnlValue.toFixed(2),
-            pnlHistory,
+            cancels: executedOrders.filter(o => o.status === 'cancelled').length,
+            totalPnL: totalPnL.toFixed(8),
+            pnlHistory: [...pnlHistory],
+            pnlTimestamps: [...pnlTimestamps],
             fillRate: "30.0%",
             avgSpread: "0.20",
             dynamicSpread: "0.10%"
@@ -176,36 +277,31 @@ function generateSimulatedData() {
 // ===== Função para dados LIVE via mb_client =====
 async function getLiveData() {
     try {
-        if (!await mbClient.ensureAuthenticated()) await mbClient.authenticate();
+        if (!await mbClient.ensureAuthenticated()) {
+            await mbClient.authenticate();
+        }
         const accountId = mbClient.getAccountId();
         const [ticker, balances] = await Promise.all([
             mbClient.getTicker(),
             mbClient.getBalances(accountId)
         ]);
 
-        // Fetch all orders using direct API call (status='all' to include open, filled, cancelled)
         const ordersResponse = await axios.get(`https://api.mercadobitcoin.net/api/v4/accounts/${accountId}/orders`, {
-            params: {
-                status: 'all',
-                symbol: mbClient.PAIR, // e.g., 'BTC-BRL'
-                limit: 100 // Adjust limit as needed; add pagination if more orders are required
-            },
+            params: {status: 'all', symbol: mbClient.PAIR, limit: 100},
             headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`},
             timeout: 10000
         });
 
-// Safely handle the API response structure
         let orders = [];
         if (ordersResponse.data && Array.isArray(ordersResponse.data.items)) {
-            orders = ordersResponse.data.items; // Use the 'items' array from the response
+            orders = ordersResponse.data.items;
         } else if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
-            orders = ordersResponse.data; // Fallback to direct array if no 'items'
+            orders = ordersResponse.data;
         } else {
-            log('WARN', 'Unexpected orders response structure:', ordersResponse.data);
-            orders = []; // Fallback to empty array if structure is unknown
+            log('WARN', 'Unexpected orders response structure, initializing empty orders:', ordersResponse.data);
+            orders = [];
         }
 
-// ===== Orderbook com fallback =====
         let orderbook;
         try {
             const response = await axios.get(`https://api.mercadobitcoin.net/api/v4/${mbClient.PAIR}/orderbook?limit=100`, {
@@ -214,17 +310,9 @@ async function getLiveData() {
             });
             orderbook = {bids: response.data.bids.slice(0, 10), asks: response.data.asks.slice(0, 10)};
         } catch (e) {
+            log('ERROR', 'Failed to fetch orderbook, using last ticker price:', e.message);
             const mid = parseFloat(ticker.last);
-            const baseSpreadPct = parseFloat(process.env.SPREAD_PCT || '0.002');
-            const qty = 0.01;
-            const levels = 5;
-            const bids = [], asks = [];
-            for (let i = 1; i <= levels; i++) {
-                const multiplier = i + Math.random() * 0.3;
-                bids.push([(mid * (1 - baseSpreadPct * multiplier)).toFixed(2), qty.toFixed(4)]);
-                asks.push([(mid * (1 + baseSpreadPct * multiplier)).toFixed(2), qty.toFixed(4)]);
-            }
-            orderbook = {bids, asks, fallback: true};
+            orderbook = {bids: [[mid, 0.01]], asks: [[mid, 0.01]], fallback: true};
         }
 
         const fills = orders.filter(o => o.status === 'filled').length;
@@ -236,32 +324,57 @@ async function getLiveData() {
         let dynamicSpreadPct = volatility >= 0.5 ? Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01))
             : volatility >= 0.1 ? 0.003 : volatility >= 0.05 ? 0.002 : 0.001;
 
-// ===== PnL e histórico =====
-        let btcPosition = 0, totalCost = 0, totalPnL = 0;
-        const pnlHistory = [];
-        orders.filter(o => o.status === 'filled').sort((a, b) => (a.created_at || 0) - (b.created_at || 0)).forEach(o => {
-            const qty = parseFloat(o.qty);
-            const price = parseFloat(o.limitPrice || o.price);
-            if (o.side === 'buy') {
-                btcPosition += qty;
-                totalCost += qty * price;
-                totalPnL += 0;
-            } else if (o.side === 'sell' && btcPosition > 0) {
-                const avgPrice = totalCost / btcPosition;
-                totalPnL += (price - avgPrice) * qty;
-                btcPosition -= qty;
-                totalCost -= avgPrice * qty;
-            }
-            pnlHistory.push(parseFloat(totalPnL.toFixed(8)));
-        });
-        totalPnL = totalPnL.toFixed(8);
+        // Calcular PnL com base nas ordens filled
+        let btcPosition = 0;
+        let totalCost = 0;
+        let totalPnL = 0;
+        const newPnlHistoryWithTimestamps = [];
+        orders.filter(o => o.status === 'filled')
+            .sort((a, b) => (a.created_at || 0) - (b.created_at || 0))
+            .forEach(o => {
+                const qty = parseFloat(o.qty);
+                const price = parseFloat(o.limitPrice || o.price);
+                const timestamp = o.created_at ? new Date(o.created_at * 1000).toISOString() : new Date().toISOString();
+                if (o.side === 'buy') {
+                    btcPosition += qty;
+                    totalCost += qty * price;
+                } else if (o.side === 'sell' && btcPosition > 0) {
+                    const avgPrice = totalCost / btcPosition;
+                    totalPnL += (price - avgPrice) * qty;
+                    btcPosition -= qty;
+                    totalCost -= avgPrice * qty;
+                }
+                newPnlHistoryWithTimestamps.push({value: parseFloat(totalPnL.toFixed(8)), timestamp});
+            });
 
-// ===== Corrigir timestamps =====
+        // Adicionar pontos regulares de PnL com base no tempo atual
+        const lastTimestamp = pnlTimestamps.length > 0 ? new Date(pnlTimestamps[pnlTimestamps.length - 1]) : null;
+        const currentTime = new Date(now);
+        if (!lastTimestamp || (currentTime - lastTimestamp) >= 60000) {
+            const unrealizedPnL = btcPosition > 0 ? btcPosition * (mid - (totalCost / btcPosition)) : 0;
+            const newPnlValue = parseFloat((totalPnL + unrealizedPnL).toFixed(8));
+            const newPnlEntry = {value: newPnlValue, timestamp: currentTime.toISOString()};
+            newPnlHistoryWithTimestamps.push(newPnlEntry);
+        }
+
+        // Combinar com o histórico existente, remover duplicatas e ordenar
+        const combinedData = [
+            ...newPnlHistoryWithTimestamps,
+            ...pnlHistory.map((value, index) => ({value, timestamp: pnlTimestamps[index]}))
+        ].filter(item => typeof item.value === 'number' && typeof item.timestamp === 'string');
+        const uniqueData = Array.from(new Map(combinedData.map(item => [item.timestamp, item])).values())
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        pnlHistory = uniqueData.map(item => item.value).slice(-MAX_PNL_HISTORY_POINTS);
+        pnlTimestamps = uniqueData.map(item => item.timestamp).slice(-MAX_PNL_HISTORY_POINTS);
+        savePnlHistory();
+
+        totalPnL = parseFloat((totalPnL + (btcPosition > 0 ? btcPosition * (mid - (totalCost / btcPosition)) : 0)).toFixed(8));
+
         const correctedOrders = orders.map(o => {
             const createdAt = o.created_at ? new Date(o.created_at * 1000).toISOString() : null;
             const updatedAt = o.updated_at ? new Date(o.updated_at * 1000).toISOString() : null;
             return {
-                id: o.order_id || o.id, // Ajustado para 'order_id' baseado na documentação da API
+                id: o.order_id || o.id,
                 side: o.side,
                 price: parseFloat(o.limitPrice || o.price),
                 qty: parseFloat(o.qty),
@@ -314,7 +427,8 @@ async function getLiveData() {
                 totalOrders: orders.length,
                 cancels: orders.filter(o => o.status === 'cancelled').length,
                 totalPnL,
-                pnlHistory,
+                pnlHistory: [...pnlHistory],
+                pnlTimestamps: [...pnlTimestamps],
                 fillRate: orders.length ? ((fills / orders.length) * 100).toFixed(1) + '%' : '0%',
                 avgSpread: (parseFloat(process.env.SPREAD_PCT || 0.002) * 100).toFixed(2),
                 dynamicSpread: (dynamicSpreadPct * 100).toFixed(2) + '%'
@@ -386,7 +500,6 @@ app.get('/api/status', async (req, res) => {
         cache.data.stats = cache.data.stats || {};
         cache.data.stats.uptime = Math.floor(uptimeSeconds / 60) + 'min';
         cache.data.stats.cycles = cycles;
-        // atualizar drift das ordens
         if (cache.data.activeOrders) {
             const mid = parseFloat(cache.data.market.mid);
             cache.data.activeOrders.forEach(o => o.drift = o.side === 'buy' ? (mid - o.price).toFixed(2) : (o.price - mid).toFixed(2));
@@ -427,7 +540,9 @@ app.use((err, req, res, next) => res.status(err.status || 500).json({
     path: req.path
 }));
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`));
+// Start server and load history
+loadPnlHistory().then(() => {
+    app.listen(PORT, '0.0.0.0', () => log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`));
+});
 
 module.exports = app;

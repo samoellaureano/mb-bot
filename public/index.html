@@ -10,66 +10,67 @@
 
     <!-- Chart.js e plugins -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Removido chartjs-chart-financial, pois não é mais necessário -->
-
-    <!-- date-fns e adapter para Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+    <!-- date-fns -->
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white font-sans">
-<div class="container mx-auto p-6">
+<div class="container mx-auto p-4">
 
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">📊 MB Bot Dashboard</h1>
-        <span id="mode" class="px-3 py-1 bg-blue-600 rounded-full text-sm">Modo: --</span>
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-xl sm:text-2xl font-bold">📊 MB Bot Dashboard</h1>
+        <span id="mode" class="px-2 py-1 sm:px-3 sm:py-1 bg-blue-600 rounded-full text-xs sm:text-sm">Modo: --</span>
     </div>
 
     <!-- Cards -->
-    <div class="grid grid-cols-4 gap-4 mb-6">
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <p class="text-gray-400">Último Preço</p>
-            <h2 id="lastPrice" class="text-xl font-bold">--</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <p class="text-gray-400 text-xs sm:text-sm">Último Preço</p>
+            <h2 id="lastPrice" class="text-lg sm:text-xl font-bold">--</h2>
         </div>
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <p class="text-gray-400">Spread</p>
-            <h2 id="spread" class="text-xl font-bold">--</h2>
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <p class="text-gray-400 text-xs sm:text-sm">Spread</p>
+            <h2 id="spread" class="text-lg sm:text-xl font-bold">--</h2>
         </div>
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <p class="text-gray-400">Volatilidade</p>
-            <h2 id="volatility" class="text-xl font-bold">--</h2>
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <p class="text-gray-400 text-xs sm:text-sm">Volatilidade</p>
+            <h2 id="volatility" class="text-lg sm:text-xl font-bold">--</h2>
         </div>
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <p class="text-gray-400">PnL</p>
-            <h2 id="pnl" class="text-xl font-bold text-green-400">--</h2>
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <p class="text-gray-400 text-xs sm:text-sm">PnL</p>
+            <h2 id="pnl" class="text-lg sm:text-xl font-bold text-green-400">--</h2>
         </div>
     </div>
 
     <!-- Conteúdo principal -->
-    <div class="grid grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Tabela de Ordens -->
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <h2 class="text-lg font-bold mb-4">Ordens Ativas</h2>
-            <table class="w-full text-sm">
-                <thead>
-                <tr class="text-gray-400">
-                    <th class="text-left">Side</th>
-                    <th class="text-left">ID</th>
-                    <th class="text-left">Preço</th>
-                    <th class="text-left">Qtd</th>
-                    <th class="text-left">Status</th>
-                    <th class="text-left">Drift</th>
-                    <th class="text-left">Age</th>
-                </tr>
-                </thead>
-                <tbody id="ordersTable"></tbody>
-            </table>
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <h2 class="text-base sm:text-lg font-bold mb-2">Ordens Ativas</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs sm:text-sm">
+                    <thead>
+                    <tr class="text-gray-400">
+                        <th class="text-left p-1 sm:p-2">Side</th>
+                        <th class="text-left p-1 sm:p-2">ID</th>
+                        <th class="text-left p-1 sm:p-2">Preço</th>
+                        <th class="text-left p-1 sm:p-2">Qtd</th>
+                        <th class="text-left p-1 sm:p-2">Status</th>
+                        <th class="text-left p-1 sm:p-2">Drift</th>
+                        <th class="text-left p-1 sm:p-2">Age</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ordersTable"></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Saldos -->
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <h2 class="text-lg font-bold mb-4">Saldos</h2>
-            <ul class="space-y-2 text-sm">
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <h2 class="text-base sm:text-lg font-bold mb-2">Saldos</h2>
+            <ul class="space-y-1 text-xs sm:text-sm">
                 <li>BRL: <span id="brl">--</span></li>
                 <li>BTC: <span id="btc">--</span></li>
                 <li>Total: <span id="total">--</span></li>
@@ -78,14 +79,16 @@
     </div>
 
     <!-- Gráficos + Config -->
-    <div class="grid grid-cols-2 gap-6 mt-6">
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <h2 class="text-lg font-bold mb-4">Evolução do PnL</h2>
-            <canvas id="pnlChart"></canvas>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <h2 class="text-base sm:text-lg font-bold mb-2">Evolução do PnL</h2>
+            <div class="w-full h-64 sm:h-72">
+                <canvas id="pnlChart"></canvas>
+            </div>
         </div>
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <h2 class="text-lg font-bold mb-4">Config & Tendência</h2>
-            <ul class="space-y-2 text-sm">
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <h2 class="text-base sm:text-lg font-bold mb-2">Config & Tendência</h2>
+            <ul class="space-y-1 text-xs sm:text-sm">
                 <li>Ordem mínima: <span id="orderSize">--</span></li>
                 <li>Spread alvo: <span id="targetSpread">--</span></li>
                 <li>Intervalo ciclo: <span id="cycleSec">--</span></li>
@@ -102,134 +105,179 @@
 
 <script>
     const priceHistory = [];
+    let pnlChart;
+
+    // Initialize chart first
+    document.addEventListener('DOMContentLoaded', () => {
+        pnlChart = new Chart(document.getElementById('pnlChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: "PnL (R$)",
+                        borderColor: "#4ade80",
+                        backgroundColor: "rgba(74,222,128,0.2)",
+                        fill: true,
+                        data: [],
+                        tension: 0.3,
+                        pointRadius: 2,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: "BTC Price (R$)",
+                        borderColor: "#60a5fa",
+                        backgroundColor: "rgba(96,165,250,0.2)",
+                        fill: true,
+                        data: [],
+                        tension: 0.3,
+                        pointRadius: 2,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {display: true, position: 'top'}, tooltip: {mode: 'index', intersect: false}},
+                scales: {
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        title: {display: true, text: 'PnL (R$)'},
+                        ticks: {font: {size: 10}}
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        title: {display: true, text: 'BTC Price (R$)'},
+                        grid: {drawOnChartArea: false},
+                        ticks: {font: {size: 10}}
+                    },
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'second',
+                            tooltipFormat: 'HH:mm:ss',
+                            displayFormats: {
+                                second: 'HH:mm:ss'
+                            }
+                        },
+                        title: {display: true, text: 'Hora'},
+                        ticks: {font: {size: 10}}
+                    }
+                }
+            }
+        });
+    });
 
     async function loadData() {
-        const res = await fetch('/api/status');
-        const data = await res.json();
+        try {
+            const res = await fetch('/api/status');
+            const data = await res.json();
 
-        // Atualiza modo
-        document.getElementById('mode').textContent = "Modo: " + (data.config.simulate ? "Simulação" : "Live");
-        document.getElementById('mode').className = data.config.simulate ? "px-3 py-1 bg-yellow-600 rounded-full text-sm" : "px-3 py-1 bg-green-600 rounded-full text-sm";
+            // Safely access data fields
+            const modeSpan = document.getElementById('mode');
+            modeSpan.textContent = `Modo: ${data.config?.simulate ? 'Simulação' : 'Live'}`;
+            modeSpan.className = data.config?.simulate
+                ? 'px-2 py-1 sm:px-3 sm:py-1 bg-yellow-600 rounded-full text-xs sm:text-sm'
+                : 'px-2 py-1 sm:px-3 sm:py-1 bg-green-600 rounded-full text-xs sm:text-sm';
 
-        // Atualiza cards
-        let lastPrice = parseFloat(data.market.last) || 0;
-        lastPrice = lastPrice.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('lastPrice').textContent = "R$ " + lastPrice;
-        document.getElementById('spread').textContent = data.market.spread + "%";
-        document.getElementById('volatility').textContent = data.market.volatility;
-        document.getElementById('pnl').textContent = data.stats.totalPnL;
-
-        // Atualiza saldos
-        document.getElementById('brl').textContent = "R$ " + parseFloat(data.balances.brl).toFixed(2);
-        document.getElementById('btc').textContent = parseFloat(data.balances.btc).toFixed(8) + " BTC";
-        document.getElementById('total').textContent = "R$ " + parseFloat(data.balances.total).toFixed(2);
-
-        // Atualiza tabela de ordens
-        const tbody = document.getElementById('ordersTable');
-        tbody.innerHTML = '';
-        data.activeOrders.forEach(order => {
-            const age = order.ageSecMinHour;
-            const ageStr = `${String(age.ageHour).padStart(2, '0')}:${String(age.ageMin % 60).padStart(2, '0')}:${String(age.ageSec % 60).padStart(2, '0')}`;
-            const priceFormatted = parseFloat(order.price).toLocaleString('pt-BR', {
+            // Update cards
+            const lastPrice = parseFloat(data.market?.last) || 0;
+            document.getElementById('lastPrice').textContent = `R$ ${lastPrice.toLocaleString('pt-BR', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
+            })}`;
+            document.getElementById('spread').textContent = `${data.market?.spread || '--'}%`;
+            document.getElementById('volatility').textContent = data.market?.volatility || '--';
+            document.getElementById('pnl').textContent = data.stats?.totalPnL || '--';
+
+            // Update balances
+            document.getElementById('brl').textContent = `R$ ${parseFloat(data.balances?.brl || 0).toFixed(2)}`;
+            document.getElementById('btc').textContent = `${parseFloat(data.balances?.btc || 0).toFixed(8)} BTC`;
+            document.getElementById('total').textContent = `R$ ${parseFloat(data.balances?.total || 0).toFixed(2)}`;
+
+            // Update orders table
+            const tbody = document.getElementById('ordersTable');
+            tbody.innerHTML = '';
+            (data.activeOrders || []).forEach(order => {
+                const age = order.ageSecMinHour || {ageHour: 0, ageMin: 0, ageSec: 0};
+                const ageStr = `${String(age.ageHour).padStart(2, '0')}:${String(age.ageMin % 60).padStart(2, '0')}:${String(age.ageSec % 60).padStart(2, '0')}`;
+                const priceFormatted = parseFloat(order.price || 0).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="${order.side === 'buy' ? 'text-green-400' : 'text-red-400'} p-1 sm:p-2">${order.side || '--'}</td>
+                    <td class="p-1 sm:p-2">${order.id || '--'}</td>
+                    <td class="p-1 sm:p-2">R$ ${priceFormatted}</td>
+                    <td class="p-1 sm:p-2">${parseFloat(order.qty || 0).toFixed(6)}</td>
+                    <td class="p-1 sm:p-2">${order.status || '--'}</td>
+                    <td class="p-1 sm:p-2">${order.drift || '--'}</td>
+                    <td class="p-1 sm:p-2">${ageStr}</td>
+                `;
+                tbody.appendChild(tr);
             });
-            order.price = "R$ " + priceFormatted;
-            order.qty = parseFloat(order.qty).toFixed(6);
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="${order.side === 'buy' ? 'text-green-400' : 'text-red-400'}">${order.side}</td>
-                <td>${order.id}</td>
-                <td>${order.price}</td>
-                <td>${order.qty}</td>
-                <td>${order.status}</td>
-                <td>${order.drift}</td>
-                <td>${ageStr}</td>
-            `;
-            tbody.appendChild(tr);
-        });
 
-        // Atualiza gráfico PnL
-        pnlChart.data.labels.push(new Date().toLocaleTimeString());
-        pnlChart.data.datasets[0].data.push(parseFloat(data.stats.totalPnL));
-        pnlChart.data.datasets[1].data.push(parseFloat(data.market.last));
-        if (pnlChart.data.labels.length > 50) {
-            pnlChart.data.labels.shift();
-            pnlChart.data.datasets[0].data.shift();
-            pnlChart.data.datasets[1].data.shift();
-        }
-        pnlChart.update();
-
-        // Config & tendência
-        document.getElementById('orderSize').textContent = data.config.orderSize;
-        document.getElementById('targetSpread').textContent = data.config.spreadPct;
-        document.getElementById('cycleSec').textContent = data.config.cycleSec + "s";
-
-        priceHistory.push(data.market.last);
-        if (priceHistory.length > 20) priceHistory.shift();
-
-        const avg = priceHistory.reduce((a, b) => a + b, 0) / priceHistory.length;
-        const trendEl = document.getElementById('trend');
-        if (data.market.last > avg * 1.002) {
-            trendEl.textContent = "Alta 📈";
-            trendEl.className = "text-green-400 font-bold";
-        } else if (data.market.last < avg * 0.998) {
-            trendEl.textContent = "Baixa 📉";
-            trendEl.className = "text-red-400 font-bold";
-        } else {
-            trendEl.textContent = "Neutra ➡️";
-            trendEl.className = "text-gray-400 font-bold";
-        }
-
-        // Novas configurações adicionadas
-        document.getElementById('stopLoss').textContent = data.config.stopLoss ? data.config.stopLoss + "%" : "N/A";
-        document.getElementById('takeProfit').textContent = data.config.takeProfit ? data.config.takeProfit + "%" : "N/A";
-        document.getElementById('minVolume').textContent = data.config.minVolume ? data.config.minVolume + " BTC" : "N/A";
-        document.getElementById('volatilityLimit').textContent = data.config.volatilityLimit ? data.config.volatilityLimit + "%" : "N/A";
-    }
-
-    const pnlChart = new Chart(document.getElementById('pnlChart'), {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [
-                {
-                    label: "PnL (R$)",
-                    borderColor: "#4ade80",
-                    backgroundColor: "rgba(74,222,128,0.2)",
-                    fill: true,
-                    data: [],
-                    tension: 0.3,
-                    pointRadius: 3,
-                    yAxisID: 'y'
-                },
-                {
-                    label: "BTC Price (R$)",
-                    borderColor: "#60a5fa",
-                    backgroundColor: "rgba(96,165,250,0.2)",
-                    fill: true,
-                    data: [],
-                    tension: 0.3,
-                    pointRadius: 3,
-                    yAxisID: 'y1'
+            // Update chart
+            //atualizar gráfico a cada 1minuto, se não ou seja a cada 6 ciclos
+            // if( data.stats?.cycleCount % 6 !== 0 ) return;
+            if ((pnlChart && data.stats?.pnlHistory?.length > 0 && data.stats?.pnlTimestamps?.length > 0) && data.stats?.cycles % 6 === 0) {
+                if (pnlChart.data.labels.length === 0) {
+                    pnlChart.data.labels = data.stats.pnlTimestamps.map(ts => new Date(ts));
+                    pnlChart.data.datasets[0].data = data.stats.pnlHistory.map((val, i) => ({
+                        x: new Date(data.stats.pnlTimestamps[i]),
+                        y: parseFloat(val || 0)
+                    }));
+                    pnlChart.data.datasets[1].data = data.stats.pnlHistory.map((_, i) => ({
+                        x: new Date(data.stats.pnlTimestamps[i]),
+                        y: parseFloat(data.market?.last || 0)
+                    }));
+                } else {
+                    pnlChart.data.labels.push(new Date());
+                    pnlChart.data.datasets[0].data.push({x: new Date(), y: parseFloat(data.stats.totalPnL || 0)});
+                    pnlChart.data.datasets[1].data.push({x: new Date(), y: parseFloat(data.market?.last || 0)});
                 }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {legend: {display: true}, tooltip: {mode: 'index', intersect: false}},
-            scales: {
-                y: {type: 'linear', position: 'left', title: {display: true, text: 'PnL (R$)'}},
-                y1: {
-                    type: 'linear',
-                    position: 'right',
-                    title: {display: true, text: 'BTC Price (R$)'},
-                    grid: {drawOnChartArea: false}
-                },
-                x: {display: true, title: {display: true, text: 'Hora'}}
+
+                if (pnlChart.data.labels.length > 360) {
+                    pnlChart.data.labels.shift();
+                    pnlChart.data.datasets[0].data.shift();
+                    pnlChart.data.datasets[1].data.shift();
+                }
+                pnlChart.update();
             }
+
+            // Update config & trend
+            document.getElementById('orderSize').textContent = data.config?.orderSize || '--';
+            document.getElementById('targetSpread').textContent = data.config?.spreadPct || '--';
+            document.getElementById('cycleSec').textContent = `${data.config?.cycleSec || '--'}s`;
+
+            priceHistory.push(data.market?.last || 0);
+            if (priceHistory.length > 20) priceHistory.shift();
+
+            const avg = priceHistory.reduce((a, b) => a + b, 0) / priceHistory.length || 0;
+            const trendEl = document.getElementById('trend');
+            if (data.market?.last > avg * 1.002) {
+                trendEl.textContent = "Alta 📈";
+                trendEl.className = "text-green-400 font-bold";
+            } else if (data.market?.last < avg * 0.998) {
+                trendEl.textContent = "Baixa 📉";
+                trendEl.className = "text-red-400 font-bold";
+            } else {
+                trendEl.textContent = "Neutra ➡️";
+                trendEl.className = "text-gray-400 font-bold";
+            }
+
+            document.getElementById('stopLoss').textContent = data.config?.stopLoss ? `${data.config.stopLoss}%` : 'N/A';
+            document.getElementById('takeProfit').textContent = data.config?.takeProfit ? `${data.config.takeProfit}%` : 'N/A';
+            document.getElementById('minVolume').textContent = data.config?.minVolume ? `${data.config.minVolume} BTC` : 'N/A';
+            document.getElementById('volatilityLimit').textContent = data.config?.volatilityLimit ? `${data.config.volatilityLimit}%` : 'N/A';
+        } catch (error) {
+            console.error('Error loading data:', error);
         }
-    });
+    }
 
     setInterval(loadData, 10 * 1000);
     loadData();
