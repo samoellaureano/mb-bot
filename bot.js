@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 /**
- * bot.js - Market Making Bot v1.2.2
- * Ajustes: volatilidade unificada + cooldown adaptativo + SL/TP dinâmico + ajuste por profundidade.
+ * bot.js - Market Making Bot v1.2.3
+ * Ajustes baseados no backtest:
+ * - Parâmetros padrão alinhados: SPREAD_PCT=0.07%, ORDER_SIZE=0.0004, STOP_LOSS_PCT=0.8%.
+ * - Filtro de volatilidade ajustado para 0.1% < volatility < 2.5%.
+ * - Cooldown dinâmico (0 para volatilidade < 0.4%, 1 caso contrário).
+ * - Escalonamento de spread com mínimo de 0.05% e ampliação limitada a 1.1x.
+ * - Tamanho de ordem com multiplicador 1 + volatility/120.
+ * - RSI (período 12) com peso 80%, SMA (período 8) com peso 20%.
+ * - Filtro de volume mínimo mantido em 0.00005.
  */
 
 require('dotenv').config();
@@ -13,28 +20,28 @@ const db = require('./db');
 const SIMULATE = process.env.SIMULATE === 'true';
 const REST_BASE = process.env.REST_BASE || 'https://api.mercadobitcoin.net/api/v4';
 const PAIR = process.env.PAIR || 'BTC-BRL';
-const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.002'); // base spread pct (ex: 0.002 = 0.2%)
-const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.0001');
+const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.0007'); // Alinhado ao backtest
+const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.0004'); // Alinhado ao backtest
 const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15'));
 const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003');
 const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0');
-const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0007');
-const STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '2.0');
-const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '5.0');
+const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005');
+const STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '0.008'); // Alinhado ao backtest
+const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.02');
 const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005');
-const VOLATILITY_LIMIT_PCT = parseFloat(process.env.VOLATILITY_LIMIT_PCT || '1.0');
-const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.00005');
-const MAX_ORDER_SIZE = parseFloat(process.env.MAX_ORDER_SIZE || '0.0002');
+const VOLATILITY_LIMIT_PCT = parseFloat(process.env.VOLATILITY_LIMIT_PCT || '1.5');
+const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.0001');
+const MAX_ORDER_SIZE = parseFloat(process.env.MAX_ORDER_SIZE || '0.0004');
 const INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002');
-const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.0001');
+const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015');
 const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2');
 const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '10');
 const PRICE_TOLERANCE = parseFloat(process.env.PRICE_TOLERANCE || '0.002');
 
-// Volatility control (configurable via .env)
-const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.3');
-const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '1.8');
-const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || process.env.VOLATILITY_LIMIT_PCT || '1.2');
+// Volatility control
+const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Alinhado ao backtest
+const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Alinhado ao backtest
+const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5');
 
 // Validate critical config
 if (!REST_BASE.startsWith('http')) {
@@ -69,7 +76,7 @@ let totalCost = 0;
 let lastObUpdate = 0;
 let lastOrderbook = {bids: [], asks: []};
 let marketTrend = 'Neutra';
-let lastTradeCycle = -1; // Added for cooldown
+let lastTradeCycle = -1;
 const OB_REFRESH_SEC = 10;
 const startTime = Date.now();
 
@@ -85,18 +92,10 @@ let stats = {
     uptime: '0min'
 };
 
-// -------------------- HELPERS --------------------
-const saveOrderSafe = async (order, note) => {
-    try {
-        await db.saveOrder({...order, note, timestamp: Math.floor(Date.now() / 1000)});
-    } catch (e) {
-        log('WARN', `Failed to save order ${order.id}:`, e.message);
-    }
-};
+// -------------------- INDICADORES --------------------
+let priceHistory = [];
 
-// -------------------- RSI --------------------
-let priceHistory = []; // Store mid/close prices
-function calculateRSI(prices, period = 14) {
+function calculateRSI(prices, period = 12) {
     if (prices.length < period + 1) return 50;
     let gains = 0, losses = 0;
     for (let i = prices.length - period - 1; i < prices.length - 1; i++) {
@@ -106,8 +105,38 @@ function calculateRSI(prices, period = 14) {
     }
     const avgGain = gains / period;
     const avgLoss = losses / period;
-    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+    const rs = avgLoss === 0 ? 100 : (avgGain === 0 ? 0 : avgGain / avgLoss);
     return 100 - (100 / (1 + rs));
+}
+
+function calculateSMA(prices, period = 20) {
+    if (prices.length < period) return prices[prices.length - 1];
+    let sum = 0;
+    for (let i = prices.length - period; i < prices.length; i++) {
+        sum += prices[i];
+    }
+    return sum / period;
+}
+
+function fetchPricePrediction(midPrice) {
+    priceHistory.push(midPrice);
+    if (priceHistory.length > 60) priceHistory.shift();
+
+    const rsi = calculateRSI(priceHistory, 12);
+    const smaShort = calculateSMA(priceHistory, 8);
+    const smaLong = calculateSMA(priceHistory, 20);
+    let trend = 'neutral';
+    let rsiConfidence = Math.abs(rsi - 50) / 50;
+    let smaConfidence = Math.abs(smaShort - smaLong) / smaLong;
+
+    // Peso: 80% RSI, 20% SMA
+    let confidence = 0.8 * rsiConfidence + 0.2 * smaConfidence;
+    if (rsi > 70 || (smaShort > smaLong && rsi > 50)) {
+        trend = 'down';
+    } else if (rsi < 30 || (smaShort < smaLong && rsi < 50)) {
+        trend = 'up';
+    }
+    return {trend, confidence: Math.min(confidence, 1)};
 }
 
 // -------------------- ORDERBOOK --------------------
@@ -128,10 +157,10 @@ async function fetchOrderbookRest() {
         if (orderbook.bids.length && orderbook.asks.length) {
             const closePrice = (parseFloat(orderbook.bids[0][0]) + parseFloat(orderbook.asks[0][0])) / 2;
             priceHistory.push(closePrice);
-            if (priceHistory.length > 60) priceHistory.shift(); // keep reasonably sized history for indicators
+            if (priceHistory.length > 60) priceHistory.shift();
             lastObUpdate = Date.now();
             lastOrderbook = orderbook;
-            log('INFO', `📊 Orderbook refreshed: Best Bid: ${orderbook.bids[0][0]}, Best Ask: ${orderbook.asks[0][0]}, Depth: ${orderbook.bids.length} bids, ${orderbook.asks.length} asks`);
+            log('INFO', `📊 Orderbook refreshed: Best Bid: ${orderbook.bids[0][0]}, Best Ask: ${orderbook.asks[0][1]}, Depth: ${orderbook.bids.length} bids, ${orderbook.asks.length} asks`);
             return orderbook;
         } else {
             throw new Error('Empty orderbook response');
@@ -189,7 +218,7 @@ async function checkOrderStatus(orderKey, side) {
             }
 
             totalFills++;
-            lastTradeCycle = cycleCount; // Update cooldown
+            lastTradeCycle = cycleCount;
             await saveOrderSafe({
                 ...order, status: 'filled', filledQty: qty, fillPrice: fillPrice.toFixed(2)
             }, `simulated_fill ${slippage.toFixed(3)}`);
@@ -221,7 +250,7 @@ async function checkOrderStatus(orderKey, side) {
             }
 
             totalFills++;
-            lastTradeCycle = cycleCount; // Update cooldown
+            lastTradeCycle = cycleCount;
             await saveOrderSafe({...order, status: 'filled', filledQty: qty, avgPrice: price}, 'live_fill');
             activeOrders.delete(orderKey);
             log('INFO', `🎉 Filled ${status.side.toUpperCase()} order ${order.id.substring(0, 8)} @ R$${price.toFixed(0)}, Qty: ${qty}, Total PnL: ${totalPnL.toFixed(2)}`);
@@ -241,13 +270,7 @@ async function runCycle() {
         stats.cycles = cycleCount;
         log('DEBUG', `⏳ Starting cycle ${cycleCount}, Time: ${new Date().toISOString()}`);
 
-        // basic cooldown after a trade
-        if (cycleCount - lastTradeCycle < 2) {
-            log('INFO', `Skipping cycle ${cycleCount}: cooldown (last trade at cycle ${lastTradeCycle})`);
-            return;
-        }
-
-        // fetch/refresh orderbook if necessary
+        // Fetch/refresh orderbook
         const obAge = (Date.now() - lastObUpdate) / 1000;
         let orderbook = (obAge > OB_REFRESH_SEC || lastObUpdate === 0) ? await fetchOrderbookRest() : lastOrderbook;
         if (!orderbook.bids.length || !orderbook.asks.length) {
@@ -255,7 +278,7 @@ async function runCycle() {
             return;
         }
 
-        // best levels
+        // Best levels
         const bestBid = orderbook.bids.length ? parseFloat(orderbook.bids[0][0]) : NaN;
         const bestAsk = orderbook.asks.length ? parseFloat(orderbook.asks[0][0]) : NaN;
         if (isNaN(bestBid) || isNaN(bestAsk) || bestBid >= bestAsk) {
@@ -268,7 +291,7 @@ async function runCycle() {
         log('INFO', `📊 Orderbook updated - Best Bid: ${bestBid}, Best Ask: ${bestAsk}, Mid: ${mid}, Volume Bid: ${orderbook.bids[0][1]}, Volume Ask: ${orderbook.asks[0][1]}`);
         log('INFO', `🔍 Current Spread (top-1): ${spreadPct.toFixed(3)}% (Configured base: ${SPREAD_PCT * 100}%)`);
 
-        // volatility based on top-10 orderbook prices range
+        // Volatility based on top-10 orderbook prices range
         const obPrices = [
             ...orderbook.bids.map(b => parseFloat(b[0])),
             ...orderbook.asks.map(a => parseFloat(a[0]))
@@ -280,59 +303,61 @@ async function runCycle() {
             volatilityPct = ((max - min) / ((max + min) / 2)) * 100;
         }
 
-        // volatility limits (configurable)
+        // Volatility limits
         if (volatilityPct > MAX_VOLATILITY_PCT || volatilityPct < MIN_VOLATILITY_PCT) {
             log('INFO', `Skipping cycle ${cycleCount}: volatility=${volatilityPct.toFixed(2)}% (outside ${MIN_VOLATILITY_PCT}-${MAX_VOLATILITY_PCT}%)`);
             return;
         }
 
-        // trend label (simple)
-        marketTrend = volatilityPct > VOL_LIMIT_PCT ? 'Alta' : 'Neutra';
-        log('INFO', `📈 Tendência atual: ${marketTrend} (Volatilidade: ${volatilityPct.toFixed(2)}%)`);
-
-        // ---------- Unified volatility + depth adjustments ----------
-        // volFactor grows with volatility (1..2), caps at 2
-        let volFactor = Math.min(2, 1 + (volatilityPct / VOL_LIMIT_PCT) * 0.5);
-
-        // dynamic order size: shrink when vol increases
-        let dynamicOrderSize = ORDER_SIZE / volFactor;
-        dynamicOrderSize = Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, dynamicOrderSize));
-
-        // base spread adjusted by volatility
-        let dynamicSpreadPct = Math.max(MIN_SPREAD_PCT, SPREAD_PCT * volFactor);
-
-        // depth effect: if book is deep, we can be tighter; if shallow, widen
-        const bidDepth = orderbook.bids.reduce((sum, [, vol]) => sum + parseFloat(vol), 0);
-        const askDepth = orderbook.asks.reduce((sum, [, vol]) => sum + parseFloat(vol), 0);
-        const depthFactor = (bidDepth + askDepth) / (dynamicOrderSize * 20); // heuristic
-        // depthFactor ~1 means reasonable; <1 shallow, >1 deep
-        if (depthFactor > 0) {
-            // make dynamicSpreadPct smaller when depth is large (more liquidity)
-            const depthAdjustment = Math.max(0.5, 1 / Math.max(0.5, depthFactor * 0.5));
-            dynamicSpreadPct *= (1 + (1 - depthAdjustment)); // if deep (depthAdjustment small), spread reduces a bit
-        }
-
-        // further penalize spread if volatility passes the configured limit
-        if (volatilityPct >= VOLATILITY_LIMIT_PCT) dynamicSpreadPct *= 1.1;
-
-        // dynamic SL / TP
-        const dynamicStopLoss = STOP_LOSS_PCT * (1 + volatilityPct / 100); // widen stop in higher vol (as %)
-        const dynamicTakeProfit = TAKE_PROFIT_PCT * (1 - Math.min(0.5, volatilityPct / 100)); // reduce TP in very high vol
-
-        // adaptive cooldown: more volatile => longer cooldown
-        const cooldown = Math.max(2, Math.ceil(volatilityPct / 0.5));
+        // Cooldown dinâmico
+        const cooldown = volatilityPct < 0.4 ? 0 : 1;
         if (cycleCount - lastTradeCycle < cooldown) {
-            log('INFO', `Skipping cycle ${cycleCount}: adaptive cooldown=${cooldown}, lastTradeCycle=${lastTradeCycle}, volatility=${volatilityPct.toFixed(2)}%`);
+            log('INFO', `Skipping cycle ${cycleCount}: cooldown=${cooldown}, lastTradeCycle=${lastTradeCycle}, volatility=${volatilityPct.toFixed(2)}%`);
             return;
         }
 
-        log('INFO', `⚖️ VolAdj -> OrderSize: ${dynamicOrderSize.toFixed(8)} BTC | Spread%: ${(dynamicSpreadPct * 100).toFixed(3)} | Vol: ${volatilityPct.toFixed(2)}% | DepthFactor: ${depthFactor.toFixed(2)} | SL: ${dynamicStopLoss.toFixed(2)}% | TP: ${dynamicTakeProfit.toFixed(2)}%`);
+        // Trend prediction
+        const pred = fetchPricePrediction(mid);
+        if (pred.trend === 'up') log('INFO', `📈 Previsão: ${pred.trend}, ajustando viés de venda`);
+        else if (pred.trend === 'down') log('INFO', `📉 Previsão: ${pred.trend}, ajustando viés de compra`);
+        marketTrend = pred.trend;
 
-        // compute buy/sell target prices using dynamic spread pct
-        let buyPrice = parseFloat((mid * (1 - dynamicSpreadPct / 2)).toFixed(2));
-        let sellPrice = parseFloat((mid * (1 + dynamicSpreadPct / 2)).toFixed(2));
+        // Dynamic adjustments
+        let depthFactor = orderbook.bids[0][1] > 0 ? orderbook.bids[0][1] / (ORDER_SIZE * 20) : 1;
+        let dynamicSpreadPct = Math.max(MIN_SPREAD_PCT, SPREAD_PCT * Math.max(1, depthFactor * 0.5));
+        if (volatilityPct >= VOLATILITY_LIMIT_PCT) dynamicSpreadPct *= 1.1;
+        else if (volatilityPct < 0.5) dynamicSpreadPct *= 0.9;
+        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.01);
 
-        // safety: if buy >= sell, expand to natural spread
+        let dynamicOrderSize = Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, ORDER_SIZE * (1 + volatilityPct / 120)));
+
+        // Inventory bias
+        const currentBaseValue = mid * btcPosition;
+        const currentQuoteValue = totalPnL; // Approximation for quote balance
+        const totalValue = currentBaseValue + currentQuoteValue;
+        const imbalance = totalValue > 0 ? (currentBaseValue - currentQuoteValue) / totalValue : 0;
+        let inventoryBias = 0;
+        if (Math.abs(imbalance) > INVENTORY_THRESHOLD) {
+            inventoryBias = -imbalance * BIAS_FACTOR;
+        }
+
+        // Trend bias
+        let trendBias = 0;
+        if (pred.trend === 'up') {
+            trendBias = pred.confidence * BIAS_FACTOR * 1.5;
+        } else if (pred.trend === 'down') {
+            trendBias = -pred.confidence * BIAS_FACTOR * 1.5;
+        }
+
+        const totalBias = inventoryBias + trendBias;
+        const refPrice = mid * (1 + totalBias);
+
+        // Compute buy/sell prices
+        const halfSpread = dynamicSpreadPct / 2;
+        let buyPrice = parseFloat((refPrice * (1 - halfSpread)).toFixed(2));
+        let sellPrice = parseFloat((refPrice * (1 + halfSpread)).toFixed(2));
+
+        // Safety check
         if (buyPrice >= sellPrice) {
             log('WARN', `⚠️ Spread too tight - Buy Price: ${buyPrice}, Sell Price: ${sellPrice}, Adjusting to natural spread`);
             const naturalSpreadPct = ((bestAsk - bestBid) / mid) / 2;
@@ -342,7 +367,13 @@ async function runCycle() {
             log('DEBUG', `Adjusted dynamicSpreadPct to ${dynamicSpreadPct * 100}% (naturalSpreadPct: ${naturalSpreadPct * 100}%)`);
         }
 
-        // ---- check existing active orders status ----
+        // Dynamic SL/TP
+        const dynamicStopLoss = STOP_LOSS_PCT * (1 + volatilityPct / 120);
+        const dynamicTakeProfit = TAKE_PROFIT_PCT * (1 - Math.min(0.5, volatilityPct / 120));
+
+        log('INFO', `⚖️ VolAdj -> OrderSize: ${dynamicOrderSize.toFixed(8)} BTC | Spread%: ${(dynamicSpreadPct * 100).toFixed(3)} | Vol: ${volatilityPct.toFixed(2)}% | DepthFactor: ${depthFactor.toFixed(2)} | SL: ${dynamicStopLoss.toFixed(2)}% | TP: ${dynamicTakeProfit.toFixed(2)}%`);
+
+        // Check existing orders
         for (let key of ['buy', 'sell']) {
             if (activeOrders.has(key)) {
                 log('DEBUG', `🔍 Checking status for ${key.toUpperCase()} order ${activeOrders.get(key).id.substring(0, 8)}, Price: ${activeOrders.get(key).price}`);
@@ -355,7 +386,7 @@ async function runCycle() {
             }
         }
 
-        // ---- manage placed orders (drift adjustments / cancels) ----
+        // Manage placed orders
         for (let key of ['buy', 'sell']) {
             if (!activeOrders.has(key)) continue;
 
@@ -376,7 +407,6 @@ async function runCycle() {
                 const newPrice = order.price + adjustment;
                 log('INFO', `🔄 Adjusting ${key.toUpperCase()} order ${order.id.substring(0, 8)}: ${order.price.toFixed(0)} → ${newPrice.toFixed(0)} (Drift Boost)`);
                 await tryCancel(key);
-                // Place new order
                 if (SIMULATE) {
                     const orderId = `${key}_SIM_${Date.now()}`;
                     activeOrders.set(key, {
@@ -420,7 +450,7 @@ async function runCycle() {
             }
         }
 
-        // ---- fetch balances (simulate/live) ----
+        // Fetch balances
         let balances;
         try {
             balances = SIMULATE ? [{symbol: 'BRL', available: 1000}, {
@@ -436,27 +466,27 @@ async function runCycle() {
         const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
 
         // Compute buy cost & checks
-        const buyCost = buyPrice * dynamicOrderSize * 1.003;
+        const buyCost = buyPrice * dynamicOrderSize * (1 + 0.0001); // Inclui taxa
         const sellAmount = dynamicOrderSize;
 
         log('DEBUG', `💸 Buy Cost Calc - Price: ${buyPrice}, Size: ${dynamicOrderSize.toFixed(8)}, Fee incl: ${buyCost.toFixed(2)}`);
         log('INFO', `📊 Inventory: BTC ${btcPosition.toFixed(8)}, Avg Cost ${(btcPosition > 0 ? totalCost / btcPosition : 0).toFixed(2)}, PnL ${totalPnL.toFixed(2)}`);
 
-        // risk checks: stop loss / take profit dynamic
+        // Risk checks: stop loss / take profit
         const currentPnL = totalPnL;
         const avgCost = btcPosition > 0 ? totalCost / btcPosition : mid;
-        if (currentPnL <= -avgCost * STOP_LOSS_PCT / 100) {
-            log('WARN', `⚠️ Stop-Loss triggered: PnL ${currentPnL.toFixed(2)} <= -${avgCost.toFixed(0)} * ${STOP_LOSS_PCT}%`);
+        if (currentPnL <= -avgCost * dynamicStopLoss) {
+            log('WARN', `⚠️ Stop-Loss triggered: PnL ${currentPnL.toFixed(2)} <= -${avgCost.toFixed(0)} * ${dynamicStopLoss * 100}%`);
             for (let key of activeOrders.keys()) await tryCancel(key);
             return;
         }
-        if (currentPnL >= avgCost * TAKE_PROFIT_PCT / 100) {
-            log('INFO', `🎉 Take-Profit triggered: PnL ${currentPnL.toFixed(2)} >= ${avgCost.toFixed(0)} * ${TAKE_PROFIT_PCT}%`);
+        if (currentPnL >= avgCost * dynamicTakeProfit) {
+            log('INFO', `🎉 Take-Profit triggered: PnL ${currentPnL.toFixed(2)} >= ${avgCost.toFixed(0)} * ${dynamicTakeProfit * 100}%`);
             for (let key of activeOrders.keys()) await tryCancel(key);
             return;
         }
 
-        // ---- place buy order if none active ----
+        // Place buy order
         if (!activeOrders.has('buy') && brlBalance >= buyCost && dynamicOrderSize >= MIN_VOLUME) {
             try {
                 if (SIMULATE) {
@@ -494,7 +524,7 @@ async function runCycle() {
             log('WARN', `💰 Cannot place BUY - BRL ${brlBalance.toFixed(2)} < Cost ${buyCost.toFixed(2)} or size < MIN_VOLUME`);
         }
 
-        // ---- place sell order if none active ----
+        // Place sell order
         if (!activeOrders.has('sell') && btcBalance >= sellAmount && dynamicOrderSize >= MIN_VOLUME) {
             try {
                 if (SIMULATE) {
@@ -532,7 +562,7 @@ async function runCycle() {
             log('WARN', `💰 Cannot place SELL - BTC ${btcBalance.toFixed(8)} < Amount ${sellAmount.toFixed(8)} or size < MIN_VOLUME`);
         }
 
-        // ---- update stats ----
+        // Update stats
         stats.totalOrders = activeOrders.size + stats.filledOrders;
         stats.filledOrders = totalFills;
         stats.totalPnL = parseFloat(totalPnL.toFixed(2));
