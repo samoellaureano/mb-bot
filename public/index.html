@@ -270,7 +270,7 @@
                     pnlChart.data.datasets[1].data.push({x: new Date(), y: parseFloat(data.market?.last || 0)});
                 }
 
-                if (pnlChart.data.labels.length > 360) {
+                if (pnlChart.data.labels.length > 10) {
                     pnlChart.data.labels.shift();
                     pnlChart.data.datasets[0].data.shift();
                     pnlChart.data.datasets[1].data.shift();
