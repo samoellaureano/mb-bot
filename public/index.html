@@ -172,6 +172,30 @@
         });
     });
 
+    function formatSpread(spread) {
+        if (!spread && spread !== 0) return "Sem dados";
+        const value = Number(spread).toFixed(2);
+        let level = "";
+
+        if (spread < 0.5) level = " (muito baixo)";
+        else if (spread < 1.5) level = " (moderado)";
+        else level = " (alto)";
+
+        return `${value}%${level}`;
+    }
+
+    function formatVolatility(vol) {
+        if (!vol && vol !== 0) return "Sem dados";
+        const value = Number(vol).toFixed(2);
+        let desc = "";
+
+        if (vol < 0.5) desc = " (estável)";
+        else if (vol < 1.5) desc = " (moderada)";
+        else desc = " (alta)";
+
+        return `${value}%${desc}`;
+    }
+
     async function loadData() {
         try {
             const res = await fetch('/api/status');
@@ -190,8 +214,10 @@
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             })}`;
-            document.getElementById('spread').textContent = `${data.market?.spread || '--'}%`;
-            document.getElementById('volatility').textContent = data.market?.volatility || '--';
+
+            document.getElementById('spread').textContent = formatSpread(data.market?.spread);
+            document.getElementById('volatility').textContent = formatVolatility(data.market?.volatility.replace("%",""));
+
             document.getElementById('pnl').textContent = `R$ ${parseFloat(data.stats?.totalPnL || 0).toFixed(2)}` +
                 (data.stats?.totalPnL >= 0 ? ' 📈' : ' 📉') || '--';
             document.getElementById('monthlyPnl').textContent = `Mensal: R$ ${parseFloat(data.stats?.monthlyPnL || 0).toFixed(2)}` || '--';
@@ -253,7 +279,9 @@
             }
 
             // Update config & trend
-            document.getElementById('orderSize').textContent = data.config?.orderSize || '--';
+            document.getElementById('orderSize').textContent = data.config?.orderSize
+                ? `${data.config.orderSize} BTC (~R$ ${(data.config.orderSize * (data.market?.last || 0)).toFixed(2)})`
+                : '--';
             document.getElementById('targetSpread').textContent = data.config?.spreadPct || '--';
             document.getElementById('cycleSec').textContent = `${data.config?.cycleSec || '--'}s`;
 

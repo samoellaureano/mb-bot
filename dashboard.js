@@ -133,7 +133,7 @@ function getMonthlyPnL(pnlHistory, pnlTimestamps) {
 
     // Filtrar entradas do mês atual
     const monthlyEntries = pnlHistory
-        .map((val, i) => ({ value: val, timestamp: new Date(pnlTimestamps[i]) }))
+        .map((val, i) => ({value: val, timestamp: new Date(pnlTimestamps[i])}))
         .filter(item => item.timestamp.getMonth() === currentMonth && item.timestamp.getFullYear() === currentYear);
 
     if (monthlyEntries.length < 2) return 0;
@@ -149,8 +149,9 @@ function generateSimulatedData() {
     const bid = last - Math.random() * 100;
     const ask = last + Math.random() * 100;
     const mid = (bid + ask) / 2;
-    const spread = ((ask - bid) / last) * 100;
-    const volatility = ((ask - bid) / mid).toFixed(2);
+    const spreadPct = ((ask - bid) / ((ask + bid) / 2)) * 100;
+    const prices = [...bids, ...asks];
+    const volatilityPct = ((Math.max(...prices) - Math.min(...prices)) / mid) * 100;
 
     const brlAvailable = 500 + Math.random() * 200;
     const btcAvailable = 0.000008 + Math.random() * 0.00002;
@@ -243,8 +244,8 @@ function generateSimulatedData() {
             bid: parseFloat(bid.toFixed(2)),
             ask: parseFloat(ask.toFixed(2)),
             mid: mid.toFixed(2),
-            spread: spread.toFixed(2),
-            volatility: volatility + "%"
+            spread: spreadPct.toFixed(2),
+            volatility: volatilityPct.toFixed(2)
         },
         balances: {
             brl: parseFloat(brlAvailable.toFixed(2)),
@@ -338,9 +339,27 @@ async function getLiveData() {
         const bid = parseFloat(ticker.buy);
         const ask = parseFloat(ticker.sell);
         const mid = (bid + ask) / 2;
-        const volatility = ((ask - bid) / mid) * 100;
-        let dynamicSpreadPct = volatility >= 0.5 ? Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01))
-            : volatility >= 0.1 ? 0.003 : volatility >= 0.05 ? 0.002 : 0.001;
+
+        // Spread real baseado no orderbook
+        const bestBid = orderbook.bids.length ? parseFloat(orderbook.bids[0][0]) : bid;
+        const bestAsk = orderbook.asks.length ? parseFloat(orderbook.asks[0][0]) : ask;
+        const spreadPct = ((bestAsk - bestBid) / ((bestAsk + bestBid) / 2)) * 100;
+
+        // Volatilidade real baseada no range top-10 do orderbook
+        const obPrices = [
+            ...orderbook.bids.map(b => parseFloat(b[0])),
+            ...orderbook.asks.map(a => parseFloat(a[0]))
+        ];
+
+        let volatilityPct = 0;
+        if (obPrices.length > 1) {
+            const max = Math.max(...obPrices);
+            const min = Math.min(...obPrices);
+            volatilityPct = ((max - min) / ((max + min) / 2)) * 100;
+        }
+
+        let dynamicSpreadPct = volatilityPct >= 0.5 ? Math.min(0.008, parseFloat(process.env.MAX_SPREAD_PCT || 0.01))
+            : volatilityPct >= 0.1 ? 0.003 : volatilityPct >= 0.05 ? 0.002 : 0.001;
 
         // Calcular PnL com base nas ordens filled
         let btcPosition = 0;
@@ -384,7 +403,7 @@ async function getLiveData() {
             .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         pnlHistory = uniqueData.map(item => item.value).slice(-MAX_PNL_HISTORY_POINTS);
         pnlTimestamps = uniqueData.map(item => item.timestamp).slice(-MAX_PNL_HISTORY_POINTS);
-        savePnlHistory();
+        await savePnlHistory();
 
         totalPnL = parseFloat((totalPnL + (btcPosition > 0 ? btcPosition * (mid - (totalCost / btcPosition)) : 0)).toFixed(8));
 
@@ -415,11 +434,11 @@ async function getLiveData() {
             market: {
                 pair: mbClient.PAIR,
                 last: parseFloat(ticker.last),
-                bid,
-                ask,
-                spread: (((ask - bid) / parseFloat(ticker.last)) * 100).toFixed(2),
-                mid: mid.toFixed(2),
-                volatility: volatility.toFixed(2) + '%'
+                bid: bestBid,
+                ask: bestAsk,
+                mid: ((bestAsk + bestBid) / 2).toFixed(2),
+                spread: spreadPct.toFixed(2),
+                volatility: volatilityPct.toFixed(2)
             },
             balances: {
                 brl: balances.find(b => b.symbol === 'BRL')?.total || 0,
