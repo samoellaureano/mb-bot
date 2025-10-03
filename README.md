@@ -251,3 +251,9 @@ MIT License - Livre para uso comercial.
 ps aux | grep node
 SIMULATE=false npm run dashboard
 nohup npm run start > exec-25092025report.log 2>&1 &
+
+
+Básico: node backtester.js path/to/candles.csv
+Com testes: node backtester.js path/to/candles.csv --test (testa combinações de spread e size).
+
+curl -v "https://api.mercadobitcoin.net/api/v4/candles?symbol=BTC-BRL&resolution=1m&from=1704067200&to=1706745600" > /mnt/c/PROJETOS_PESSOAIS/mb-bot/candles.json

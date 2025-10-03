@@ -125,6 +125,23 @@ async function savePnlHistory() {
     }
 }
 
+// Calcular PnL mensal
+function getMonthlyPnL(pnlHistory, pnlTimestamps) {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Filtrar entradas do mês atual
+    const monthlyEntries = pnlHistory
+        .map((val, i) => ({ value: val, timestamp: new Date(pnlTimestamps[i]) }))
+        .filter(item => item.timestamp.getMonth() === currentMonth && item.timestamp.getFullYear() === currentYear);
+
+    if (monthlyEntries.length < 2) return 0;
+
+    // Diferença entre o último e o primeiro ponto do mês
+    return monthlyEntries[monthlyEntries.length - 1].value - monthlyEntries[0].value;
+}
+
 // ===== Função para gerar dados simulados =====
 function generateSimulatedData() {
     const now = Date.now();
@@ -247,6 +264,7 @@ function generateSimulatedData() {
             totalOrders: 100,
             cancels: executedOrders.filter(o => o.status === 'cancelled').length,
             totalPnL: totalPnL.toFixed(8),
+            monthlyPnL: getMonthlyPnL(pnlHistory, pnlTimestamps).toFixed(8), // PnL só do mês atual
             pnlHistory: [...pnlHistory],
             pnlTimestamps: [...pnlTimestamps],
             fillRate: "30.0%",
@@ -427,6 +445,7 @@ async function getLiveData() {
                 totalOrders: orders.length,
                 cancels: orders.filter(o => o.status === 'cancelled').length,
                 totalPnL,
+                monthlyPnL: getMonthlyPnL(pnlHistory, pnlTimestamps).toFixed(8), // PnL só do mês atual
                 pnlHistory: [...pnlHistory],
                 pnlTimestamps: [...pnlTimestamps],
                 fillRate: orders.length ? ((fills / orders.length) * 100).toFixed(1) + '%' : '0%',

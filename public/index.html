@@ -39,8 +39,9 @@
             <h2 id="volatility" class="text-lg sm:text-xl font-bold">--</h2>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
-            <p class="text-gray-400 text-xs sm:text-sm">PnL</p>
+            <p class="text-gray-400 text-xs sm:text-sm">PnL (Total / Mês)</p>
             <h2 id="pnl" class="text-lg sm:text-xl font-bold text-green-400">--</h2>
+            <p id="monthlyPnl" class="text-xs sm:text-sm text-gray-300">Mensal: --</p>
         </div>
     </div>
 
@@ -191,7 +192,9 @@
             })}`;
             document.getElementById('spread').textContent = `${data.market?.spread || '--'}%`;
             document.getElementById('volatility').textContent = data.market?.volatility || '--';
-            document.getElementById('pnl').textContent = data.stats?.totalPnL || '--';
+            document.getElementById('pnl').textContent = `R$ ${parseFloat(data.stats?.totalPnL || 0).toFixed(2)}` +
+                (data.stats?.totalPnL >= 0 ? ' 📈' : ' 📉') || '--';
+            document.getElementById('monthlyPnl').textContent = `Mensal: R$ ${parseFloat(data.stats?.monthlyPnL || 0).toFixed(2)}` || '--';
 
             // Update balances
             document.getElementById('brl').textContent = `R$ ${parseFloat(data.balances?.brl || 0).toFixed(2)}`;
