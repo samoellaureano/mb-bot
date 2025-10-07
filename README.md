@@ -230,6 +230,25 @@ npm run test-client   # API tests
 npm run backtest      # Estratégia
 ```
 
+## Comandos úteis
+### Simulação rápida:
+```
+SIMULATE=true node bot.js
+```
+
+### Limpar banco:
+```
+node db.js clear rm ./database/orders.db
+```
+### Rodar em produção:
+```
+SIMULATE=false node bot.js SIMULATE=false node dashboard.js
+```
+
+node db.js clear
+node db.js stats
+node db.js orders 10
+
 ------------------------------------------------------------------------
 
 ## 📄 **Licença**
@@ -257,3 +276,118 @@ Básico: node backtester.js path/to/candles.csv
 Com testes: node backtester.js path/to/candles.csv --test (testa combinações de spread e size).
 
 curl -v "https://api.mercadobitcoin.net/api/v4/candles?symbol=BTC-BRL&resolution=1m&from=1704067200&to=1706745600" > /mnt/c/PROJETOS_PESSOAIS/mb-bot/candles.json
+
+Especificação completa para bot de trading lucrativo
+
+Objetivo:
+Criar um bot de trading automatizado que maximize lucro, garantindo robustez, segurança, logs detalhados e um mini-dashboard por ciclo. Todas as funcionalidades existentes devem ser preservadas e aprimoradas com novas camadas de decisão e monitoramento.
+
+1. Configuração e validação
+
+Validar todas variáveis críticas de configuração, ex.: REST_BASE deve ser URL válida.
+
+Verificar integridade do orderbook:
+
+Abortando ciclo se bestBid >= bestAsk ou dados inválidos.
+
+Checar saldo disponível antes de enviar ordens (BRL/BTC).
+
+Evitar enviar ordens menores que MIN_VOLUME.
+
+Respeitar limites de volatilidade, ignorando ciclos fora da faixa segura.
+
+2. Cálculo e ajuste de volatilidade / spread / tamanho de ordens
+
+Spread dinâmico:
+
+Baseado em volatilidade, profundidade do orderbook (depthFactor) e limites mínimos/máximos.
+
+Garantir que buyPrice < sellPrice e respeitar MIN_SPREAD_PCT.
+
+Tamanho da ordem:
+
+Escalado com volatilidade e saldo disponível.
+
+Ajuste automático baseado no score de lucro esperado (novo).
+
+3. Indicadores técnicos e tendência
+
+Utilizar:
+
+RSI (Relative Strength Index).
+
+EMA curto e longo prazo.
+
+Volatilidade para determinar tendência e confiança.
+
+Aplicar viés de inventário e tendência (trendBias + inventoryBias) para ajustar preço de referência.
+
+Camada extra de decisão “lucro esperado” combinando EMA/RSI/Volatilidade para filtrar ordens e aumentar o potencial de lucro.
+
+4. Gestão de ordens ativas
+
+Reprecificação baseada em drift de preço (PRICE_DRIFT).
+
+Cancelamento inteligente:
+
+Limites de idade (MIN_ORDER_CYCLES, MAX_ORDER_AGE).
+
+Interesse do book (liquidez).
+
+Stop-loss e take-profit dinâmicos.
+
+Ajuste automático do tamanho de ordens baseado no score de lucro esperado.
+
+5. PnL e gestão de risco
+
+Cálculo de PnL real considerando:
+
+Saldo atual, preço médio e fills reais ou simulados.
+
+Stop-loss e take-profit ajustados dinamicamente conforme volatilidade.
+
+Alertas automáticos quando PnL ou ROI atingirem metas definidas.
+
+6. Log e visualização
+
+Log detalhado ciclo a ciclo:
+
+Status de ordens, spreads, volatilidade, drift, ajuste de preço, lucro esperado.
+
+Mini-dashboard por ciclo mostrando:
+
+PnL, ROI, idade das ordens, spreads, volatilidade, lucro esperado e alertas.
+
+7. Dinâmica geral do bot
+
+Carregar configuração e validar variáveis críticas.
+
+Buscar orderbook e histórico de preços; validar integridade.
+
+Calcular indicadores técnicos (RSI, EMA, volatilidade).
+
+Determinar tendência, viés de inventário e lucro esperado.
+
+Ajustar preço e tamanho das ordens com base em:
+
+Spread dinâmico.
+
+Score de lucro esperado.
+
+Saldo disponível.
+
+Enviar ordens (buy/sell) respeitando volume mínimo.
+
+Reavaliar ordens ativas:
+
+Reprecificação se drift de preço.
+
+Cancelamento por idade ou interesse do book.
+
+Aplicar stop-loss / take-profit.
+
+Calcular PnL/ROI atual e emitir alertas se metas atingidas.
+
+Registrar ciclo no log detalhado e atualizar mini-dashboard.
+
+Repetir ciclo de forma contínua ou conforme intervalo definido.

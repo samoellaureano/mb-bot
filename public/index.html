@@ -158,7 +158,7 @@
                     x: {
                         type: 'time',
                         time: {
-                            unit: 'second',
+                            unit: 'minute',
                             tooltipFormat: 'HH:mm:ss',
                             displayFormats: {
                                 second: 'HH:mm:ss'
@@ -216,7 +216,7 @@
             })}`;
 
             document.getElementById('spread').textContent = formatSpread(data.market?.spread);
-            document.getElementById('volatility').textContent = formatVolatility(data.market?.volatility.replace("%",""));
+            document.getElementById('volatility').textContent = formatVolatility(data.market?.volatility.replace("%", ""));
 
             document.getElementById('pnl').textContent = `R$ ${parseFloat(data.stats?.totalPnL || 0).toFixed(2)}` +
                 (data.stats?.totalPnL >= 0 ? ' 📈' : ' 📉') || '--';
@@ -270,7 +270,7 @@
                     pnlChart.data.datasets[1].data.push({x: new Date(), y: parseFloat(data.market?.last || 0)});
                 }
 
-                if (pnlChart.data.labels.length > 10) {
+                if (pnlChart.data.labels.length > 1440) { //atualizados a cada 10s, manter 1440 = 4h
                     pnlChart.data.labels.shift();
                     pnlChart.data.datasets[0].data.shift();
                     pnlChart.data.datasets[1].data.shift();
@@ -288,16 +288,27 @@
             priceHistory.push(data.market?.last || 0);
             if (priceHistory.length > 20) priceHistory.shift();
 
-            const avg = priceHistory.reduce((a, b) => a + b, 0) / priceHistory.length || 0;
             const trendEl = document.getElementById('trend');
-            if (data.market?.last > avg * 1.002) {
-                trendEl.textContent = "Alta 📈";
+            if (data.market?.tendency.trend === 'up') {
+                const valorRef = Number(data.market?.bid) || 0;
+                trendEl.textContent = "Alta 📈 - " + `R$ ${valorRef.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`;
                 trendEl.className = "text-green-400 font-bold";
-            } else if (data.market?.last < avg * 0.998) {
-                trendEl.textContent = "Baixa 📉";
+            } else if (data.market?.tendency.trend === 'down') {
+                const valorRef = Number(data.market?.ask) || 0;
+                trendEl.textContent = "Baixa 📉 - " + `R$ ${valorRef.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`;
                 trendEl.className = "text-red-400 font-bold";
             } else {
-                trendEl.textContent = "Neutra ➡️";
+                const valorRef = Number(data.market?.mid) || 0;
+                trendEl.textContent = "Neutra ➡️ - " + `R$ ${valorRef.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`;
                 trendEl.className = "text-gray-400 font-bold";
             }
 

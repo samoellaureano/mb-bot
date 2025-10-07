@@ -7,12 +7,12 @@ const mbClient = require('./mb_client');
 const axios = require('axios');
 
 // Config
-const SIMULATE = mbClient.SIMULATE;
+const SIMULATE = process.env.SIMULATE === 'true';
 const PORT = parseInt(process.env.PORT) || 3001;
 const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 30000; // 30 segundos
 const DEBUG = process.env.DEBUG === 'true';
 const PNL_HISTORY_FILE = path.join(__dirname, 'pnl_history.json');
-const MAX_PNL_HISTORY_POINTS = 864; // Limite de 24h com intervalos de 10min
+const MAX_PNL_HISTORY_POINTS = 1440; // Com pontos a cada 10s, quero 4horas de histórico (4*60*60/10=1440)
 
 // Logging
 const log = (level, message, data) => {
@@ -57,6 +57,69 @@ const serverStartTime = Date.now();
 
 // Cache
 let cache = {timestamp: 0, data: null, valid: false};
+
+// -------------------- INDICADORES --------------------
+let priceHistory = [];
+
+function calculateRSI(prices, period = 12) {
+    if (prices.length < period + 1) return 50;
+    let gains = 0, losses = 0;
+    for (let i = prices.length - period - 1; i < prices.length - 1; i++) {
+        const change = prices[i + 1] - prices[i];
+        if (change > 0) gains += change;
+        else losses -= change;
+    }
+    const avgGain = gains / period;
+    const avgLoss = losses / period;
+    const rs = avgLoss === 0 ? 100 : (avgGain === 0 ? 0 : avgGain / avgLoss);
+    return 100 - (100 / (1 + rs));
+}
+
+function calculateEMA(prices, period = 12) {
+    if (prices.length < period) return prices[prices.length - 1];
+    const k = 2 / (period + 1);
+    let ema = prices[prices.length - period];
+    for (let i = prices.length - period + 1; i < prices.length; i++) {
+        ema = prices[i] * k + ema * (1 - k);
+    }
+    return ema;
+}
+
+function calculateVolatility(prices, period = 12) {
+    if (prices.length < period) return 0;
+    const recent = prices.slice(-period);
+    const mean = recent.reduce((a, b) => a + b, 0) / period;
+    const variance = recent.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / period;
+    return Math.sqrt(variance); // desvio padrão
+}
+
+function fetchPricePrediction(midPrice) {
+    priceHistory.push(midPrice);
+    if (priceHistory.length > 60) priceHistory.shift();
+
+    const rsi = calculateRSI(priceHistory, 12);
+    const emaShort = calculateEMA(priceHistory, 8);
+    const emaLong = calculateEMA(priceHistory, 20);
+    const volatility = calculateVolatility(priceHistory, 12);
+
+    // Determina tendência
+    let trend = 'neutral';
+    if (emaShort > emaLong && rsi > 50) trend = 'up';
+    else if (emaShort < emaLong && rsi < 50) trend = 'down';
+
+    // Confiança
+    let rsiConf = Math.abs(rsi - 50) / 50;                  // 0 a 1
+    let emaConf = Math.abs(emaShort - emaLong) / (emaLong || 1); // 0 a 1
+    let volConf = Math.min(volatility / midPrice, 1);       // normaliza volatilidade relativa
+
+    // Combina indicadores: mais peso para RSI, depois EMA, depois volatilidade
+    let confidence = 0.5 * rsiConf + 0.3 * emaConf + 0.2 * volConf;
+
+    // Suavização final
+    confidence = Math.min(confidence, 1);
+
+    return { trend, confidence, rsi, emaShort, emaLong, volatility };
+}
 
 // Load or initialize PNL history
 let pnlHistory = [];
@@ -150,6 +213,8 @@ function generateSimulatedData() {
     const ask = last + Math.random() * 100;
     const mid = (bid + ask) / 2;
     const spreadPct = ((ask - bid) / ((ask + bid) / 2)) * 100;
+    const bids = Array.from({length: 5}, (_, i) => parseFloat((mid - (i + 1) * 50 - Math.random() * 20).toFixed(2)));
+    const asks = Array.from({length: 5}, (_, i) => parseFloat((mid + (i + 1) * 50 + Math.random() * 20).toFixed(2)));
     const prices = [...bids, ...asks];
     const volatilityPct = ((Math.max(...prices) - Math.min(...prices)) / mid) * 100;
 
@@ -232,9 +297,6 @@ function generateSimulatedData() {
     pnlTimestamps = uniqueData.map(item => item.timestamp).slice(-MAX_PNL_HISTORY_POINTS);
     savePnlHistory().then(r => log('DEBUG', 'Simulated PnL history saved'));
 
-    const bids = Array.from({length: 5}, (_, i) => parseFloat((mid - (i + 1) * 50 - Math.random() * 20).toFixed(2)));
-    const asks = Array.from({length: 5}, (_, i) => parseFloat((mid + (i + 1) * 50 + Math.random() * 20).toFixed(2)));
-
     return {
         timestamp: new Date().toISOString(),
         mode: "SIMULATE",
@@ -243,9 +305,10 @@ function generateSimulatedData() {
             last: parseFloat(last.toFixed(2)),
             bid: parseFloat(bid.toFixed(2)),
             ask: parseFloat(ask.toFixed(2)),
-            mid: mid.toFixed(2),
+            mid: parseFloat(mid.toFixed(2)),
             spread: spreadPct.toFixed(2),
-            volatility: volatilityPct.toFixed(2)
+            volatility: volatilityPct.toFixed(2),
+            tendency: fetchPricePrediction(mid)
         },
         balances: {
             brl: parseFloat(brlAvailable.toFixed(2)),
@@ -438,7 +501,8 @@ async function getLiveData() {
                 ask: bestAsk,
                 mid: ((bestAsk + bestBid) / 2).toFixed(2),
                 spread: spreadPct.toFixed(2),
-                volatility: volatilityPct.toFixed(2)
+                volatility: volatilityPct.toFixed(2),
+                tendency: fetchPricePrediction(mid)
             },
             balances: {
                 brl: balances.find(b => b.symbol === 'BRL')?.total || 0,
