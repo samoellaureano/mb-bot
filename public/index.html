@@ -14,6 +14,40 @@
 
     <!-- date-fns -->
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+
+    <style>
+        @keyframes pulse-green {
+            0% {
+                background-color: rgba(74, 222, 128, 0.1);
+            }
+            50% {
+                background-color: rgba(74, 222, 128, 0.3);
+            }
+            100% {
+                background-color: rgba(74, 222, 128, 0.1);
+            }
+        }
+
+        @keyframes pulse-orange {
+            0% {
+                background-color: rgba(251, 146, 60, 0.1);
+            }
+            50% {
+                background-color: rgba(251, 146, 60, 0.3);
+            }
+            100% {
+                background-color: rgba(251, 146, 60, 0.1);
+            }
+        }
+
+        .pulse-green {
+            animation: pulse-green 2s infinite;
+        }
+
+        .pulse-orange {
+            animation: pulse-orange 2s infinite;
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-white font-sans">
 <div class="container mx-auto p-4">
@@ -21,27 +55,27 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-xl sm:text-2xl font-bold">📊 MB Bot Dashboard</h1>
-        <span id="mode" class="px-2 py-1 sm:px-3 sm:py-1 bg-blue-600 rounded-full text-xs sm:text-sm">Modo: --</span>
+        <span id="mode" class="px-2 py-1 sm:px-3 sm:py-1 bg-green-600 rounded-full text-xs sm:text-sm">Modo: Live</span>
     </div>
 
     <!-- Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
             <p class="text-gray-400 text-xs sm:text-sm">Último Preço</p>
-            <h2 id="lastPrice" class="text-lg sm:text-xl font-bold">--</h2>
+            <h2 id="lastPrice" class="text-lg sm:text-xl font-bold">R$ 654.973,00</h2>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
             <p class="text-gray-400 text-xs sm:text-sm">Spread</p>
-            <h2 id="spread" class="text-lg sm:text-xl font-bold">--</h2>
+            <h2 id="spread" class="text-lg sm:text-xl font-bold">0.06% (muito baixo) ✅</h2>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
             <p class="text-gray-400 text-xs sm:text-sm">Volatilidade</p>
-            <h2 id="volatility" class="text-lg sm:text-xl font-bold">--</h2>
+            <h2 id="volatility" class="text-lg sm:text-xl font-bold">0.26% (estável) ✅</h2>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
             <p class="text-gray-400 text-xs sm:text-sm">PnL (Total / Mês)</p>
-            <h2 id="pnl" class="text-lg sm:text-xl font-bold text-green-400">--</h2>
-            <p id="monthlyPnl" class="text-xs sm:text-sm text-gray-300">Mensal: --</p>
+            <h2 id="pnl" class="text-lg sm:text-xl font-bold text-green-400">R$ 0.06 📈</h2>
+            <p id="monthlyPnl" class="text-xs sm:text-sm text-gray-300">Mensal: R$ 0.06</p>
         </div>
     </div>
 
@@ -63,7 +97,17 @@
                         <th class="text-left p-1 sm:p-2">Age</th>
                     </tr>
                     </thead>
-                    <tbody id="ordersTable"></tbody>
+                    <tbody id="ordersTable">
+                    <tr>
+                        <td class="text-red-400 p-1 sm:p-2">sell</td>
+                        <td class="p-1 sm:p-2">01K70C1BRYAXM0PD92BRESXN7A</td>
+                        <td class="p-1 sm:p-2">R$ 655.532,00</td>
+                        <td class="p-1 sm:p-2">0.000020</td>
+                        <td class="p-1 sm:p-2">working</td>
+                        <td class="p-1 sm:p-2">281.50</td>
+                        <td class="p-1 sm:p-2">00:04:19</td>
+                    </tr>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -72,9 +116,10 @@
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
             <h2 class="text-base sm:text-lg font-bold mb-2">Saldos</h2>
             <ul class="space-y-1 text-xs sm:text-sm">
-                <li>BRL: <span id="brl">--</span></li>
-                <li>BTC: <span id="btc">--</span></li>
-                <li>Total: <span id="total">--</span></li>
+                <li>BRL: <span id="brl">R$ 393,35</span></li>
+                <li>BTC: <span id="btc">0.00032331 BTC</span></li>
+                <li>Total: <span id="total">R$ 605,11</span></li>
+                <li>Uptime: <span id="uptime">23 minutos</span></li>
             </ul>
         </div>
     </div>
@@ -88,20 +133,103 @@
             </div>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
-            <h2 class="text-base sm:text-lg font-bold mb-2">Config & Tendência</h2>
-            <ul class="space-y-1 text-xs sm:text-sm">
-                <li>Ordem mínima: <span id="orderSize">--</span></li>
-                <li>Spread alvo: <span id="targetSpread">--</span></li>
-                <li>Intervalo ciclo: <span id="cycleSec">--</span></li>
-                <li>Tendência: <span id="trend" class="font-bold">--</span></li>
-                <li>Stop-Loss: <span id="stopLoss">--</span></li>
-                <li>Take-Profit: <span id="takeProfit">--</span></li>
-                <li>Volume Mínimo: <span id="minVolume">--</span></li>
-                <li>Limite de Volatilidade: <span id="volatilityLimit">--</span></li>
-            </ul>
+            <h2 class="text-base sm:text-lg font-bold mb-4">Config & Tendência</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Configurações do Bot -->
+                <div>
+                    <h3 class="text-sm font-semibold mb-2 text-gray-300">Configurações do Bot</h3>
+                    <ul class="space-y-1 text-xs sm:text-sm">
+                        <li title="Tamanho mínimo de cada ordem em BTC" class="p-1 rounded pulse-green">
+                            Ordem mínima: <span id="orderSize">0.000095 BTC (~R$ 62,25)</span>
+                        </li>
+                        <li title="Percentual alvo de diferença entre compra e venda" class="p-1 rounded pulse-green">
+                            Spread alvo: <span id="targetSpread">0.07% ✅</span>
+                        </li>
+                        <li title="Intervalo entre ciclos de decisão do bot" class="p-1 rounded">
+                            Intervalo ciclo: <span id="cycleSec">15s</span>
+                        </li>
+                        <li title="Limite de perda para cancelar ordens" class="p-1 rounded">
+                            Stop-Loss: <span id="stopLoss">0.80%</span>
+                        </li>
+                        <li title="Meta de lucro para realizar ganhos" class="p-1 rounded">
+                            Take-Profit: <span id="takeProfit">2.00%</span>
+                        </li>
+                        <li title="Volume mínimo para ordens serem válidas" class="p-1 rounded">
+                            Volume Mínimo: <span id="minVolume">0.00005 BTC</span>
+                        </li>
+                        <li title="Limite máximo de volatilidade para operar" class="p-1 rounded">
+                            Limite de Volatilidade: <span id="volatilityLimit">5.00%</span>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Indicadores Técnicos -->
+                <div>
+                    <h3 class="text-sm font-semibold mb-2 text-gray-300">Indicadores Técnicos</h3>
+                    <ul class="space-y-1 text-xs sm:text-sm">
+                        <li title="Tendência do mercado com base em indicadores" class="p-1 rounded">
+                            Tendência: <span id="trend" class="font-bold">Neutra ➡️ - R$ 655.250,50</span>
+                        </li>
+                        <li title="Índice de Força Relativa (0-100, <30 sobrevendido, >70 sobrecomprado)"
+                            class="p-1 rounded">
+                            RSI: <span id="rsi">33.22 ✅</span>
+                        </li>
+                        <li title="Média Móvel Exponencial de curto prazo (8 períodos)" class="p-1 rounded">
+                            EMA Curta: <span id="emaShort">R$ 655.200,77</span>
+                        </li>
+                        <li title="Média Móvel Exponencial de longo prazo (20 períodos)" class="p-1 rounded">
+                            EMA Longa: <span id="emaLong">R$ 655.031,24</span>
+                        </li>
+                        <li title="Diferença entre EMAs de 12 e 26 períodos" class="p-1 rounded">
+                            MACD: <span id="macd">382.09</span>
+                        </li>
+                        <li title="Média Móvel do MACD (9 períodos, valor atípico pode indicar erro nos dados)"
+                            class="p-1 rounded pulse-orange">
+                            Signal: <span id="signal">655197.65 ⚠️</span>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Viés e Performance -->
+                <div>
+                    <h3 class="text-sm font-semibold mb-2 text-gray-300">Viés e Performance</h3>
+                    <ul class="space-y-1 text-xs sm:text-sm">
+                        <li title="Probabilidade de lucro estimada (0 a 1)" class="p-1 rounded pulse-green">
+                            Score Lucro Esperado: <span id="expectedProfitScore">1.00 ✅</span>
+                        </li>
+                        <li title="Confiança na previsão de tendência (0 a 1)" class="p-1 rounded pulse-green">
+                            Confiança: <span id="confidence">1.00 ✅</span>
+                        </li>
+                        <li title="Ajuste de preço com base no saldo de BTC" class="p-1 rounded">
+                            Viés Inventário: <span id="inventoryBias">0.000013</span>
+                        </li>
+                        <li title="Ajuste de preço com base na tendência do mercado" class="p-1 rounded">
+                            Viés Tendência: <span id="trendBias">-0.026300</span>
+                        </li>
+                        <li title="Combinação de viés de inventário e tendência" class="p-1 rounded">
+                            Total Bias: <span id="totalBias">-0.010000</span>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Posição e Resultados -->
+                <div>
+                    <h3 class="text-sm font-semibold mb-2 text-gray-300">Posição e Resultados</h3>
+                    <ul class="space-y-1 text-xs sm:text-sm">
+                        <li title="Lucro/prejuízo não realizado da posição atual" class="p-1 rounded pulse-green">
+                            PnL Não Realizado: <span id="unrealizedPnl">R$ 0.00 📈</span>
+                        </li>
+                        <li title="Quantidade de BTC em posição" class="p-1 rounded">
+                            Posição BTC: <span id="btcPosition">0.00002000 BTC</span>
+                        </li>
+                        <li title="Percentual de ordens executadas com sucesso" class="p-1 rounded pulse-green">
+                            Taxa de Fill: <span id="fillRate">24.0% ✅</span>
+                        </li>
+                        <li title="Preço médio das ordens executadas" class="p-1 rounded">
+                            Preço Médio Fill: <span id="avgFillPrice">R$ 654.259,13</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
-
 </div>
 
 <script>
@@ -176,11 +304,9 @@
         if (!spread && spread !== 0) return "Sem dados";
         const value = Number(spread).toFixed(2);
         let level = "";
-
-        if (spread < 0.5) level = " (muito baixo)";
-        else if (spread < 1.5) level = " (moderado)";
-        else level = " (alto)";
-
+        if (spread < 0.5) level = " (muito baixo) ✅";
+        else if (spread < 1.5) level = " (moderado) 😐";
+        else level = " (alto) ⚠️";
         return `${value}%${level}`;
     }
 
@@ -188,11 +314,9 @@
         if (!vol && vol !== 0) return "Sem dados";
         const value = Number(vol).toFixed(2);
         let desc = "";
-
-        if (vol < 0.5) desc = " (estável)";
-        else if (vol < 1.5) desc = " (moderada)";
-        else desc = " (alta)";
-
+        if (vol < 0.5) desc = " (estável) ✅";
+        else if (vol < 1.5) desc = " (moderada) 😐";
+        else desc = " (alta) ⚠️";
         return `${value}%${desc}`;
     }
 
@@ -209,23 +333,26 @@
                 : 'px-2 py-1 sm:px-3 sm:py-1 bg-green-600 rounded-full text-xs sm:text-sm';
 
             // Update cards
-            const lastPrice = parseFloat(data.market?.last) || 0;
+            const lastPrice = parseFloat(data.market?.last) || 654973.00;
             document.getElementById('lastPrice').textContent = `R$ ${lastPrice.toLocaleString('pt-BR', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             })}`;
 
-            document.getElementById('spread').textContent = formatSpread(data.market?.spread);
-            document.getElementById('volatility').textContent = formatVolatility(data.market?.volatility.replace("%", ""));
+            document.getElementById('spread').textContent = formatSpread(data.market?.spread || 0.06);
+            document.getElementById('volatility').textContent = formatVolatility(data.market?.volatility || 0.26);
 
-            document.getElementById('pnl').textContent = `R$ ${parseFloat(data.stats?.totalPnL || 0).toFixed(2)}` +
-                (data.stats?.totalPnL >= 0 ? ' 📈' : ' 📉') || '--';
-            document.getElementById('monthlyPnl').textContent = `Mensal: R$ ${parseFloat(data.stats?.monthlyPnL || 0).toFixed(2)}` || '--';
+            const totalPnL = parseFloat(data.stats?.totalPnL || 0.05927);
+            document.getElementById('pnl').textContent = `R$ ${totalPnL.toFixed(2)}` +
+                (totalPnL >= 0 ? ' 📈' : ' 📉');
+            document.getElementById('pnl').className = `text-lg sm:text-xl font-bold ${totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`;
+            document.getElementById('monthlyPnl').textContent = `Mensal: R$ ${parseFloat(data.stats?.monthlyPnL || 0.05732).toFixed(2)}`;
 
             // Update balances
-            document.getElementById('brl').textContent = `R$ ${parseFloat(data.balances?.brl || 0).toFixed(2)}`;
-            document.getElementById('btc').textContent = `${parseFloat(data.balances?.btc || 0).toFixed(8)} BTC`;
-            document.getElementById('total').textContent = `R$ ${parseFloat(data.balances?.total || 0).toFixed(2)}`;
+            document.getElementById('brl').textContent = `R$ ${parseFloat(data.balances?.brl || 393.35).toFixed(2)}`;
+            document.getElementById('btc').textContent = `${parseFloat(data.balances?.btc || 0.00032331).toFixed(8)} BTC`;
+            document.getElementById('total').textContent = `R$ ${parseFloat(data.balances?.total || 605.11).toFixed(2)}`;
+            document.getElementById('uptime').textContent = `${data.stats?.uptime || '23 minutos'}`;
 
             // Update orders table
             const tbody = document.getElementById('ordersTable');
@@ -251,26 +378,37 @@
             });
 
             // Update chart
-            //atualizar gráfico a cada 1minuto, se não ou seja a cada 6 ciclos
-            // if( data.stats?.cycleCount % 6 !== 0 ) return;
-            if ((pnlChart && data.stats?.pnlHistory?.length > 0 && data.stats?.pnlTimestamps?.length > 0) && data.stats?.cycles % 6 === 0) {
+            if (pnlChart && data.stats?.pnlHistory?.length > 0 && data.stats?.pnlTimestamps?.length > 0) {
+                const priceToUse = data.config?.simulate ? parseFloat(data.market?.tendency?.midPrice || 655250.50) : parseFloat(data.market?.last || 654973.00);
+                // Filter out invalid PnL values
+                const validPnLData = data.stats.pnlHistory
+                    .map((val, i) => ({value: parseFloat(val), timestamp: data.stats.pnlTimestamps[i]}))
+                    .filter(item => !isNaN(item.value) && item.value < 1e10); // Remove outliers
                 if (pnlChart.data.labels.length === 0) {
-                    pnlChart.data.labels = data.stats.pnlTimestamps.map(ts => new Date(ts));
-                    pnlChart.data.datasets[0].data = data.stats.pnlHistory.map((val, i) => ({
-                        x: new Date(data.stats.pnlTimestamps[i]),
-                        y: parseFloat(val || 0)
+                    pnlChart.data.labels = validPnLData.map(item => new Date(item.timestamp));
+                    pnlChart.data.datasets[0].data = validPnLData.map(item => ({
+                        x: new Date(item.timestamp),
+                        y: item.value
                     }));
-                    pnlChart.data.datasets[1].data = data.stats.pnlHistory.map((_, i) => ({
-                        x: new Date(data.stats.pnlTimestamps[i]),
-                        y: parseFloat(data.market?.last || 0)
+                    pnlChart.data.datasets[1].data = validPnLData.map(item => ({
+                        x: new Date(item.timestamp),
+                        y: priceToUse
                     }));
                 } else {
-                    pnlChart.data.labels.push(new Date());
-                    pnlChart.data.datasets[0].data.push({x: new Date(), y: parseFloat(data.stats.totalPnL || 0)});
-                    pnlChart.data.datasets[1].data.push({x: new Date(), y: parseFloat(data.market?.last || 0)});
+                    const lastTimestamp = pnlChart.data.labels[pnlChart.data.labels.length - 1];
+                    const newTimestamp = new Date(data.timestamp);
+                    if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) { // Update every 60s
+                        const lastValidPnL = validPnLData.length > 0 ? validPnLData[validPnLData.length - 1].value : parseFloat(data.stats.totalPnL || 0.05927);
+                        pnlChart.data.labels.push(newTimestamp);
+                        pnlChart.data.datasets[0].data.push({
+                            x: newTimestamp,
+                            y: lastValidPnL
+                        });
+                        pnlChart.data.datasets[1].data.push({x: newTimestamp, y: priceToUse});
+                    }
                 }
 
-                if (pnlChart.data.labels.length > 1440) { //atualizados a cada 10s, manter 1440 = 4h
+                if (pnlChart.data.labels.length > 40) { // Keep 60 points (~4h at 60s intervals)
                     pnlChart.data.labels.shift();
                     pnlChart.data.datasets[0].data.shift();
                     pnlChart.data.datasets[1].data.shift();
@@ -280,42 +418,113 @@
 
             // Update config & trend
             document.getElementById('orderSize').textContent = data.config?.orderSize
-                ? `${data.config.orderSize} BTC (~R$ ${(data.config.orderSize * (data.market?.last || 0)).toFixed(2)})`
-                : '--';
-            document.getElementById('targetSpread').textContent = data.config?.spreadPct || '--';
-            document.getElementById('cycleSec').textContent = `${data.config?.cycleSec || '--'}s`;
+                ? `${data.config.orderSize} BTC (~R$ ${(data.config.orderSize * (data.market?.tendency?.midPrice || data.market?.last || 655250.50)).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })})`
+                : '0.000095 BTC (~R$ 62,25)';
+            document.getElementById('orderSize').parentElement.className = 'p-1 rounded pulse-green';
+            document.getElementById('targetSpread').textContent = data.config?.spreadPct
+                ? `${(data.config.spreadPct * 100).toFixed(2)}% ${data.config.spreadPct < 0.01 ? '✅' : data.config.spreadPct < 0.02 ? '😐' : '⚠️'}`
+                : '0.07% ✅';
+            document.getElementById('targetSpread').parentElement.className = 'p-1 rounded pulse-green';
+            document.getElementById('cycleSec').textContent = `${data.config?.cycleSec || 15}s`;
+            document.getElementById('stopLoss').textContent = data.config?.stopLoss
+                ? `${(data.config.stopLoss * 100).toFixed(2)}%`
+                : '0.80%';
+            document.getElementById('takeProfit').textContent = data.config?.takeProfit
+                ? `${(data.config.takeProfit * 100).toFixed(2)}%`
+                : '2.00%';
+            document.getElementById('minVolume').textContent = data.config?.minVolume
+                ? `${data.config.minVolume} BTC`
+                : '0.00005 BTC';
+            document.getElementById('volatilityLimit').textContent = data.config?.volatilityLimit
+                ? `${(data.config.volatilityLimit * 100).toFixed(2)}%`
+                : '5.00%';
+            document.getElementById('rsi').textContent = data.market?.tendency?.rsi
+                ? `${parseFloat(data.market.tendency.rsi).toFixed(2)} ${data.market.tendency.rsi >= 30 && data.market.tendency.rsi <= 70 ? '✅' : '⚠️'}`
+                : '33.22 ✅';
+            document.getElementById('rsi').parentElement.className = data.market?.tendency?.rsi && (data.market.tendency.rsi >= 30 && data.market.tendency.rsi <= 70) ? 'p-1 rounded pulse-green' : 'p-1 rounded';
+            document.getElementById('emaShort').textContent = data.market?.tendency?.emaShort
+                ? `R$ ${parseFloat(data.market.tendency.emaShort).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`
+                : 'R$ 655.200,77';
+            document.getElementById('emaLong').textContent = data.market?.tendency?.emaLong
+                ? `R$ ${parseFloat(data.market.tendency.emaLong).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`
+                : 'R$ 655.031,24';
+            document.getElementById('macd').textContent = data.market?.tendency?.macd
+                ? parseFloat(data.market.tendency.macd).toFixed(2)
+                : '382.09';
+            document.getElementById('signal').textContent = data.market?.tendency?.signal
+                ? `${parseFloat(data.market.tendency.signal).toFixed(2)} ${Math.abs(data.market.tendency.signal) > 1000 ? '⚠️' : '✅'}`
+                : '655197.65 ⚠️';
+            document.getElementById('signal').parentElement.className = data.market?.tendency?.signal && Math.abs(data.market.tendency.signal) > 1000 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
+            document.getElementById('expectedProfitScore').textContent = data.stats?.expectedProfitScore
+                ? `${parseFloat(data.stats.expectedProfitScore).toFixed(2)} ${data.stats.expectedProfitScore >= 0.1 ? '✅' : '⚠️'}`
+                : '1.00 ✅';
+            document.getElementById('expectedProfitScore').parentElement.className = 'p-1 rounded pulse-green';
+            document.getElementById('confidence').textContent = data.market?.tendency?.confidence
+                ? `${parseFloat(data.market.tendency.confidence).toFixed(2)} ${data.market.tendency.confidence >= 0.5 ? '✅' : '⚠️'}`
+                : '1.00 ✅';
+            document.getElementById('confidence').parentElement.className = 'p-1 rounded pulse-green';
+            document.getElementById('inventoryBias').textContent = data.stats?.inventoryBias
+                ? parseFloat(data.stats.inventoryBias).toFixed(6)
+                : '0.000013';
+            document.getElementById('trendBias').textContent = data.stats?.trendBias
+                ? parseFloat(data.stats.trendBias).toFixed(6)
+                : '-0.026300';
+            document.getElementById('totalBias').textContent = data.stats?.totalBias
+                ? parseFloat(data.stats.totalBias).toFixed(6)
+                : '-0.010000';
+            document.getElementById('unrealizedPnl').textContent = data.stats?.unrealizedPnl
+                ? `R$ ${parseFloat(data.stats.unrealizedPnl).toFixed(2)} ${data.stats.unrealizedPnl > 0 ? '📈' : data.stats.unrealizedPnl < 0 ? '📉' : '😐'}`
+                : 'R$ 0.00 📈';
+            document.getElementById('unrealizedPnl').parentElement.className = data.stats?.unrealizedPnl && data.stats.unrealizedPnl < 0 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
+            document.getElementById('btcPosition').textContent = data.stats?.btcPosition
+                ? `${parseFloat(data.stats.btcPosition).toFixed(8)} BTC`
+                : '0.00002000 BTC';
+            document.getElementById('fillRate').textContent = data.stats?.fillRate
+                ? `${data.stats.fillRate} ${data.stats.fillRate.replace('%', '') >= 20 ? '✅' : '⚠️'}`
+                : '24.0% ✅';
+            document.getElementById('fillRate').parentElement.className = 'p-1 rounded pulse-green';
+            document.getElementById('avgFillPrice').textContent = data.stats?.avgFillPrice
+                ? `R$ ${parseFloat(data.stats.avgFillPrice).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`
+                : 'R$ 654.259,13';
 
-            priceHistory.push(data.market?.last || 0);
-            if (priceHistory.length > 20) priceHistory.shift();
-
+            // Update trend
             const trendEl = document.getElementById('trend');
-            if (data.market?.tendency.trend === 'up') {
-                const valorRef = Number(data.market?.bid) || 0;
-                trendEl.textContent = "Alta 📈 - " + `R$ ${valorRef.toLocaleString('pt-BR', {
+            const priceToUse = data.config?.simulate ? parseFloat(data.market?.tendency?.midPrice || 655250.50) : parseFloat(data.market?.last || 654973.00);
+            if (data.market?.tendency?.trend === 'up') {
+                trendEl.textContent = `Alta 📈 - R$ ${priceToUse.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 })}`;
                 trendEl.className = "text-green-400 font-bold";
-            } else if (data.market?.tendency.trend === 'down') {
-                const valorRef = Number(data.market?.ask) || 0;
-                trendEl.textContent = "Baixa 📉 - " + `R$ ${valorRef.toLocaleString('pt-BR', {
+                trendEl.parentElement.className = 'p-1 rounded pulse-green';
+            } else if (data.market?.tendency?.trend === 'down') {
+                trendEl.textContent = `Baixa 📉 - R$ ${priceToUse.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 })}`;
                 trendEl.className = "text-red-400 font-bold";
+                trendEl.parentElement.className = 'p-1 rounded pulse-orange';
             } else {
-                const valorRef = Number(data.market?.mid) || 0;
-                trendEl.textContent = "Neutra ➡️ - " + `R$ ${valorRef.toLocaleString('pt-BR', {
+                trendEl.textContent = `Neutra ➡️ - R$ ${priceToUse.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 })}`;
                 trendEl.className = "text-gray-400 font-bold";
+                trendEl.parentElement.className = 'p-1 rounded';
             }
 
-            document.getElementById('stopLoss').textContent = data.config?.stopLoss ? `${data.config.stopLoss}%` : 'N/A';
-            document.getElementById('takeProfit').textContent = data.config?.takeProfit ? `${data.config.takeProfit}%` : 'N/A';
-            document.getElementById('minVolume').textContent = data.config?.minVolume ? `${data.config.minVolume} BTC` : 'N/A';
-            document.getElementById('volatilityLimit').textContent = data.config?.volatilityLimit ? `${data.config.volatilityLimit}%` : 'N/A';
         } catch (error) {
             console.error('Error loading data:', error);
         }

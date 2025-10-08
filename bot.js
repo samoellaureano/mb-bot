@@ -59,6 +59,7 @@ const PARAM_ADJUST_FACTOR = 0.05;
 const PERFORMANCE_WINDOW = 5;
 const OB_REFRESH_SEC = 10;
 const startTime = Date.now();
+const FEE_RATE = 0.003; // Taxa de maker estimada
 
 // Validação configs
 if (!REST_BASE.startsWith('http')) {
@@ -353,14 +354,15 @@ async function checkOrderStatus(orderKey, side) {
         if (Math.random() < fillChance) {
             const slippage = (Math.random() - 0.5) * 0.002;
             const fillPrice = order.price * (1 + slippage);
-            const qty = order.qty;
+            let qty = order.qty;
             let pnl = 0;
             if (side === 'buy') {
+                qty = qty * (1 - FEE_RATE); // Deduz fee do qty recebido
                 btcPosition += qty;
                 totalCost += qty * fillPrice;
             } else if (side === 'sell') {
                 const avgPrice = btcPosition > 0 ? totalCost / btcPosition : 0;
-                pnl = (fillPrice - avgPrice) * qty;
+                pnl = (fillPrice - avgPrice) * qty - (qty * fillPrice * FEE_RATE); // Deduz fee do pnl
                 totalPnL += pnl;
                 btcPosition -= qty;
                 totalCost -= avgPrice * qty;
@@ -390,10 +392,10 @@ async function checkOrderStatus(orderKey, side) {
             let pnl = 0;
             if (status.side === 'buy') {
                 btcPosition += qty;
-                totalCost += qty * price;
+                totalCost += qty * price + (qty * price * FEE_RATE); // Adiciona fee ao custo
             } else if (status.side === 'sell') {
                 const avgPrice = btcPosition > 0 ? totalCost / btcPosition : 0;
-                pnl = (price - avgPrice) * qty;
+                pnl = (price - avgPrice) * qty - (qty * price * FEE_RATE); // Deduz fee do pnl
                 totalPnL += pnl;
                 btcPosition -= qty;
                 totalCost -= avgPrice * qty;
@@ -433,7 +435,8 @@ async function placeOrder(side, price, qty) {
             qty: qty.toFixed(8),
             side: side.toLowerCase(),
             stopPrice: 0,
-            type: 'limit', ...(side === 'buy' ? {cost: 100} : {}) // Mantém o cost para compra, se necessário
+            type: 'limit'
+            // Removido {cost: 100} para evitar bugs
         };
         const orderId = SIMULATE ? `${side}_SIM_${Date.now()}` : (await MB.placeOrder(orderData.side)).orderId;
         activeOrders.set(side, {
@@ -505,7 +508,7 @@ async function checkOrders(mid, volatility, pred, orderbook) {
     }
 }
 
-// ---------------- COMPUTE PNL ----------------
+// ---------------- COMPUTE PnL ----------------
 function computePnL(mid) {
     const unrealized = (mid * btcPosition) - totalCost;
     const total = totalPnL + unrealized;
@@ -659,6 +662,7 @@ async function runCycle() {
 
         let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, ORDER_SIZE * (1 + volatilityPct / 120)));
         dynamicOrderSize *= (1 + pred.expectedProfit - EXPECTED_PROFIT_THRESHOLD);
+        dynamicOrderSize = Math.min(MAX_ORDER_SIZE, dynamicOrderSize); // Limita após multiplicação
         currentBaseSize = dynamicOrderSize;
 
         // Calcular viés
@@ -710,9 +714,9 @@ async function runCycle() {
         // Colocar ordens
         if (pred.expectedProfit >= EXPECTED_PROFIT_THRESHOLD) {
             let buyQty = dynamicOrderSize;
-            const buyCost = buyPrice * buyQty * (1 + 0.001); // Taxa estimada de 0.1%
+            const buyCost = buyPrice * buyQty * (1 + FEE_RATE); // Taxa estimada de 0.3%
             if (buyCost > brlBalance) {
-                buyQty = Math.floor((brlBalance / buyPrice) * (1 - 0.001));
+                buyQty = Math.floor((brlBalance / (buyPrice * (1 + FEE_RATE))) * 1e8) / 1e8;
                 if (buyQty < MIN_ORDER_SIZE) {
                     buyQty = 0;
                     log('WARN', `Saldo BRL insuficiente (${brlBalance.toFixed(2)} < ${buyCost.toFixed(2)}). Ignorando compra.`);
@@ -724,11 +728,14 @@ async function runCycle() {
 
             let sellQty = dynamicOrderSize;
             if (sellQty > btcBalance) {
-                sellQty = btcBalance;
-                if (sellQty < MIN_ORDER_SIZE) {
-                    sellQty = 0;
-                    log('WARN', `Saldo BTC insuficiente (${btcBalance.toFixed(8)} < ${sellQty.toFixed(8)}). Ignorando venda.`);
-                }
+                sellQty = Math.floor(btcBalance * 1e8) / 1e8;
+            }
+            if (sellQty > 0) {
+                sellQty = Math.max(MIN_ORDER_SIZE, Math.floor(sellQty * (1 - FEE_RATE) * 1e8) / 1e8); // Buffer para fee deduzida do BTC
+            }
+            if (sellQty < MIN_ORDER_SIZE) {
+                sellQty = 0;
+                log('WARN', `Saldo BTC insuficiente (${btcBalance.toFixed(8)} < ${dynamicOrderSize.toFixed(8)}). Ignorando venda.`);
             }
             if (!activeOrders.has('sell') && sellQty >= MIN_ORDER_SIZE) {
                 await placeOrder('sell', sellPrice, sellQty);
