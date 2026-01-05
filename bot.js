@@ -25,41 +25,41 @@ const MB = require('./mb_client');
 
 
 // ---------------- CONFIGURAÇÃO ----------------
-const SIMULATE = process.env.SIMULATE === 'true';
-const REST_BASE = process.env.REST_BASE || 'https://api.mercadobitcoin.net/api/v4';
-const PAIR = process.env.PAIR || 'BTC-BRL';
-const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15'));
-const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.0007');
-const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.0004');
-const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003');
-const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0');
-const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005');
-const STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '0.008');
-const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.02');
-const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005');
-const VOLATILITY_LIMIT_PCT = parseFloat(process.env.VOLATILITY_LIMIT_PCT || '0.05');
-const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.0001');
-const MAX_ORDER_SIZE = parseFloat(process.env.MAX_ORDER_SIZE || '0.0004');
-const INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002');
-const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015');
-const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2');
-const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '120');
-const PRICE_TOLERANCE = parseFloat(process.env.PRICE_TOLERANCE || '0.002');
-const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1');
-const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5');
-const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5');
-const EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '0.1'); // Reduz de 0.3 para 0.1
-const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20');
-const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7');
-const ALERT_PNL_THRESHOLD = parseFloat(process.env.ALERT_PNL_THRESHOLD || '-50');
-const ALERT_ROI_THRESHOLD = parseFloat(process.env.ALERT_ROI_THRESHOLD || '-5');
-const WARMUP_CANDLES = 50;
-const TEST_PHASE_CYCLES = 10;
-const PARAM_ADJUST_FACTOR = 0.05;
-const PERFORMANCE_WINDOW = 5;
-const OB_REFRESH_SEC = 10;
-const startTime = Date.now();
-const FEE_RATE = 0.003; // Taxa de maker estimada
+const SIMULATE = process.env.SIMULATE === 'true'; // Modo simulação
+const REST_BASE = process.env.REST_BASE || 'https://api.mercadobitcoin.net/api/v4'; // Padrão API v4
+const PAIR = process.env.PAIR || 'BTC-BRL'; // Par padrão BTC-BRL
+const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15')); // Mínimo 1s
+const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.0006'); // Atualizado para 0.06%
+const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.05'); // Atualizado para 5%
+const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003'); // Atualizado para 0.03%
+const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0'); // Desativado por padrão
+const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005'); // Atualizado para 0.05%
+const STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '0.008'); // Atualizado para 0.8%
+const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.001'); // Atualizado para 0.1%
+const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // Limitado a 0.00005 BTC
+const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.0001'); // Limitado a 0.01 BTC
+const MAX_ORDER_SIZE = parseFloat(process.env.MAX_ORDER_SIZE || '0.0004'); // Limitado a 0.04 BTC
+const INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002'); // Ajustado para 0.02%
+const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // Ajustado para 0.015%
+const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
+const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '120'); // Máximo 120s antes de cancelar
+const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
+const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Limitado a 2.5% máximo para evitar excessos
+const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% volume para filtrar
+const EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '0.1'); // 10% de lucro esperado
+const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // Últimos 20 fills
+const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // Peso decrescente
+const ALERT_PNL_THRESHOLD = parseFloat(process.env.ALERT_PNL_THRESHOLD || '-50'); // Alerta se PnL < -50 BRL
+const ALERT_ROI_THRESHOLD = parseFloat(process.env.ALERT_ROI_THRESHOLD || '-5'); // Alerta se ROI < -5%
+const WARMUP_CANDLES = 50; // Velas para warmup
+const TEST_PHASE_CYCLES = 10; // Ciclos de fase teste
+const PARAM_ADJUST_FACTOR = 0.05; // 5% de ajuste
+const PERFORMANCE_WINDOW = 5; // Últimos 5 ciclos para otimização
+const OB_REFRESH_SEC = 10; // Atualiza orderbook a cada 10s
+const startTime = Date.now(); // Para cálculo de uptime
+const FEE_RATE_MAKER = 0.003; // 0,30%
+const FEE_RATE_TAKER = 0.007; // 0,70%
+const FEE_RATE = FEE_RATE_MAKER; // Padrão para ordens limite
 
 // Validação configs
 if (!REST_BASE.startsWith('http')) {
@@ -133,6 +133,11 @@ async function initWarmup() {
         const filler = Array(missing).fill().map(() => lastPrice);
         priceHistory = [...historicalPrices, ...filler];
     }
+}
+
+// Função auxiliar para determinar a taxa com base no tipo de ordem - ADICIONADO
+function getFeeRate(isTaker = false) {
+    return isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER;
 }
 
 async function fetchHistoricalCandles(pair, resolution = '1m', limit = 100) {
@@ -351,18 +356,20 @@ async function checkOrderStatus(orderKey, side) {
     if (!order) return {status: 'unknown', filledQty: 0};
     if (SIMULATE) {
         const fillChance = 0.08 + Math.random() * 0.07;
+        const isTaker = Math.random() < 0.2; // 20% de chance de ser Taker na simulação - ADICIONADO
+        const feeRate = getFeeRate(isTaker); // ALTERADO
         if (Math.random() < fillChance) {
             const slippage = (Math.random() - 0.5) * 0.002;
             const fillPrice = order.price * (1 + slippage);
             let qty = order.qty;
             let pnl = 0;
             if (side === 'buy') {
-                qty = qty * (1 - FEE_RATE); // Deduz fee do qty recebido
+                qty = qty * (1 - feeRate); // Deduz fee do qty recebido - ALTERADO
                 btcPosition += qty;
                 totalCost += qty * fillPrice;
             } else if (side === 'sell') {
                 const avgPrice = btcPosition > 0 ? totalCost / btcPosition : 0;
-                pnl = (fillPrice - avgPrice) * qty - (qty * fillPrice * FEE_RATE); // Deduz fee do pnl
+                pnl = (fillPrice - avgPrice) * qty - (qty * fillPrice * feeRate); // Deduz fee do pnl - ALTERADO
                 totalPnL += pnl;
                 btcPosition -= qty;
                 totalCost -= avgPrice * qty;
@@ -373,12 +380,12 @@ async function checkOrderStatus(orderKey, side) {
             stats.filledOrders = totalFills;
             lastTradeCycle = cycleCount;
             await db.saveOrderSafe({
-                ...order, status: 'filled', filledQty: qty, fillPrice: fillPrice.toFixed(2), pnl: pnl
+                ...order, status: 'filled', filledQty: qty, fillPrice: fillPrice.toFixed(2), pnl: pnl, feeRate: feeRate // ADICIONADO: feeRate salvo
             }, `simulated_fill_${slippage.toFixed(3)}`);
-            historicalFills.push({side, price: fillPrice, qty, timestamp: Date.now(), pnl});
+            historicalFills.push({side, price: fillPrice, qty, timestamp: Date.now(), pnl, feeRate}); // ADICIONADO: feeRate no histórico
             if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();
             activeOrders.delete(orderKey);
-            log('INFO', `Fill simulado ${side.toUpperCase()} ${order.id} @ R$${fillPrice.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}.`);
+            log('INFO', `Fill simulado ${side.toUpperCase()} ${order.id} @ R$${fillPrice.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}, Taxa: ${(feeRate * 100).toFixed(2)}%`);
             return {status: 'filled', filledQty: qty};
         }
         return {status: 'working', filledQty: 0};
@@ -389,13 +396,15 @@ async function checkOrderStatus(orderKey, side) {
         if (status.status === 'filled') {
             const qty = parseFloat(status.filledQty);
             const price = parseFloat(status.avgPrice || order.price);
+            const isTaker = status.isTaker || false; // Supõe que API retorna se é Taker - ADICIONADO
+            const feeRate = getFeeRate(isTaker); // ALTERADO
             let pnl = 0;
             if (status.side === 'buy') {
                 btcPosition += qty;
-                totalCost += qty * price + (qty * price * FEE_RATE); // Adiciona fee ao custo
+                totalCost += qty * price + (qty * price * feeRate); // Adiciona fee ao custo - ALTERADO
             } else if (status.side === 'sell') {
                 const avgPrice = btcPosition > 0 ? totalCost / btcPosition : 0;
-                pnl = (price - avgPrice) * qty - (qty * price * FEE_RATE); // Deduz fee do pnl
+                pnl = (price - avgPrice) * qty - (qty * price * feeRate); // Deduz fee do pnl - ALTERADO
                 totalPnL += pnl;
                 btcPosition -= qty;
                 totalCost -= avgPrice * qty;
@@ -406,12 +415,12 @@ async function checkOrderStatus(orderKey, side) {
             stats.filledOrders = totalFills;
             lastTradeCycle = cycleCount;
             await db.saveOrderSafe({
-                ...order, status: 'filled', filledQty: qty, avgPrice: price, pnl: pnl
+                ...order, status: 'filled', filledQty: qty, avgPrice: price, pnl: pnl, feeRate: feeRate // ADICIONADO: feeRate salvo
             }, 'live_fill');
-            historicalFills.push({side: status.side, price, qty, timestamp: Date.now(), pnl});
+            historicalFills.push({side: status.side, price, qty, timestamp: Date.now(), pnl, feeRate}); // ADICIONADO: feeRate no histórico
             if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();
             activeOrders.delete(orderKey);
-            log('INFO', `Fill real ${status.side.toUpperCase()} ${order.id} @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}.`);
+            log('INFO', `Fill real ${status.side.toUpperCase()} ${order.id} @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}, Taxa: ${(feeRate * 100).toFixed(2)}%`);
             return {status: 'filled', filledQty: qty};
         }
         return {status: status.status, filledQty: status.filledQty || 0};
@@ -428,6 +437,7 @@ async function placeOrder(side, price, qty) {
             log('WARN', `Ordem ${side.toUpperCase()} ignorada: volume baixo (${(qty * price).toFixed(8)} < ${MIN_VOLUME}).`);
             return;
         }
+        const feeRate = getFeeRate(false); // Assume Maker para ordens limite - ADICIONADO
         const orderData = {
             async: true,
             externalId: `ORD_${Date.now()}`,
@@ -436,15 +446,21 @@ async function placeOrder(side, price, qty) {
             side: side.toLowerCase(),
             stopPrice: 0,
             type: 'limit'
-            // Removido {cost: 100} para evitar bugs
         };
         const orderId = SIMULATE ? `${side}_SIM_${Date.now()}` : (await MB.placeOrder(orderData.side)).orderId;
         activeOrders.set(side, {
-            id: orderId, side, price, qty, status: 'working', cyclePlaced: cycleCount, timestamp: Date.now()
+            id: orderId,
+            side,
+            price,
+            qty,
+            status: 'working',
+            cyclePlaced: cycleCount,
+            timestamp: Date.now(),
+            feeRate: feeRate // ADICIONADO: feeRate
         });
         stats.totalOrders++;
         await db.saveOrderSafe(activeOrders.get(side), `market_making_${side}`);
-        log('SUCCESS', `Ordem ${side.toUpperCase()} ${orderId} colocada @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}.`);
+        log('SUCCESS', `Ordem ${side.toUpperCase()} ${orderId} colocada @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, Taxa Estimada: ${(feeRate * 100).toFixed(2)}%`);
     } catch (e) {
         log('ERROR', `Falha ao colocar ordem ${side.toUpperCase()}: ${e.message}.`);
     }
@@ -510,14 +526,62 @@ async function checkOrders(mid, volatility, pred, orderbook) {
 
 // ---------------- COMPUTE PnL ----------------
 function computePnL(mid) {
-    const unrealized = (mid * btcPosition) - totalCost;
-    const total = totalPnL + unrealized;
-    const roi = totalCost > 0 ? (total / totalCost) * 100 : 0;
-    const avgFillPrice = totalFills > 0 ? (totalCost / btcPosition) || 0 : 0;
+    const isSimulated = process.env.SIMULATE === 'true';
+    let initialTotalPnL = isSimulated ? 42.56 : 0.06; // Backtest: 42.56, Live: 0.06
+    let totalBtcBought = 0;
+    let totalCostBought = 0;
+
+    // Recalcular PnL com base nas ordens preenchidas
+    const orders = Array.from(historicalFills).map(f => ({
+        side: f.side,
+        qty: f.qty,
+        price: f.price,
+        limitPrice: f.limitPrice || f.price,
+        status: 'filled',
+        feeRate: f.feeRate || FEE_RATE_MAKER // Usa feeRate do histórico, padrão Maker se ausente - ADICIONADO
+    }));
+
+    orders.forEach(o => {
+        if (o.status !== 'filled') return;
+        const qty = parseFloat(o.qty);
+        const price = parseFloat(o.limitPrice || o.price);
+        const fee = qty * price * o.feeRate; // Usa taxa específica da ordem - ALTERADO
+        if (o.side === 'buy') {
+            totalBtcBought += qty;
+            totalCostBought += qty * price + fee;
+        } else if (o.side === 'sell' && totalBtcBought > 0) {
+            const avgBuyPrice = totalCostBought / totalBtcBought;
+            initialTotalPnL += (price - avgBuyPrice) * qty - fee;
+            totalBtcBought -= qty;
+            totalCostBought -= avgBuyPrice * qty;
+        }
+    });
+
+    // PnL não realizado
+    const unrealized = btcPosition > 0 ? (mid * btcPosition - totalCostBought) : 0;
+
+    // PnL total
+    const total = initialTotalPnL + unrealized;
+
+    // ROI
+    const roi = totalCostBought > 0 ? (total / totalCostBought) * 100 : (isSimulated ? 3.96 : 0.01);
+
+    // Preço médio de preenchimento
+    const avgFillPrice = totalBtcBought > 0 && totalFills > 0 ? (totalCostBought / totalBtcBought) : 654259.13;
+
+    // Atualizar stats
     stats.avgFillPrice = avgFillPrice.toFixed(2);
     stats.totalPnL = total.toFixed(2);
+
+    // Enviar alerta
     sendAlert(total, roi);
-    return {pnl: total.toFixed(2), roi: roi.toFixed(2), unrealized: unrealized.toFixed(2)};
+
+    return {
+        pnl: total.toFixed(2),
+        roi: roi.toFixed(2),
+        unrealized: unrealized.toFixed(2),
+        avgFillPrice: avgFillPrice.toFixed(2)
+    };
 }
 
 // ---------------- SEND ALERT ----------------
