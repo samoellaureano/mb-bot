@@ -63,6 +63,22 @@ const FEE_RATE_MAKER = 0.003; // 0,30%
 const FEE_RATE_TAKER = 0.007; // 0,70%
 const FEE_RATE = FEE_RATE_MAKER; // Padrão para ordens limite
 
+// -------- AJUSTE DINÂMICO DO RECOVERY BUFFER --------
+const RECOVERY_BUFFER_BASE = 0.0005; // Buffer base de recuperação: 0.05%
+const VOL_MIN_RECOVERY = 0.002; // Volatilidade mínima: 0.20%
+const VOL_MAX_RECOVERY = 0.02; // Volatilidade máxima: 2.00%
+const RECOVERY_FATOR_MIN = 1.0; // Fator mínimo: 1.0x
+const RECOVERY_FATOR_MAX = 2.0; // Fator máximo: 2.0x
+
+function calculateDynamicRecoveryBuffer(volatilityPct) {
+    const volDecimal = volatilityPct / 100;
+    if (volDecimal <= VOL_MIN_RECOVERY) return RECOVERY_BUFFER_BASE * RECOVERY_FATOR_MIN;
+    if (volDecimal >= VOL_MAX_RECOVERY) return RECOVERY_BUFFER_BASE * RECOVERY_FATOR_MAX;
+    const fator = RECOVERY_FATOR_MIN + (RECOVERY_FATOR_MAX - RECOVERY_FATOR_MIN) * ((volDecimal - VOL_MIN_RECOVERY) / (VOL_MAX_RECOVERY - VOL_MIN_RECOVERY));
+    const adjustedBuffer = RECOVERY_BUFFER_BASE * fator;
+    return adjustedBuffer;
+}
+
 // Validação configs
 if (!REST_BASE.startsWith('http')) {
     log('ERROR', 'REST_BASE inválido. Encerrando.');
@@ -873,8 +889,8 @@ async function runCycle() {
         dynamicOrderSize *= regimeSizeMult;
         const refPrice = mid * (1 + totalBias);
         
-        // Buffer de Recuperação de Resíduo: Aumenta levemente o spread se o PnL estiver negativo
-        const pnlResidueBuffer = stats.totalPnL < 0 ? 0.0005 : 0; // +0.05% de spread para recuperar resíduos
+        // Buffer de Recuperação de Resíduo: Aumenta dinamicamente o spread se o PnL estiver negativo
+        const pnlResidueBuffer = stats.totalPnL < 0 ? calculateDynamicRecoveryBuffer(pred.volatility * 100) : 0;
         const finalSpreadPct = dynamicSpreadPct + pnlResidueBuffer;
 
         // Arredondamento Favorável: Compra (Floor), Venda (Ceil) para evitar perdas por precisão

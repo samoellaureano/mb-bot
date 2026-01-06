@@ -597,7 +597,8 @@ async function getLiveData() {
                 minVolume: MIN_VOLUME,
                 volatilityLimit: parseFloat(process.env.VOLATILITY_LIMIT || 0.05),
                 feeRateMaker: FEE_RATE_MAKER, // ADICIONADO
-                feeRateTaker: FEE_RATE_TAKER // ADICIONADO
+                feeRateTaker: FEE_RATE_TAKER, // ADICIONADO
+                recoveryBufferDynamic: totalPnL < 0 ? (pred.volatility * 100 * 0.0025).toFixed(4) : '0.0000' // Buffer dinâmico baseado em volatilidade
             },
             debug: {
                 marketInterest,
