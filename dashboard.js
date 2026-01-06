@@ -577,6 +577,8 @@ async function getLiveData() {
                 spreadPct: SPREAD_PCT,
                 orderSize: ORDER_SIZE,
                 cycleSec: parseInt(process.env.CYCLE_SEC || '15'),
+                isRecovering: totalPnL < 0,
+                pnlResidualHistory: pnlHistory.filter(p => p < 0),
                 maxOrderAgeSecMinHour: (() => {
                     const ageSec = MAX_ORDER_AGE;
                     const ageMin = Math.floor(ageSec / 60);
