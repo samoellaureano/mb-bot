@@ -1,0 +1,9 @@
+nohup: ignoring input
+03:42:41.427 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+03:42:41.430 [INFO]   [DB] Carregados 6 fills históricos. 
+[03:42:41] [DASHBOARD INFO] Carregados 6 fills históricos do banco de dados. 
+[03:42:41] [DASHBOARD INFO] Loaded PNL history with 32 points from /home/ubuntu/mb-bot/pnl_history.json 
+[03:42:41] [DASHBOARD INFO] Dashboard ready at http://localhost:3001 - Mode: LIVE 
+2026-01-06T03:42:41.617Z [WARN]   Token expired/near expiry, reauthenticating...
+2026-01-06T03:42:41.617Z [INFO]   API_KEY: bdb29a91...
+2026-01-06T03:42:41.617Z [INFO]   API_SECRET: e14075f1...

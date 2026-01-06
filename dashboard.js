@@ -355,27 +355,41 @@ async function getLiveData() {
             }
 
             try {
-                const response = await axios.get(`https://api.mercadobitcoin.net/api/v4/${mbClient.PAIR.replace('-', '')}/orderbook?limit=100`, {
-                    timeout: 10000,
-                    headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`}
+                // Usar API pública para orderbook para evitar problemas de autenticação/rate limit no dashboard
+                const response = await axios.get(`https://api.mercadobitcoin.net/api/v4/${mbClient.PAIR}/orderbook?limit=20`, {
+                    timeout: 5000
                 });
-                orderbook = {bids: response.data.bids.slice(0, 10), asks: response.data.asks.slice(0, 10)};
+                if (response.data && response.data.bids && response.data.asks) {
+                    orderbook = {
+                        bids: response.data.bids.slice(0, 10),
+                        asks: response.data.asks.slice(0, 10)
+                    };
+                } else {
+                    throw new Error('Invalid orderbook data structure');
+                }
             } catch (e) {
-                log('ERROR', 'Failed to fetch orderbook, using last ticker price:', e.message);
-                const mid = parseFloat(ticker.last);
-                orderbook = {bids: [[mid, 0.01]], asks: [[mid, 0.01]], fallback: true};
+                log('ERROR', 'Failed to fetch orderbook in dashboard:', e.message);
+                // Fallback para o ticker, mas tenta manter um spread mínimo simbólico se bid/ask forem iguais
+                const tBid = parseFloat(ticker.buy || ticker.last);
+                const tAsk = parseFloat(ticker.sell || ticker.last);
+                if (tBid === tAsk) {
+                    orderbook = {bids: [[tBid * 0.9999, 0.01]], asks: [[tAsk * 1.0001, 0.01]], fallback: true};
+                } else {
+                    orderbook = {bids: [[tBid, 0.01]], asks: [[tAsk, 0.01]], fallback: true};
+                }
             }
         }
 
         const fills = orders.filter(o => o.status === 'filled').length;
         const now = Date.now();
-        const bid = parseFloat(ticker.buy);
-        const ask = parseFloat(ticker.sell);
-        const mid = (bid + ask) / 2;
-
-        const bestBid = orderbook.bids.length ? parseFloat(orderbook.bids[0][0]) : bid;
-        const bestAsk = orderbook.asks.length ? parseFloat(orderbook.asks[0][0]) : ask;
-        const spreadPct = ((bestAsk - bestBid) / ((bestAsk + bestBid) / 2)) * 100;
+        const bid = parseFloat(ticker.buy || ticker.last);
+        const ask = parseFloat(ticker.sell || ticker.last);
+        
+        // Priorizar dados do orderbook real para bid/ask
+        const bestBid = orderbook.bids && orderbook.bids.length ? parseFloat(orderbook.bids[0][0]) : bid;
+        const bestAsk = orderbook.asks && orderbook.asks.length ? parseFloat(orderbook.asks[0][0]) : ask;
+        const mid = (bestBid + bestAsk) / 2;
+        const spreadPct = bestAsk > bestBid ? ((bestAsk - bestBid) / mid) * 100 : 0;
 
         const obPrices = [
             ...orderbook.bids.map(b => parseFloat(b[0])),
@@ -416,11 +430,14 @@ async function getLiveData() {
             }))
             .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
+        let totalInvested = 0;
         filledOrders.forEach(o => {
             const fee = o.qty * o.price * o.feeRate;
             if (o.side === 'buy') {
                 btcPosition += o.qty;
-                totalCost += o.qty * o.price + fee;
+                const cost = o.qty * o.price + fee;
+                totalCost += cost;
+                totalInvested += cost; // Capital total que entrou na estratégia
             } else if (o.side === 'sell' && btcPosition > 0) {
                 const avgPrice = totalCost / btcPosition;
                 btcPosition -= o.qty;
@@ -552,7 +569,8 @@ async function getLiveData() {
                 emaShort: parseFloat(pred.emaShort.toFixed(2)),
                 emaLong: parseFloat(pred.emaLong.toFixed(2)),
                 volatility: parseFloat(pred.volatility.toFixed(2)),
-                roi: totalCost > 0 ? ((totalPnL / totalCost) * 100).toFixed(2) : (SIMULATE ? 3.96 : 0.01) // ALTERADO
+                regime: pred.regime,
+                roi: totalInvested > 0 ? ((totalPnL / totalInvested) * 100).toFixed(2) : (SIMULATE ? 3.96 : 0.00)
             },
             config: {
                 simulate: SIMULATE,

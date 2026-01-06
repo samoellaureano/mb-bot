@@ -39,6 +39,8 @@ const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.001'); // A
 const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // Limitado a 0.00005 BTC
 const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.0001'); // Limitado a 0.01 BTC
 const MAX_ORDER_SIZE = parseFloat(process.env.MAX_ORDER_SIZE || '0.0004'); // Limitado a 0.04 BTC
+const MAX_POSITION = parseFloat(process.env.MAX_POSITION || '0.0003'); // Posição máxima em BTC
+const DAILY_LOSS_LIMIT = parseFloat(process.env.DAILY_LOSS_LIMIT || '10'); // Limite de perda diária em BRL
 const INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002'); // Ajustado para 0.02%
 const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // Ajustado para 0.015%
 const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
@@ -260,7 +262,23 @@ function analyzeHistoricalFills() {
     return {recentBias: recentBias * BIAS_FACTOR, successRate, avgWeightedPnL};
 }
 
-function fetchPricePrediction(midPrice) {
+function calculateOrderbookImbalance(orderbook) {
+    if (!orderbook || !orderbook.bids.length || !orderbook.asks.length) return 0;
+    const bidVol = orderbook.bids.slice(0, 5).reduce((sum, b) => sum + b[1], 0);
+    const askVol = orderbook.asks.slice(0, 5).reduce((sum, a) => sum + a[1], 0);
+    return (bidVol - askVol) / (bidVol + askVol); // -1 a 1
+}
+
+function identifyMarketRegime(rsi, volatility, trendScore) {
+    if (volatility < 0.3 && Math.abs(rsi - 50) < 10) return 'RANGING'; // Lateral
+    if (trendScore > 2.5 && rsi > 60) return 'BULL_TREND'; // Tendência Forte de Alta
+    if (trendScore < 0.5 && rsi < 40) return 'BEAR_TREND'; // Tendência Forte de Baixa
+    if (trendScore > 1.5) return 'BULLISH'; // Tendência Leve de Alta
+    if (trendScore < 1.5) return 'BEARISH'; // Tendência Leve de Baixa
+    return 'NEUTRAL';
+}
+
+function fetchPricePrediction(midPrice, orderbook) {
     priceHistory.push(midPrice);
     if (priceHistory.length > 60) priceHistory.shift();
     const rsi = calculateRSI(priceHistory, 12);
@@ -268,12 +286,18 @@ function fetchPricePrediction(midPrice) {
     const emaLong = calculateEMA(priceHistory, 20);
     const {macd, signal} = calculateMACD(priceHistory);
     const volatility = calculateVolatility(priceHistory); // Já em % (e.g., 0.87)
+    const imbalance = calculateOrderbookImbalance(orderbook);
     const histAnalysis = analyzeHistoricalFills();
+    
     let trendScore = 0;
     if (emaShort > emaLong) trendScore += 1;
     if (rsi > 50) trendScore += 1;
     if (macd > signal) trendScore += 1;
+    if (imbalance > 0.2) trendScore += 0.5; // Pressão de compra
+    if (imbalance < -0.2) trendScore -= 0.5; // Pressão de venda
     if (histAnalysis.recentBias > 0) trendScore += 0.5;
+    
+    const regime = identifyMarketRegime(rsi, volatility, trendScore);
     const trend = trendScore > 2 ? 'up' : (trendScore < 1.5 ? 'down' : 'neutral');
     let rsiConf = Math.abs(rsi - 50) / 50; // 0-1
     let emaConf = Math.abs(emaShort - emaLong) / (emaLong || 1); // Normalizado pelo preço
@@ -307,6 +331,7 @@ function fetchPricePrediction(midPrice) {
     });
     return {
         trend,
+        regime,
         confidence,
         rsi,
         emaShort,
@@ -519,11 +544,11 @@ async function checkOrders(mid, volatility, pred, orderbook) {
             log('SUCCESS', `Take-profit acionado para ordem ${key.toUpperCase()}.`);
             continue;
         }
-        // Melhoria: Sistema Anti-Stuck para ordens reais
-        const isStuck = !SIMULATE && timeAge > 60 && priceDrift > 0.005;
+        // Melhoria: Sistema Anti-Stuck Agressivo para destravar capital
+        const isStuck = !SIMULATE && (timeAge > 300 || priceDrift > 0.01); // Cancela se > 5min ou > 1% de drift
         if (timeAge > MAX_ORDER_AGE || (age >= MIN_ORDER_CYCLES && !hasInterest) || isStuck) {
             await tryCancel(key);
-            log('INFO', `Ordem ${key.toUpperCase()} cancelada por ${isStuck ? 'travamento (stuck)' : 'idade/liquidez'}.`);
+            log('INFO', `Ordem ${key.toUpperCase()} cancelada por ${isStuck ? 'travamento (stuck/obsoleta)' : 'idade/liquidez'}.`);
             continue;
         }
         if (age >= MIN_ORDER_CYCLES && priceDrift > PRICE_DRIFT * (1 + PRICE_DRIFT_BOOST)) {
@@ -727,7 +752,7 @@ async function runCycle() {
         }
 
         // Calcular indicadores e previsão
-        const pred = fetchPricePrediction(mid);
+        const pred = fetchPricePrediction(mid, orderbook);
         marketTrend = pred.trend;
 
         // Melhoria: Spread dinâmico agressivo baseado em volatilidade e RSI
@@ -750,14 +775,48 @@ async function runCycle() {
         dynamicOrderSize = Math.min(MAX_ORDER_SIZE, dynamicOrderSize);
         currentBaseSize = dynamicOrderSize;
 
-        // Melhoria: Viés de tendência aprimorado com confiança
-        const inventoryBias = getInventoryBias(mid);
-        const trendFactor = parseFloat(pred.confidence) > 2.0 ? 0.02 : 0.01;
+        // Otimização de Regime de Mercado (Trend Specialist)
+        let regimeSpreadMult = 1.0;
+        let regimeBiasMult = 1.0;
+        let regimeSizeMult = 1.0;
+
+        switch (pred.regime) {
+            case 'BULL_TREND':
+                regimeSpreadMult = 0.8; // Spread mais curto para não perder o bonde
+                regimeBiasMult = 1.5;   // Viés de compra mais forte
+                regimeSizeMult = 1.2;   // Aumenta a mão na alta
+                break;
+            case 'BEAR_TREND':
+                regimeSpreadMult = 1.5; // Spread mais largo para se proteger
+                regimeBiasMult = 1.5;   // Viés de venda mais forte
+                regimeSizeMult = 0.8;   // Diminui a mão na queda
+                break;
+            case 'RANGING':
+                regimeSpreadMult = 1.2; // Spread maior para capturar oscilação lateral
+                regimeBiasMult = 0.5;   // Viés neutro
+                regimeSizeMult = 1.0;
+                break;
+        }
+
+        dynamicSpreadPct *= regimeSpreadMult;
+
+        const targetBtc = MAX_POSITION / 2;
+        const inventoryDeviation = (btcPosition - targetBtc) / MAX_POSITION;
+        const inventorySkew = -inventoryDeviation * 0.01 * regimeBiasMult;
+        
+        const avgPrice = stats.avgFillPrice > 0 ? parseFloat(stats.avgFillPrice) : mid;
+        const dcaBias = mid < avgPrice * 0.95 ? 0.005 : 0;
+        
+        const trendFactor = (parseFloat(pred.confidence) > 2.0 ? 0.003 : 0.0015) * regimeBiasMult;
         const trendBias = pred.trend === 'up' ? trendFactor : (pred.trend === 'down' ? -trendFactor : 0);
-        const totalBias = Math.min(0.03, Math.max(-0.03, inventoryBias + trendBias));
+        
+        const totalBias = Math.min(0.03, Math.max(-0.03, inventorySkew + trendBias + dcaBias));
+        dynamicOrderSize *= regimeSizeMult;
         const refPrice = mid * (1 + totalBias);
-        let buyPrice = parseFloat((refPrice * (1 - dynamicSpreadPct / 2)).toFixed(2));
-        let sellPrice = parseFloat((refPrice * (1 + dynamicSpreadPct / 2)).toFixed(2));
+        
+        // Garantir que as ordens sejam Post-Only (Maker) comparando com o melhor bid/ask
+        let buyPrice = Math.min(parseFloat((refPrice * (1 - dynamicSpreadPct / 2)).toFixed(2)), bestBid);
+        let sellPrice = Math.max(parseFloat((refPrice * (1 + dynamicSpreadPct / 2)).toFixed(2)), bestAsk);
         if (buyPrice >= sellPrice || Math.abs(buyPrice - sellPrice) / mid < MIN_SPREAD_PCT) {
             log('WARN', 'Spread inválido ou muito estreito. Ajustando para spread natural.');
             buyPrice = parseFloat((mid * (1 - dynamicSpreadPct / 2)).toFixed(2));
@@ -852,15 +911,22 @@ async function runCycle() {
         // Otimizar parâmetros
         if (cycleCount % PERFORMANCE_WINDOW === 0) optimizeParams();
 
+        // Trava de Segurança: Perda Máxima Diária
+        const dailyPnl = parseFloat(pnlData.pnl);
+        if (dailyPnl <= -DAILY_LOSS_LIMIT) {
+            log('ALERT', `CRÍTICO: Limite de perda diária atingido (${dailyPnl.toFixed(2)} <= -${DAILY_LOSS_LIMIT}). Encerrando bot por segurança.`);
+            process.exit(1);
+        }
+
         // Mini-dashboard
         log('INFO', '────────────── Mini Dashboard ──────────────');
-        log('INFO', `Ciclo: ${cycleCount} | Mid Price: ${mid.toFixed(2)} | Tendência: ${marketTrend}`);
+        log('INFO', `Ciclo: ${cycleCount} | Mid Price: ${mid.toFixed(2)} | Tendência: ${marketTrend} | Regime: ${pred.regime}`);
         log('INFO', `RSI: ${pred.rsi.toFixed(2)} | EMA Curta: ${pred.emaShort.toFixed(2)} | EMA Longa: ${pred.emaLong.toFixed(2)}`);
         log('INFO', `MACD: ${pred.macd?.toFixed(2) || 'N/A'} | Signal: ${pred.signal?.toFixed(2) || 'N/A'} | Volatilidade: ${pred.volatility.toFixed(2)}%`);
         log('INFO', `Score Lucro Esperado: ${pred.expectedProfit.toFixed(2)} | Confiança: ${pred.confidence.toFixed(2)}`);
         log('INFO', `Spread: ${(dynamicSpreadPct * 100).toFixed(3)}% | Buy Price: ${buyPrice.toFixed(2)} | Sell Price: ${sellPrice.toFixed(2)}`);
         log('INFO', `Tamanho Ordens: ${dynamicOrderSize.toFixed(8)} BTC | Depth Factor: ${depthFactor.toFixed(2)}`);
-        log('INFO', `Viés Inventário: ${inventoryBias.toFixed(6)} | Viés Tendência: ${trendBias.toFixed(6)} | Total Bias: ${totalBias.toFixed(6)}`);
+        log('INFO', `Viés Inventário (Skew): ${inventorySkew.toFixed(6)} | Viés Tendência: ${trendBias.toFixed(6)} | Total Bias: ${totalBias.toFixed(6)}`);
         log('INFO', `PnL Total: ${pnlData.pnl} BRL | ROI: ${pnlData.roi}% | PnL Não Realizado: ${pnlData.unrealized} BRL`);
         log('INFO', `Posição BTC: ${btcPosition.toFixed(8)} | Saldo BRL: ${brlBalance.toFixed(2)} | Saldo BTC: ${btcBalance.toFixed(8)}`);
         log('INFO', `Ordens Ativas: ${activeOrders.size} | Fills: ${totalFills} | Cancelamentos: ${stats.cancels}`);

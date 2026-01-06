@@ -148,8 +148,11 @@
                     <h3 class="text-sm font-semibold mb-2 text-gray-300">Indicadores Técnicos</h3>
                     <ul class="space-y-1 text-xs sm:text-sm">
                         <li title="Tendência do mercado com base em indicadores" class="p-1 rounded">
-                            Tendência: <span id="trend" class="font-bold">Neutra ➡️ - R$ 654.973,00</span>
+                                    Tendência: <span id="trend">Neutra ➡️ - R$ 654.973,00</span>
                         </li>
+                        <li title="Regime de mercado atual" class="p-1 rounded">
+                            Regime: <span id="regime" class="font-bold">NEUTRAL</span>
+                        </li>     </li>
                         <li title="Índice de Força Relativa (0-100, <30 sobrevendido, >70 sobrecomprado)"
                             class="p-1 rounded">
                             RSI: <span id="rsi">33.22 ✅</span>
@@ -499,6 +502,13 @@
             document.getElementById('roi').textContent = data.stats?.roi
                 ? `${parseFloat(data.stats.roi).toFixed(2)}% ${data.stats.roi > 0 ? '📈' : data.stats.roi < 0 ? '📉' : '😐'}`
                 : '0.01% 📈';
+            
+            const regimeEl = document.getElementById('regime');
+            if (data.stats?.regime) {
+                regimeEl.textContent = data.stats.regime;
+                regimeEl.className = data.stats.regime.includes('BULL') ? 'text-green-400 font-bold' : 
+                                   data.stats.regime.includes('BEAR') ? 'text-red-400 font-bold' : 'text-gray-400 font-bold';
+            }
             document.getElementById('roi').parentElement.className = data.stats?.roi && data.stats.roi < 0 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
 
             const trendEl = document.getElementById('trend');
