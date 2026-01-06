@@ -394,44 +394,40 @@ async function getLiveData() {
 
         let btcPosition = 0;
         let totalCost = 0;
-        let totalPnL = SIMULATE ? 42.56 : 0.06; // ALTERADO para alinhar com bot.js
+        let totalPnL = 0; // Reset para cálculo limpo a cada requisição
         const newPnlHistoryWithTimestamps = [];
 
-        // Carregar fills históricos - ADICIONADO
-        historicalFills = SIMULATE ? historicalFills : await loadHistoricalFills();
+        // Carregar fills históricos do banco para cálculo real
+        const dbStats = await db.getStats({hours: 24});
+        totalPnL = dbStats.total_pnl || 0;
+        
+        // Em modo simulação, adicionamos o valor base
+        if (SIMULATE) totalPnL += 42.56;
 
-        // Calcular PnL com base nas ordens preenchidas
+        // Re-calcular posição e custo médio para PnL não realizado
         let filledOrders = orders
             .filter(o => o.status === 'filled')
             .map(o => ({
                 side: o.side,
                 qty: parseFloat(o.qty),
                 price: parseFloat(o.limitPrice || o.price),
-                feeRate: o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER, // ALTERADO: usar feeRate da ordem
+                feeRate: o.feeRate || (o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER),
                 timestamp: o.created_at ? new Date(o.created_at * 1000).toISOString() : new Date().toISOString()
             }))
             .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
         filledOrders.forEach(o => {
-            const fee = o.qty * o.price * o.feeRate; // ALTERADO: usar taxa específica
+            const fee = o.qty * o.price * o.feeRate;
             if (o.side === 'buy') {
                 btcPosition += o.qty;
                 totalCost += o.qty * o.price + fee;
             } else if (o.side === 'sell' && btcPosition > 0) {
                 const avgPrice = totalCost / btcPosition;
-                totalPnL += (o.price - avgPrice) * o.qty - fee;
                 btcPosition -= o.qty;
                 totalCost -= avgPrice * o.qty;
             }
-            newPnlHistoryWithTimestamps.push({value: parseFloat(totalPnL.toFixed(8)), timestamp: o.timestamp});
-            historicalFills.push({
-                side: o.side,
-                price: o.price,
-                qty: o.qty,
-                timestamp: new Date(o.timestamp).getTime(),
-                pnl: o.side === 'sell' ? (o.price - (totalCost / btcPosition || o.price)) * o.qty - fee : 0,
-                feeRate: o.feeRate // ADICIONADO
-            });
+            if (btcPosition < 0) btcPosition = 0;
+            if (totalCost < 0) totalCost = 0;
         });
 
         if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();

@@ -46,7 +46,7 @@ const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '120'); // Máximo 1
 const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
 const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Limitado a 2.5% máximo para evitar excessos
 const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% volume para filtrar
-const EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '0.1'); // 10% de lucro esperado
+const EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '0.0005'); // 0.05% de lucro esperado (ajustado)
 const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // Últimos 20 fills
 const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // Peso decrescente
 const ALERT_PNL_THRESHOLD = parseFloat(process.env.ALERT_PNL_THRESHOLD || '-50'); // Alerta se PnL < -50 BRL
@@ -275,14 +275,25 @@ function fetchPricePrediction(midPrice) {
     if (macd > signal) trendScore += 1;
     if (histAnalysis.recentBias > 0) trendScore += 0.5;
     const trend = trendScore > 2 ? 'up' : (trendScore < 1.5 ? 'down' : 'neutral');
-    let rsiConf = Math.abs(rsi - 50) / 50;
-    let emaConf = Math.abs(emaShort - emaLong) / (emaLong || 1);
-    let macdConf = Math.abs(macd - signal) / Math.max(Math.abs(macd), 1);
-    let volConf = Math.min(volatility / 100, 1); // Corrige escala (e.g., 0.87% -> 0.0087)
-    let histConf = histAnalysis.successRate;
+    let rsiConf = Math.abs(rsi - 50) / 50; // 0-1
+    let emaConf = Math.abs(emaShort - emaLong) / (emaLong || 1); // Normalizado pelo preço
+    // Corrigir macdConf: normalizar pela média dos preços, não pelo MACD
+    let macdConf = Math.abs(macd - signal) / (midPrice || 1); // Normalizado pelo preço médio
+    let volConf = Math.min(volatility / MAX_VOLATILITY_PCT, 1); // 0-1
+    let histConf = histAnalysis.successRate; // 0-1
     let confidence = 0.3 * rsiConf + 0.25 * emaConf + 0.2 * macdConf + 0.15 * volConf + 0.1 * histConf;
-    const expectedProfit = confidence * (trendScore / 3) * (1 + histAnalysis.avgWeightedPnL / midPrice);
-    const normalizedExpectedProfit = Math.min(Math.max(expectedProfit, 0), 1);
+    
+    // Fórmula simplificada e eficaz para expectedProfit
+    // Base: spread (potencial de lucro por operação) em percentual
+    const spreadBase = SPREAD_PCT * 10000; // Ex: 0.0006 -> 6
+    // Multiplicador de volatilidade (mais vol = mais oportunidade)
+    const volMultiplier = 1 + (volatility / 5); // Ex: 2.5% -> 1.5
+    // Bonus de tendência (sempre permite operação, mas favorece tendências)
+    const trendBonus = trendScore > 1.5 ? 2.0 : (trendScore > 0.5 ? 1.5 : 1.0);
+    // Fórmula final: spread * vol * tendência
+    const expectedProfit = spreadBase * volMultiplier * trendBonus;
+    // Normaliza para 0-1 (100 = 0.01 = 1%)
+    const normalizedExpectedProfit = Math.min(Math.max(expectedProfit / 10000, 0), 1);
     log('INFO', 'Previsão de preço', {
         trend,
         confidence: confidence.toFixed(2),
@@ -720,15 +731,18 @@ async function runCycle() {
         marketTrend = pred.trend;
 
         // Melhoria: Spread dinâmico agressivo baseado em volatilidade e RSI
-        const depthFactor = orderbook.bids[0][1] > 0 ? orderbook.bids[0][1] / (ORDER_SIZE * 20) : 1;
-        let dynamicSpreadPct = Math.max(MIN_SPREAD_PCT, SPREAD_PCT * Math.max(1, depthFactor * 0.5));
+        const depthFactor = orderbook.bids[0][1] > 0 ? Math.min(orderbook.bids[0][1] / (ORDER_SIZE * 20), 2) : 1;
+        let dynamicSpreadPct = Math.max(MIN_SPREAD_PCT, SPREAD_PCT * (1 + volatilityPct / 10));
         
-        if (volatilityPct >= VOL_LIMIT_PCT) dynamicSpreadPct *= 1.3; 
-        else if (volatilityPct < 0.5) dynamicSpreadPct *= 0.8;
+        // Ajuste baseado em volatilidade (mais conservador)
+        if (volatilityPct >= VOL_LIMIT_PCT) dynamicSpreadPct *= 1.15; 
+        else if (volatilityPct < 0.5) dynamicSpreadPct *= 0.9;
         
-        if (pred.rsi > 70 || pred.rsi < 30) dynamicSpreadPct *= 1.2; // Aumenta spread em exaustão
+        // Ajuste baseado em RSI (zonas de exaustão)
+        if (pred.rsi > 70 || pred.rsi < 30) dynamicSpreadPct *= 1.1;
         
-        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.015);
+        // Limita spread máximo a 0.5% (muito mais conservador)
+        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.005);
         currentSpreadPct = dynamicSpreadPct;
 
         let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, ORDER_SIZE * (1 + volatilityPct / 100)));
@@ -782,6 +796,16 @@ async function runCycle() {
         }
         const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.available || 0);
         const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
+        
+        // Alerta de saldo insuficiente
+        const minBrlBalance = MIN_ORDER_SIZE * mid * 2; // Saldo mínimo para 2 ordens
+        const minBtcBalance = MIN_ORDER_SIZE * 2;
+        if (brlBalance < minBrlBalance) {
+            log('ALERT', `Saldo BRL muito baixo (${brlBalance.toFixed(2)} < ${minBrlBalance.toFixed(2)}). Considere depositar mais fundos.`);
+        }
+        if (btcBalance < minBtcBalance) {
+            log('WARN', `Saldo BTC muito baixo (${btcBalance.toFixed(8)} < ${minBtcBalance.toFixed(8)}). Apenas ordens de compra serão colocadas.`);
+        }
 
         // Colocar ordens
         if (pred.expectedProfit >= EXPECTED_PROFIT_THRESHOLD) {
