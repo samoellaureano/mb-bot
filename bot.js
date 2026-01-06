@@ -873,13 +873,18 @@ async function runCycle() {
         dynamicOrderSize *= regimeSizeMult;
         const refPrice = mid * (1 + totalBias);
         
-        // Garantir que as ordens sejam Post-Only (Maker) comparando com o melhor bid/ask
-        let buyPrice = Math.min(parseFloat((refPrice * (1 - dynamicSpreadPct / 2)).toFixed(2)), bestBid);
-        let sellPrice = Math.max(parseFloat((refPrice * (1 + dynamicSpreadPct / 2)).toFixed(2)), bestAsk);
+        // Buffer de Recuperação de Resíduo: Aumenta levemente o spread se o PnL estiver negativo
+        const pnlResidueBuffer = stats.totalPnL < 0 ? 0.0005 : 0; // +0.05% de spread para recuperar resíduos
+        const finalSpreadPct = dynamicSpreadPct + pnlResidueBuffer;
+
+        // Arredondamento Favorável: Compra (Floor), Venda (Ceil) para evitar perdas por precisão
+        let buyPrice = Math.min(Math.floor(refPrice * (1 - finalSpreadPct / 2) * 100) / 100, bestBid);
+        let sellPrice = Math.max(Math.ceil(refPrice * (1 + finalSpreadPct / 2) * 100) / 100, bestAsk);
+        
         if (buyPrice >= sellPrice || Math.abs(buyPrice - sellPrice) / mid < MIN_SPREAD_PCT) {
             log('WARN', 'Spread inválido ou muito estreito. Ajustando para spread natural.');
-            buyPrice = parseFloat((mid * (1 - dynamicSpreadPct / 2)).toFixed(2));
-            sellPrice = parseFloat((mid * (1 + dynamicSpreadPct / 2)).toFixed(2));
+            buyPrice = Math.floor(mid * (1 - finalSpreadPct / 2) * 100) / 100;
+            sellPrice = Math.ceil(mid * (1 + finalSpreadPct / 2) * 100) / 100;
         }
 
         // Verificar cooldown

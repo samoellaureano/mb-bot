@@ -1039,3 +1039,570 @@ nohup: ignoring input
   macd: '-4.16',
   signal: '508036.76'
 }
+03:51:31.290 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:51:31] [DASHBOARD INFO] RSI calculado: 33.33. 
+[03:51:31] [DASHBOARD INFO] EMA(8) calculada: 508036.70. 
+[03:51:31] [DASHBOARD INFO] EMA(20) calculada: 508039.42. 
+[03:51:31] [DASHBOARD INFO] EMA(12) calculada: 508036.75. 
+[03:51:31] [DASHBOARD INFO] EMA(26) calculada: 508040.62. 
+[03:51:31] [DASHBOARD INFO] EMA(9) calculada: 508036.71. 
+[03:51:31] [DASHBOARD INFO] MACD calculado: MACD=-3.87, Signal=508036.71. 
+[03:51:31] [DASHBOARD INFO] Volatilidade calculada: 0.22%. 
+[03:51:31] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:51:31] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '33.33',
+  emaShort: '508036.70',
+  emaLong: '508039.42',
+  volatility: '0.22',
+  macd: '-3.87',
+  signal: '508036.71'
+}
+03:51:36.000 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:51:36] [DASHBOARD INFO] RSI calculado: 97.06. 
+[03:51:36] [DASHBOARD INFO] EMA(8) calculada: 508043.88. 
+[03:51:36] [DASHBOARD INFO] EMA(20) calculada: 508042.23. 
+[03:51:36] [DASHBOARD INFO] EMA(12) calculada: 508041.71. 
+[03:51:36] [DASHBOARD INFO] EMA(26) calculada: 508042.72. 
+[03:51:36] [DASHBOARD INFO] EMA(9) calculada: 508043.17. 
+[03:51:36] [DASHBOARD INFO] MACD calculado: MACD=-1.01, Signal=508043.17. 
+[03:51:36] [DASHBOARD INFO] Volatilidade calculada: 0.23%. 
+[03:51:36] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:51:36] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.06',
+  emaShort: '508043.88',
+  emaLong: '508042.23',
+  volatility: '0.23',
+  macd: '-1.01',
+  signal: '508043.17'
+}
+03:51:40.651 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:51:40] [DASHBOARD INFO] RSI calculado: 97.65. 
+[03:51:40] [DASHBOARD INFO] EMA(8) calculada: 508051.28. 
+[03:51:40] [DASHBOARD INFO] EMA(20) calculada: 508045.59. 
+[03:51:40] [DASHBOARD INFO] EMA(12) calculada: 508047.22. 
+[03:51:40] [DASHBOARD INFO] EMA(26) calculada: 508045.30. 
+[03:51:40] [DASHBOARD INFO] EMA(9) calculada: 508050.04. 
+[03:51:40] [DASHBOARD INFO] MACD calculado: MACD=1.92, Signal=508050.04. 
+[03:51:40] [DASHBOARD INFO] Volatilidade calculada: 0.22%. 
+[03:51:40] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:51:40] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.65',
+  emaShort: '508051.28',
+  emaLong: '508045.59',
+  volatility: '0.22',
+  macd: '1.92',
+  signal: '508050.04'
+}
+03:51:45.951 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:51:45] [DASHBOARD INFO] RSI calculado: 98.59. 
+[03:51:45] [DASHBOARD INFO] EMA(8) calculada: 508063.44. 
+[03:51:45] [DASHBOARD INFO] EMA(20) calculada: 508051.35. 
+[03:51:45] [DASHBOARD INFO] EMA(12) calculada: 508056.26. 
+[03:51:45] [DASHBOARD INFO] EMA(26) calculada: 508049.79. 
+[03:51:45] [DASHBOARD INFO] EMA(9) calculada: 508061.16. 
+[03:51:45] [DASHBOARD INFO] MACD calculado: MACD=6.47, Signal=508061.16. 
+[03:51:45] [DASHBOARD INFO] Volatilidade calculada: 0.23%. 
+[03:51:45] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:51:45] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '98.59',
+  emaShort: '508063.44',
+  emaLong: '508051.35',
+  volatility: '0.23',
+  macd: '6.47',
+  signal: '508061.16'
+}
+03:51:50.532 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:51:50] [DASHBOARD INFO] RSI calculado: 98.59. 
+[03:51:50] [DASHBOARD INFO] EMA(8) calculada: 508072.90. 
+[03:51:50] [DASHBOARD INFO] EMA(20) calculada: 508054.73. 
+[03:51:50] [DASHBOARD INFO] EMA(12) calculada: 508063.91. 
+[03:51:50] [DASHBOARD INFO] EMA(26) calculada: 508053.96. 
+[03:51:50] [DASHBOARD INFO] EMA(9) calculada: 508070.13. 
+[03:51:50] [DASHBOARD INFO] MACD calculado: MACD=9.95, Signal=508070.13. 
+[03:51:50] [DASHBOARD INFO] Volatilidade calculada: 0.23%. 
+[03:51:50] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:51:50] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '98.59',
+  emaShort: '508072.90',
+  emaLong: '508054.73',
+  volatility: '0.23',
+  macd: '9.95',
+  signal: '508070.13'
+}
+03:51:55.665 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:51:55] [DASHBOARD INFO] RSI calculado: 98.61. 
+[03:51:55] [DASHBOARD INFO] EMA(8) calculada: 508080.48. 
+[03:51:55] [DASHBOARD INFO] EMA(20) calculada: 508059.71. 
+[03:51:55] [DASHBOARD INFO] EMA(12) calculada: 508070.54. 
+[03:51:55] [DASHBOARD INFO] EMA(26) calculada: 508057.89. 
+[03:51:55] [DASHBOARD INFO] EMA(9) calculada: 508077.50. 
+[03:51:55] [DASHBOARD INFO] MACD calculado: MACD=12.65, Signal=508077.50. 
+[03:51:55] [DASHBOARD INFO] Volatilidade calculada: 0.22%. 
+[03:51:55] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:51:55] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '98.61',
+  emaShort: '508080.48',
+  emaLong: '508059.71',
+  volatility: '0.22',
+  macd: '12.65',
+  signal: '508077.50'
+}
+03:52:01.150 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:01] [DASHBOARD INFO] RSI calculado: 97.93. 
+[03:52:01] [DASHBOARD INFO] EMA(8) calculada: 508086.33. 
+[03:52:01] [DASHBOARD INFO] EMA(20) calculada: 508064.23. 
+[03:52:01] [DASHBOARD INFO] EMA(12) calculada: 508076.01. 
+[03:52:01] [DASHBOARD INFO] EMA(26) calculada: 508061.49. 
+[03:52:01] [DASHBOARD INFO] EMA(9) calculada: 508083.30. 
+[03:52:01] [DASHBOARD INFO] MACD calculado: MACD=14.52, Signal=508083.30. 
+[03:52:01] [DASHBOARD INFO] Volatilidade calculada: 0.22%. 
+[03:52:01] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:01] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.93',
+  emaShort: '508086.33',
+  emaLong: '508064.23',
+  volatility: '0.22',
+  macd: '14.52',
+  signal: '508083.30'
+}
+03:52:05.575 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:05] [DASHBOARD INFO] RSI calculado: 97.93. 
+[03:52:05] [DASHBOARD INFO] EMA(8) calculada: 508090.63. 
+[03:52:05] [DASHBOARD INFO] EMA(20) calculada: 508068.21. 
+[03:52:05] [DASHBOARD INFO] EMA(12) calculada: 508080.62. 
+[03:52:05] [DASHBOARD INFO] EMA(26) calculada: 508064.79. 
+[03:52:05] [DASHBOARD INFO] EMA(9) calculada: 508087.91. 
+[03:52:05] [DASHBOARD INFO] MACD calculado: MACD=15.84, Signal=508087.91. 
+[03:52:05] [DASHBOARD INFO] Volatilidade calculada: 0.22%. 
+[03:52:05] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:05] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.93',
+  emaShort: '508090.63',
+  emaLong: '508068.21',
+  volatility: '0.22',
+  macd: '15.84',
+  signal: '508087.91'
+}
+03:52:10.949 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:10] [DASHBOARD INFO] RSI calculado: 97.99. 
+[03:52:10] [DASHBOARD INFO] EMA(8) calculada: 508098.84. 
+[03:52:10] [DASHBOARD INFO] EMA(20) calculada: 508072.00. 
+[03:52:10] [DASHBOARD INFO] EMA(12) calculada: 508084.83. 
+[03:52:10] [DASHBOARD INFO] EMA(26) calculada: 508067.99. 
+[03:52:10] [DASHBOARD INFO] EMA(9) calculada: 508091.86. 
+[03:52:10] [DASHBOARD INFO] MACD calculado: MACD=16.85, Signal=508091.86. 
+[03:52:10] [DASHBOARD INFO] Volatilidade calculada: 0.21%. 
+[03:52:10] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:10] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.99',
+  emaShort: '508098.84',
+  emaLong: '508072.00',
+  volatility: '0.21',
+  macd: '16.85',
+  signal: '508091.86'
+}
+03:52:15.701 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:15] [DASHBOARD INFO] RSI calculado: 97.99. 
+[03:52:15] [DASHBOARD INFO] EMA(8) calculada: 508102.02. 
+[03:52:15] [DASHBOARD INFO] EMA(20) calculada: 508075.43. 
+[03:52:15] [DASHBOARD INFO] EMA(12) calculada: 508088.40. 
+[03:52:15] [DASHBOARD INFO] EMA(26) calculada: 508070.95. 
+[03:52:15] [DASHBOARD INFO] EMA(9) calculada: 508099.45. 
+[03:52:15] [DASHBOARD INFO] MACD calculado: MACD=17.45, Signal=508099.45. 
+[03:52:15] [DASHBOARD INFO] Volatilidade calculada: 0.21%. 
+[03:52:15] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:15] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.99',
+  emaShort: '508102.02',
+  emaLong: '508075.43',
+  volatility: '0.21',
+  macd: '17.45',
+  signal: '508099.45'
+}
+03:52:20.374 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:20] [DASHBOARD INFO] RSI calculado: 95.42. 
+[03:52:20] [DASHBOARD INFO] EMA(8) calculada: 508106.72. 
+[03:52:20] [DASHBOARD INFO] EMA(20) calculada: 508078.34. 
+[03:52:20] [DASHBOARD INFO] EMA(12) calculada: 508091.17. 
+[03:52:20] [DASHBOARD INFO] EMA(26) calculada: 508071.72. 
+[03:52:20] [DASHBOARD INFO] EMA(9) calculada: 508101.90. 
+[03:52:20] [DASHBOARD INFO] MACD calculado: MACD=19.45, Signal=508101.90. 
+[03:52:20] [DASHBOARD INFO] Volatilidade calculada: 0.21%. 
+[03:52:20] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:20] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '95.42',
+  emaShort: '508106.72',
+  emaLong: '508078.34',
+  volatility: '0.21',
+  macd: '19.45',
+  signal: '508101.90'
+}
+03:52:25.708 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:25] [DASHBOARD INFO] RSI calculado: 95.51. 
+[03:52:25] [DASHBOARD INFO] EMA(8) calculada: 508107.00. 
+[03:52:25] [DASHBOARD INFO] EMA(20) calculada: 508081.16. 
+[03:52:25] [DASHBOARD INFO] EMA(12) calculada: 508093.69. 
+[03:52:25] [DASHBOARD INFO] EMA(26) calculada: 508074.41. 
+[03:52:25] [DASHBOARD INFO] EMA(9) calculada: 508106.95. 
+[03:52:25] [DASHBOARD INFO] MACD calculado: MACD=19.29, Signal=508106.95. 
+[03:52:25] [DASHBOARD INFO] Volatilidade calculada: 0.21%. 
+[03:52:25] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:25] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '95.51',
+  emaShort: '508107.00',
+  emaLong: '508081.16',
+  volatility: '0.21',
+  macd: '19.29',
+  signal: '508106.95'
+}
+03:52:30.426 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":72,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:30] [DASHBOARD INFO] RSI calculado: 94.90. 
+[03:52:30] [DASHBOARD INFO] EMA(8) calculada: 508107.14. 
+[03:52:30] [DASHBOARD INFO] EMA(20) calculada: 508083.62. 
+[03:52:30] [DASHBOARD INFO] EMA(12) calculada: 508100.12. 
+[03:52:30] [DASHBOARD INFO] EMA(26) calculada: 508076.89. 
+[03:52:30] [DASHBOARD INFO] EMA(9) calculada: 508106.96. 
+[03:52:30] [DASHBOARD INFO] MACD calculado: MACD=23.23, Signal=508106.96. 
+[03:52:30] [DASHBOARD INFO] Volatilidade calculada: 0.21%. 
+[03:52:30] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:30] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '94.90',
+  emaShort: '508107.14',
+  emaLong: '508083.62',
+  volatility: '0.21',
+  macd: '23.23',
+  signal: '508106.96'
+}
+03:52:35.532 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":72,"filled_orders":8,"cancelled_orders":59,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:35] [DASHBOARD INFO] RSI calculado: 96.90. 
+[03:52:35] [DASHBOARD INFO] EMA(8) calculada: 508125.48. 
+[03:52:35] [DASHBOARD INFO] EMA(20) calculada: 508093.75. 
+[03:52:35] [DASHBOARD INFO] EMA(12) calculada: 508115.09. 
+[03:52:35] [DASHBOARD INFO] EMA(26) calculada: 508085.27. 
+[03:52:35] [DASHBOARD INFO] EMA(9) calculada: 508123.70. 
+[03:52:35] [DASHBOARD INFO] MACD calculado: MACD=29.82, Signal=508123.70. 
+[03:52:35] [DASHBOARD INFO] Volatilidade calculada: 0.23%. 
+[03:52:35] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:35] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '96.90',
+  emaShort: '508125.48',
+  emaLong: '508093.75',
+  volatility: '0.23',
+  macd: '29.82',
+  signal: '508123.70'
+}
+03:52:40.512 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":73,"filled_orders":8,"cancelled_orders":59,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:40] [DASHBOARD INFO] RSI calculado: 97.91. 
+[03:52:40] [DASHBOARD INFO] EMA(8) calculada: 508155.42. 
+[03:52:40] [DASHBOARD INFO] EMA(20) calculada: 508109.57. 
+[03:52:40] [DASHBOARD INFO] EMA(12) calculada: 508141.30. 
+[03:52:40] [DASHBOARD INFO] EMA(26) calculada: 508098.25. 
+[03:52:40] [DASHBOARD INFO] EMA(9) calculada: 508150.99. 
+[03:52:40] [DASHBOARD INFO] MACD calculado: MACD=43.05, Signal=508150.99. 
+[03:52:40] [DASHBOARD INFO] Volatilidade calculada: 0.25%. 
+[03:52:40] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:40] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.91',
+  emaShort: '508155.42',
+  emaLong: '508109.57',
+  volatility: '0.25',
+  macd: '43.05',
+  signal: '508150.99'
+}
+03:52:45.488 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":73,"filled_orders":8,"cancelled_orders":59,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:45] [DASHBOARD INFO] RSI calculado: 69.67. 
+[03:52:45] [DASHBOARD INFO] EMA(8) calculada: 508164.59. 
+[03:52:45] [DASHBOARD INFO] EMA(20) calculada: 508117.75. 
+[03:52:45] [DASHBOARD INFO] EMA(12) calculada: 508149.64. 
+[03:52:45] [DASHBOARD INFO] EMA(26) calculada: 508105.45. 
+[03:52:45] [DASHBOARD INFO] EMA(9) calculada: 508159.83. 
+[03:52:45] [DASHBOARD INFO] MACD calculado: MACD=44.19, Signal=508159.83. 
+[03:52:45] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[03:52:45] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:45] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '69.67',
+  emaShort: '508164.59',
+  emaLong: '508117.75',
+  volatility: '0.26',
+  macd: '44.19',
+  signal: '508159.83'
+}
+03:52:50.480 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":75,"filled_orders":8,"cancelled_orders":62,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:50] [DASHBOARD INFO] RSI calculado: 69.67. 
+[03:52:50] [DASHBOARD INFO] EMA(8) calculada: 508171.46. 
+[03:52:50] [DASHBOARD INFO] EMA(20) calculada: 508125.16. 
+[03:52:50] [DASHBOARD INFO] EMA(12) calculada: 508156.83. 
+[03:52:50] [DASHBOARD INFO] EMA(26) calculada: 508112.12. 
+[03:52:50] [DASHBOARD INFO] EMA(9) calculada: 508167.23. 
+[03:52:50] [DASHBOARD INFO] MACD calculado: MACD=44.71, Signal=508167.23. 
+[03:52:50] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[03:52:50] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:50] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '69.67',
+  emaShort: '508171.46',
+  emaLong: '508125.16',
+  volatility: '0.26',
+  macd: '44.71',
+  signal: '508167.23'
+}
+03:52:55.748 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":76,"filled_orders":8,"cancelled_orders":63,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:52:55] [DASHBOARD INFO] RSI calculado: 69.54. 
+[03:52:55] [DASHBOARD INFO] EMA(8) calculada: 508176.54. 
+[03:52:55] [DASHBOARD INFO] EMA(20) calculada: 508131.86. 
+[03:52:55] [DASHBOARD INFO] EMA(12) calculada: 508162.71. 
+[03:52:55] [DASHBOARD INFO] EMA(26) calculada: 508118.30. 
+[03:52:55] [DASHBOARD INFO] EMA(9) calculada: 508172.88. 
+[03:52:55] [DASHBOARD INFO] MACD calculado: MACD=44.41, Signal=508172.88. 
+[03:52:55] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:52:55] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:52:55] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '69.54',
+  emaShort: '508176.54',
+  emaLong: '508131.86',
+  volatility: '0.27',
+  macd: '44.41',
+  signal: '508172.88'
+}
+03:53:01.386 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":77,"filled_orders":8,"cancelled_orders":63,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:01] [DASHBOARD INFO] RSI calculado: 69.76. 
+[03:53:01] [DASHBOARD INFO] EMA(8) calculada: 508181.13. 
+[03:53:01] [DASHBOARD INFO] EMA(20) calculada: 508138.03. 
+[03:53:01] [DASHBOARD INFO] EMA(12) calculada: 508167.77. 
+[03:53:01] [DASHBOARD INFO] EMA(26) calculada: 508124.05. 
+[03:53:01] [DASHBOARD INFO] EMA(9) calculada: 508177.24. 
+[03:53:01] [DASHBOARD INFO] MACD calculado: MACD=43.71, Signal=508177.24. 
+[03:53:01] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:53:01] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:01] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '69.76',
+  emaShort: '508181.13',
+  emaLong: '508138.03',
+  volatility: '0.27',
+  macd: '43.71',
+  signal: '508177.24'
+}
+03:53:05.815 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":77,"filled_orders":8,"cancelled_orders":63,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:05] [DASHBOARD INFO] RSI calculado: 69.91. 
+[03:53:05] [DASHBOARD INFO] EMA(8) calculada: 508184.30. 
+[03:53:05] [DASHBOARD INFO] EMA(20) calculada: 508143.49. 
+[03:53:05] [DASHBOARD INFO] EMA(12) calculada: 508172.38. 
+[03:53:05] [DASHBOARD INFO] EMA(26) calculada: 508129.38. 
+[03:53:05] [DASHBOARD INFO] EMA(9) calculada: 508181.26. 
+[03:53:05] [DASHBOARD INFO] MACD calculado: MACD=42.99, Signal=508181.26. 
+[03:53:05] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:53:05] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:05] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '69.91',
+  emaShort: '508184.30',
+  emaLong: '508143.49',
+  volatility: '0.27',
+  macd: '42.99',
+  signal: '508181.26'
+}
+03:53:12.606 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":78,"filled_orders":8,"cancelled_orders":66,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:12] [DASHBOARD INFO] RSI calculado: 69.49. 
+[03:53:12] [DASHBOARD INFO] EMA(8) calculada: 508197.90. 
+[03:53:12] [DASHBOARD INFO] EMA(20) calculada: 508152.83. 
+[03:53:12] [DASHBOARD INFO] EMA(12) calculada: 508175.94. 
+[03:53:12] [DASHBOARD INFO] EMA(26) calculada: 508134.21. 
+[03:53:12] [DASHBOARD INFO] EMA(9) calculada: 508183.97. 
+[03:53:12] [DASHBOARD INFO] MACD calculado: MACD=41.72, Signal=508183.97. 
+[03:53:12] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:53:12] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:12] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '69.49',
+  emaShort: '508197.90',
+  emaLong: '508152.83',
+  volatility: '0.27',
+  macd: '41.72',
+  signal: '508183.97'
+}
+03:53:15.847 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":80,"filled_orders":8,"cancelled_orders":66,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:15] [DASHBOARD INFO] RSI calculado: 69.76. 
+[03:53:15] [DASHBOARD INFO] EMA(8) calculada: 508207.26. 
+[03:53:15] [DASHBOARD INFO] EMA(20) calculada: 508158.23. 
+[03:53:15] [DASHBOARD INFO] EMA(12) calculada: 508178.98. 
+[03:53:15] [DASHBOARD INFO] EMA(26) calculada: 508138.90. 
+[03:53:15] [DASHBOARD INFO] EMA(9) calculada: 508197.82. 
+[03:53:15] [DASHBOARD INFO] MACD calculado: MACD=40.08, Signal=508197.82. 
+[03:53:15] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:53:15] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:15] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '69.76',
+  emaShort: '508207.26',
+  emaLong: '508158.23',
+  volatility: '0.27',
+  macd: '40.08',
+  signal: '508197.82'
+}
+03:53:20.475 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":81,"filled_orders":8,"cancelled_orders":66,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:20] [DASHBOARD INFO] RSI calculado: 70.38. 
+[03:53:20] [DASHBOARD INFO] EMA(8) calculada: 508196.38. 
+[03:53:20] [DASHBOARD INFO] EMA(20) calculada: 508165.82. 
+[03:53:20] [DASHBOARD INFO] EMA(12) calculada: 508182.10. 
+[03:53:20] [DASHBOARD INFO] EMA(26) calculada: 508143.24. 
+[03:53:20] [DASHBOARD INFO] EMA(9) calculada: 508207.22. 
+[03:53:20] [DASHBOARD INFO] MACD calculado: MACD=38.86, Signal=508207.22. 
+[03:53:20] [DASHBOARD INFO] Volatilidade calculada: 0.28%. 
+[03:53:20] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:20] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '70.38',
+  emaShort: '508196.38',
+  emaLong: '508165.82',
+  volatility: '0.28',
+  macd: '38.86',
+  signal: '508207.22'
+}
+03:53:25.526 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":81,"filled_orders":8,"cancelled_orders":66,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:25] [DASHBOARD INFO] RSI calculado: 64.46. 
+[03:53:25] [DASHBOARD INFO] EMA(8) calculada: 508192.30. 
+[03:53:25] [DASHBOARD INFO] EMA(20) calculada: 508166.98. 
+[03:53:25] [DASHBOARD INFO] EMA(12) calculada: 508181.34. 
+[03:53:25] [DASHBOARD INFO] EMA(26) calculada: 508145.82. 
+[03:53:25] [DASHBOARD INFO] EMA(9) calculada: 508192.65. 
+[03:53:25] [DASHBOARD INFO] MACD calculado: MACD=35.52, Signal=508192.65. 
+[03:53:25] [DASHBOARD INFO] Volatilidade calculada: 0.28%. 
+[03:53:25] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:25] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '64.46',
+  emaShort: '508192.30',
+  emaLong: '508166.98',
+  volatility: '0.28',
+  macd: '35.52',
+  signal: '508192.65'
+}
+03:53:30.338 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":81,"filled_orders":8,"cancelled_orders":66,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:30] [DASHBOARD INFO] RSI calculado: 64.20. 
+[03:53:30] [DASHBOARD INFO] EMA(8) calculada: 508188.68. 
+[03:53:30] [DASHBOARD INFO] EMA(20) calculada: 508167.98. 
+[03:53:30] [DASHBOARD INFO] EMA(12) calculada: 508191.70. 
+[03:53:30] [DASHBOARD INFO] EMA(26) calculada: 508148.12. 
+[03:53:30] [DASHBOARD INFO] EMA(9) calculada: 508189.32. 
+[03:53:30] [DASHBOARD INFO] MACD calculado: MACD=43.58, Signal=508189.32. 
+[03:53:30] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:53:30] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:30] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '64.20',
+  emaShort: '508188.68',
+  emaLong: '508167.98',
+  volatility: '0.27',
+  macd: '43.58',
+  signal: '508189.32'
+}
+03:53:35.539 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":81,"filled_orders":8,"cancelled_orders":66,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:35] [DASHBOARD INFO] RSI calculado: 43.58. 
+[03:53:35] [DASHBOARD INFO] EMA(8) calculada: 508184.26. 
+[03:53:35] [DASHBOARD INFO] EMA(20) calculada: 508167.96. 
+[03:53:35] [DASHBOARD INFO] EMA(12) calculada: 508197.62. 
+[03:53:35] [DASHBOARD INFO] EMA(26) calculada: 508149.56. 
+[03:53:35] [DASHBOARD INFO] EMA(9) calculada: 508185.16. 
+[03:53:35] [DASHBOARD INFO] MACD calculado: MACD=48.06, Signal=508185.16. 
+[03:53:35] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:53:35] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:35] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '43.58',
+  emaShort: '508184.26',
+  emaLong: '508167.96',
+  volatility: '0.27',
+  macd: '48.06',
+  signal: '508185.16'
+}
+03:53:40.513 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":81,"filled_orders":8,"cancelled_orders":66,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:53:40] [DASHBOARD INFO] RSI calculado: 10.43. 
+[03:53:40] [DASHBOARD INFO] EMA(8) calculada: 508182.65. 
+[03:53:40] [DASHBOARD INFO] EMA(20) calculada: 508168.75. 
+[03:53:40] [DASHBOARD INFO] EMA(12) calculada: 508185.70. 
+[03:53:40] [DASHBOARD INFO] EMA(26) calculada: 508155.99. 
+[03:53:40] [DASHBOARD INFO] EMA(9) calculada: 508183.59. 
+[03:53:40] [DASHBOARD INFO] MACD calculado: MACD=29.71, Signal=508183.59. 
+[03:53:40] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:53:40] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:53:40] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '10.43',
+  emaShort: '508182.65',
+  emaLong: '508168.75',
+  volatility: '0.27',
+  macd: '29.71',
+  signal: '508183.59'
+}
