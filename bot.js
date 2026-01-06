@@ -508,9 +508,11 @@ async function checkOrders(mid, volatility, pred, orderbook) {
             log('SUCCESS', `Take-profit acionado para ordem ${key.toUpperCase()}.`);
             continue;
         }
-        if (timeAge > MAX_ORDER_AGE || (age >= MIN_ORDER_CYCLES && !hasInterest)) {
+        // Melhoria: Sistema Anti-Stuck para ordens reais
+        const isStuck = !SIMULATE && timeAge > 60 && priceDrift > 0.005;
+        if (timeAge > MAX_ORDER_AGE || (age >= MIN_ORDER_CYCLES && !hasInterest) || isStuck) {
             await tryCancel(key);
-            log('INFO', `Ordem ${key.toUpperCase()} cancelada por idade (${timeAge.toFixed(1)}s) ou baixa liquidez.`);
+            log('INFO', `Ordem ${key.toUpperCase()} cancelada por ${isStuck ? 'travamento (stuck)' : 'idade/liquidez'}.`);
             continue;
         }
         if (age >= MIN_ORDER_CYCLES && priceDrift > PRICE_DRIFT * (1 + PRICE_DRIFT_BOOST)) {
@@ -717,22 +719,28 @@ async function runCycle() {
         const pred = fetchPricePrediction(mid);
         marketTrend = pred.trend;
 
-        // Calcular spread e tamanho dinâmicos
+        // Melhoria: Spread dinâmico agressivo baseado em volatilidade e RSI
         const depthFactor = orderbook.bids[0][1] > 0 ? orderbook.bids[0][1] / (ORDER_SIZE * 20) : 1;
         let dynamicSpreadPct = Math.max(MIN_SPREAD_PCT, SPREAD_PCT * Math.max(1, depthFactor * 0.5));
-        if (volatilityPct >= VOL_LIMIT_PCT) dynamicSpreadPct *= 1.1; else if (volatilityPct < 0.5) dynamicSpreadPct *= 0.9;
-        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.01);
+        
+        if (volatilityPct >= VOL_LIMIT_PCT) dynamicSpreadPct *= 1.3; 
+        else if (volatilityPct < 0.5) dynamicSpreadPct *= 0.8;
+        
+        if (pred.rsi > 70 || pred.rsi < 30) dynamicSpreadPct *= 1.2; // Aumenta spread em exaustão
+        
+        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.015);
         currentSpreadPct = dynamicSpreadPct;
 
-        let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, ORDER_SIZE * (1 + volatilityPct / 120)));
-        dynamicOrderSize *= (1 + pred.expectedProfit - EXPECTED_PROFIT_THRESHOLD);
-        dynamicOrderSize = Math.min(MAX_ORDER_SIZE, dynamicOrderSize); // Limita após multiplicação
+        let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, ORDER_SIZE * (1 + volatilityPct / 100)));
+        dynamicOrderSize *= (1 + (pred.expectedProfit - EXPECTED_PROFIT_THRESHOLD) * 2);
+        dynamicOrderSize = Math.min(MAX_ORDER_SIZE, dynamicOrderSize);
         currentBaseSize = dynamicOrderSize;
 
-        // Calcular viés
+        // Melhoria: Viés de tendência aprimorado com confiança
         const inventoryBias = getInventoryBias(mid);
-        const trendBias = getTrendBias(pred);
-        const totalBias = Math.min(0.01, Math.max(-0.01, inventoryBias + trendBias)); // Limita viés entre -1% e +1%
+        const trendFactor = parseFloat(pred.confidence) > 2.0 ? 0.02 : 0.01;
+        const trendBias = pred.trend === 'up' ? trendFactor : (pred.trend === 'down' ? -trendFactor : 0);
+        const totalBias = Math.min(0.03, Math.max(-0.03, inventoryBias + trendBias));
         const refPrice = mid * (1 + totalBias);
         let buyPrice = parseFloat((refPrice * (1 - dynamicSpreadPct / 2)).toFixed(2));
         let sellPrice = parseFloat((refPrice * (1 + dynamicSpreadPct / 2)).toFixed(2));

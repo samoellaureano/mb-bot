@@ -60,4 +60,157 @@
   macd: '0.00',
   signal: '296621.82'
 }
+00:12:01.191 [INFO]   [DB] Consultadas 24 ordens. 
+[00:12:01] [DASHBOARD DEBUG] Simulated data fetched {
+  ticker: {
+    pair: 'BTC-BRL',
+    last: '304745.54',
+    buy: '304623.64',
+    sell: '304867.44',
+    high: '306269.27',
+    low: '303221.81',
+    open: '304136.05',
+    vol: '18.863',
+    date: 1.76765832119e+21
+  },
+  balances: [
+    {
+      symbol: 'BRL',
+      available: '10000.00',
+      on_hold: '0.00',
+      total: '10000.00'
+    },
+    {
+      symbol: 'BTC',
+      available: '0.05000000',
+      on_hold: '0.00000000',
+      total: '0.05000000'
+    }
+  ],
+  ordersCount: 24,
+  orderbookKeys: [ 'asks', 'bids', 'timestamp' ]
+}
+[00:12:01] [DASHBOARD DEBUG] Saved PNL history with 882 points to /home/ubuntu/mb-bot/pnl_history.json 
+[00:12:01] [DASHBOARD WARN] Histórico insuficiente para RSI (2/13). Retornando neutro (50). 
+[00:12:01] [DASHBOARD WARN] Histórico insuficiente para EMA (2/8). Usando último preço. 
+[00:12:01] [DASHBOARD WARN] Histórico insuficiente para EMA (2/20). Usando último preço. 
+[00:12:01] [DASHBOARD WARN] Histórico insuficiente para EMA (2/12). Usando último preço. 
+[00:12:01] [DASHBOARD WARN] Histórico insuficiente para EMA (2/26). Usando último preço. 
+[00:12:01] [DASHBOARD WARN] Histórico insuficiente para EMA (2/9). Usando último preço. 
+[00:12:01] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=304745.54. 
+[00:12:01] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[00:12:01] [DASHBOARD INFO] Análise fills históricos: Bias=0.00%, Sucesso=25.00%, PnL médio=0.01. 
+[00:12:01] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '1.00',
+  rsi: '50.00',
+  emaShort: '304745.54',
+  emaLong: '304745.54',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '304745.54'
+}
+00:12:10.220 [INFO]   [DB] Consultadas 24 ordens. 
+[00:12:10] [DASHBOARD DEBUG] Simulated data fetched {
+  ticker: {
+    pair: 'BTC-BRL',
+    last: '303019.79',
+    buy: '302898.58',
+    sell: '303141.00',
+    high: '304534.89',
+    low: '301504.69',
+    open: '302413.75',
+    vol: '24.414',
+    date: 1.767658330219e+21
+  },
+  balances: [
+    {
+      symbol: 'BRL',
+      available: '10000.00',
+      on_hold: '0.00',
+      total: '10000.00'
+    },
+    {
+      symbol: 'BTC',
+      available: '0.05000000',
+      on_hold: '0.00000000',
+      total: '0.05000000'
+    }
+  ],
+  ordersCount: 24,
+  orderbookKeys: [ 'asks', 'bids', 'timestamp' ]
+}
+[00:12:10] [DASHBOARD DEBUG] Saved PNL history with 883 points to /home/ubuntu/mb-bot/pnl_history.json 
+[00:12:10] [DASHBOARD WARN] Histórico insuficiente para RSI (3/13). Retornando neutro (50). 
+[00:12:10] [DASHBOARD WARN] Histórico insuficiente para EMA (3/8). Usando último preço. 
+[00:12:10] [DASHBOARD WARN] Histórico insuficiente para EMA (3/20). Usando último preço. 
+[00:12:10] [DASHBOARD WARN] Histórico insuficiente para EMA (3/12). Usando último preço. 
+[00:12:10] [DASHBOARD WARN] Histórico insuficiente para EMA (3/26). Usando último preço. 
+[00:12:10] [DASHBOARD WARN] Histórico insuficiente para EMA (3/9). Usando último preço. 
+[00:12:10] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=303019.79. 
+[00:12:10] [DASHBOARD INFO] Volatilidade calculada: 2.50%. 
+[00:12:10] [DASHBOARD INFO] Análise fills históricos: Bias=0.00%, Sucesso=25.00%, PnL médio=0.01. 
+[00:12:10] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '1.00',
+  rsi: '50.00',
+  emaShort: '303019.79',
+  emaLong: '303019.79',
+  volatility: '2.50',
+  macd: '0.00',
+  signal: '303019.79'
+}
+00:12:15.227 [INFO]   [DB] Consultadas 24 ordens. 
+[00:12:15] [DASHBOARD DEBUG] Simulated data fetched {
+  ticker: {
+    pair: 'BTC-BRL',
+    last: '301547.46',
+    buy: '301426.84',
+    sell: '301668.08',
+    high: '303055.20',
+    low: '300039.72',
+    open: '300944.36',
+    vol: '34.909',
+    date: 1.767658335226e+21
+  },
+  balances: [
+    {
+      symbol: 'BRL',
+      available: '10000.00',
+      on_hold: '0.00',
+      total: '10000.00'
+    },
+    {
+      symbol: 'BTC',
+      available: '0.05000000',
+      on_hold: '0.00000000',
+      total: '0.05000000'
+    }
+  ],
+  ordersCount: 24,
+  orderbookKeys: [ 'asks', 'bids', 'timestamp' ]
+}
+[00:12:15] [DASHBOARD DEBUG] Saved PNL history with 884 points to /home/ubuntu/mb-bot/pnl_history.json 
+[00:12:15] [DASHBOARD WARN] Histórico insuficiente para RSI (4/13). Retornando neutro (50). 
+[00:12:15] [DASHBOARD WARN] Histórico insuficiente para EMA (4/8). Usando último preço. 
+[00:12:15] [DASHBOARD WARN] Histórico insuficiente para EMA (4/20). Usando último preço. 
+[00:12:15] [DASHBOARD WARN] Histórico insuficiente para EMA (4/12). Usando último preço. 
+[00:12:15] [DASHBOARD WARN] Histórico insuficiente para EMA (4/26). Usando último preço. 
+[00:12:15] [DASHBOARD WARN] Histórico insuficiente para EMA (4/9). Usando último preço. 
+[00:12:15] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=301547.46. 
+[00:12:15] [DASHBOARD INFO] Volatilidade calculada: 2.50%. 
+[00:12:15] [DASHBOARD INFO] Análise fills históricos: Bias=0.00%, Sucesso=25.00%, PnL médio=0.01. 
+[00:12:15] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '1.00',
+  rsi: '50.00',
+  emaShort: '301547.46',
+  emaLong: '301547.46',
+  volatility: '2.50',
+  macd: '0.00',
+  signal: '301547.46'
+}
 Killed
