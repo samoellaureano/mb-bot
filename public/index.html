@@ -65,7 +65,7 @@
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-purple-500">
             <p class="text-gray-400 text-xs sm:text-sm">Saldo Total Est.</p>
-            <h2 id="total" class="text-lg sm:text-xl font-bold">R$ 0,00</h2>
+            <h2 id="totalBalanceCard" class="text-lg sm:text-xl font-bold">Carregando...</h2>
             <p id="monthlyPnl" class="text-xs sm:text-sm text-gray-400">Mensal: R$ 0,00</p>
         </div>
     </div>
@@ -102,9 +102,9 @@
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
             <h2 class="text-base sm:text-lg font-bold mb-2">Saldos</h2>
             <ul class="space-y-1 text-xs sm:text-sm">
-                <li>BRL: <span id="brl">R$ 393,35</span></li>
-                <li>BTC: <span id="btc">0.00032331 BTC</span></li>
-                <li>Total: <span id="total">R$ 605,11</span></li>
+                <li>BRL: <span id="brl">Carregando...</span></li>
+                <li>BTC: <span id="btc">Carregando...</span></li>
+                <li>Total: <span id="totalBalanceList">Carregando...</span></li>
             </ul>
         </div>
     </div>
@@ -231,22 +231,27 @@
                 datasets: [
                     {
                         label: "PnL (R$)",
-                        borderColor: "#4ade80",
-                        backgroundColor: "rgba(74,222,128,0.2)",
+                        borderColor: "#10b981",
+                        backgroundColor: "rgba(16,185,129,0.1)",
+                        borderWidth: 2,
                         fill: true,
                         data: [],
-                        tension: 0.3,
-                        pointRadius: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
                         yAxisID: 'y'
                     },
                     {
                         label: "BTC Price (R$)",
-                        borderColor: "#60a5fa",
-                        backgroundColor: "rgba(96,165,250,0.2)",
-                        fill: true,
+                        borderColor: "#3b82f6",
+                        backgroundColor: "transparent",
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        fill: false,
                         data: [],
-                        tension: 0.3,
-                        pointRadius: 2,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
                         yAxisID: 'y1'
                     }
                 ]
@@ -254,32 +259,42 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {legend: {display: true, position: 'top'}, tooltip: {mode: 'index', intersect: false}},
+                interaction: {mode: 'index', intersect: false},
+                plugins: {
+                    legend: {display: true, position: 'top', labels: {color: '#9ca3af', font: {size: 11}}},
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        titleColor: '#f3f4f6',
+                        bodyColor: '#d1d5db',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: true
+                    }
+                },
                 scales: {
                     y: {
                         type: 'linear',
                         position: 'left',
-                        title: {display: true, text: 'PnL (R$)'},
-                        ticks: {font: {size: 10}}
+                        title: {display: true, text: 'PnL (R$)', color: '#10b981'},
+                        grid: {color: 'rgba(75, 85, 99, 0.1)'},
+                        ticks: {color: '#9ca3af', font: {size: 10}}
                     },
                     y1: {
                         type: 'linear',
                         position: 'right',
-                        title: {display: true, text: 'BTC Price (R$)'},
+                        title: {display: true, text: 'BTC Price (R$)', color: '#3b82f6'},
                         grid: {drawOnChartArea: false},
-                        ticks: {font: {size: 10}}
+                        ticks: {color: '#9ca3af', font: {size: 10}}
                     },
                     x: {
                         type: 'time',
                         time: {
                             unit: 'minute',
-                            tooltipFormat: 'HH:mm:ss',
-                            displayFormats: {
-                                second: 'HH:mm:ss'
-                            }
+                            displayFormats: {minute: 'HH:mm'}
                         },
-                        title: {display: true, text: 'Hora'},
-                        ticks: {font: {size: 10}}
+                        grid: {color: 'rgba(75, 85, 99, 0.1)'},
+                        ticks: {color: '#9ca3af', font: {size: 10}}
                     }
                 }
             }
@@ -308,7 +323,7 @@
 
     async function loadData() {
         try {
-            const res = await fetch('/api/data');
+            const res = await fetch(`/api/data?t=${Date.now()}`);
             const data = await res.json();
 
             const modeSpan = document.getElementById('mode');
@@ -356,10 +371,12 @@
                 maximumFractionDigits: 2
             })}`;
             document.getElementById('btc').textContent = `${parseFloat(data.balances?.btc || 0).toFixed(8)} BTC`;
-            document.getElementById('total').textContent = `R$ ${parseFloat(data.balances?.total || 0).toLocaleString('pt-BR', {
+            const totalFormatted = `R$ ${parseFloat(data.balances?.total || 0).toLocaleString('pt-BR', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             })}`;
+            document.getElementById('totalBalanceCard').textContent = totalFormatted;
+            document.getElementById('totalBalanceList').textContent = totalFormatted;
 
             const tbody = document.getElementById('ordersTable');
             tbody.innerHTML = '';
