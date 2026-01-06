@@ -1,0 +1,100 @@
+nohup: ignoring input
+02:09:16.212 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+02:09:16.215 [INFO]   [DB] Carregados 0 fills históricos. 
+[02:09:16] [DASHBOARD INFO] Carregados 0 fills históricos do banco de dados. 
+[02:09:16] [DASHBOARD ERROR] Failed to load PNL history: Invalid PNL history data structure 
+[02:09:16] [DASHBOARD INFO] Dashboard ready at http://localhost:3001 - Mode: LIVE 
+2026-01-06T02:09:20.923Z [WARN]   Token expired/near expiry, reauthenticating...
+2026-01-06T02:09:20.924Z [INFO]   API_KEY: bdb29a91...
+2026-01-06T02:09:20.924Z [INFO]   API_SECRET: e14075f1...
+2026-01-06T02:09:24.102Z [INFO]   Account ID: f02d1506...
+2026-01-06T02:09:24.103Z [INFO]   Access Token: eyJhbGci...
+2026-01-06T02:09:24.103Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+[02:09:28] [DASHBOARD ERROR] Failed to fetch orderbook, using last ticker price: Request failed with status code 404
+02:09:28.110 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":1,"filled_orders":0,"cancelled_orders":0,"total_pnl":0,"avg_fill_value":0,"avg_spread":0.08,"...
+[02:09:28] [DASHBOARD WARN] Histórico insuficiente para RSI (1/13). Retornando neutro (50). 
+[02:09:28] [DASHBOARD WARN] Histórico insuficiente para EMA (1/8). Usando último preço. 
+[02:09:28] [DASHBOARD WARN] Histórico insuficiente para EMA (1/20). Usando último preço. 
+[02:09:28] [DASHBOARD WARN] Histórico insuficiente para EMA (1/12). Usando último preço. 
+[02:09:28] [DASHBOARD WARN] Histórico insuficiente para EMA (1/26). Usando último preço. 
+[02:09:28] [DASHBOARD WARN] Histórico insuficiente para EMA (1/9). Usando último preço. 
+[02:09:28] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=507660.50. 
+[02:09:28] [DASHBOARD WARN] Dados insuficientes para calcular volatilidade. Retornando 0.1%. 
+[02:09:28] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[02:09:28] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '507660.50',
+  emaLong: '507660.50',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '507660.50'
+}
+[02:09:31] [DASHBOARD ERROR] Failed to fetch orderbook, using last ticker price: Request failed with status code 404
+02:09:31.374 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":1,"filled_orders":0,"cancelled_orders":0,"total_pnl":0,"avg_fill_value":0,"avg_spread":0.08,"...
+[02:09:31] [DASHBOARD WARN] Histórico insuficiente para RSI (2/13). Retornando neutro (50). 
+[02:09:31] [DASHBOARD WARN] Histórico insuficiente para EMA (2/8). Usando último preço. 
+[02:09:31] [DASHBOARD WARN] Histórico insuficiente para EMA (2/20). Usando último preço. 
+[02:09:31] [DASHBOARD WARN] Histórico insuficiente para EMA (2/12). Usando último preço. 
+[02:09:31] [DASHBOARD WARN] Histórico insuficiente para EMA (2/26). Usando último preço. 
+[02:09:31] [DASHBOARD WARN] Histórico insuficiente para EMA (2/9). Usando último preço. 
+[02:09:31] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=507637.50. 
+[02:09:31] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[02:09:31] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[02:09:31] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '507637.50',
+  emaLong: '507637.50',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '507637.50'
+}
+[02:09:32] [DASHBOARD ERROR] Failed to fetch orderbook, using last ticker price: Request failed with status code 404
+02:09:32.554 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":1,"filled_orders":0,"cancelled_orders":0,"total_pnl":0,"avg_fill_value":0,"avg_spread":0.08,"...
+[02:09:32] [DASHBOARD WARN] Histórico insuficiente para RSI (3/13). Retornando neutro (50). 
+[02:09:32] [DASHBOARD WARN] Histórico insuficiente para EMA (3/8). Usando último preço. 
+[02:09:32] [DASHBOARD WARN] Histórico insuficiente para EMA (3/20). Usando último preço. 
+[02:09:32] [DASHBOARD WARN] Histórico insuficiente para EMA (3/12). Usando último preço. 
+[02:09:32] [DASHBOARD WARN] Histórico insuficiente para EMA (3/26). Usando último preço. 
+[02:09:32] [DASHBOARD WARN] Histórico insuficiente para EMA (3/9). Usando último preço. 
+[02:09:32] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=507634.50. 
+[02:09:32] [DASHBOARD INFO] Volatilidade calculada: 0.07%. 
+[02:09:32] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[02:09:32] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '507634.50',
+  emaLong: '507634.50',
+  volatility: '0.07',
+  macd: '0.00',
+  signal: '507634.50'
+}
+[02:09:34] [DASHBOARD ERROR] Failed to fetch orderbook, using last ticker price: Request failed with status code 404
+02:09:34.581 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":1,"filled_orders":0,"cancelled_orders":0,"total_pnl":0,"avg_fill_value":0,"avg_spread":0.08,"...
+[02:09:34] [DASHBOARD WARN] Histórico insuficiente para RSI (4/13). Retornando neutro (50). 
+[02:09:34] [DASHBOARD WARN] Histórico insuficiente para EMA (4/8). Usando último preço. 
+[02:09:34] [DASHBOARD WARN] Histórico insuficiente para EMA (4/20). Usando último preço. 
+[02:09:34] [DASHBOARD WARN] Histórico insuficiente para EMA (4/12). Usando último preço. 
+[02:09:34] [DASHBOARD WARN] Histórico insuficiente para EMA (4/26). Usando último preço. 
+[02:09:34] [DASHBOARD WARN] Histórico insuficiente para EMA (4/9). Usando último preço. 
+[02:09:34] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=507637.00. 
+[02:09:34] [DASHBOARD INFO] Volatilidade calculada: 0.08%. 
+[02:09:34] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[02:09:34] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '507637.00',
+  emaLong: '507637.00',
+  volatility: '0.08',
+  macd: '0.00',
+  signal: '507637.00'
+}
