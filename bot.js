@@ -213,6 +213,57 @@ function calculateMACD(prices) {
     return {macd, signal};
 }
 
+function calculateADX(prices, period = 14) {
+    if (prices.length < period * 2) {
+        log('WARN', `Histórico insuficiente para ADX (${prices.length}/${period * 2}). Retornando força neutra (20).`);
+        return 20;
+    }
+    
+    let tr = [];
+    let dmPlus = [];
+    let dmMinus = [];
+    
+    for (let i = 1; i < prices.length; i++) {
+        const high = prices[i] * 1.0001; // Simulação de High/Low baseada no Close
+        const low = prices[i] * 0.9999;
+        const prevHigh = prices[i-1] * 1.0001;
+        const prevLow = prices[i-1] * 0.9999;
+        const prevClose = prices[i-1];
+        
+        const trVal = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
+        tr.push(trVal);
+        
+        const upMove = high - prevHigh;
+        const downMove = prevLow - low;
+        
+        dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+        dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+    }
+    
+    const smooth = (arr, p) => {
+        let result = [arr.slice(0, p).reduce((a, b) => a + b, 0) / p];
+        for (let i = p; i < arr.length; i++) {
+            result.push((result[result.length - 1] * (p - 1) + arr[i]) / p);
+        }
+        return result;
+    };
+    
+    const smoothedTR = smooth(tr, period);
+    const smoothedDMPlus = smooth(dmPlus, period);
+    const smoothedDMMinus = smooth(dmMinus, period);
+    
+    let dx = [];
+    for (let i = 0; i < smoothedTR.length; i++) {
+        const diPlus = (smoothedDMPlus[i] / smoothedTR[i]) * 100;
+        const diMinus = (smoothedDMMinus[i] / smoothedTR[i]) * 100;
+        dx.push(Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100);
+    }
+    
+    const adx = smooth(dx, period).pop();
+    log('INFO', `ADX calculado: ${adx.toFixed(2)}.`);
+    return adx || 20;
+}
+
 function calculateVolatility(prices) {
     if (!prices || prices.length < 2) {
         log('WARN', 'Dados insuficientes para calcular volatilidade. Retornando 0.1%.');
@@ -269,10 +320,11 @@ function calculateOrderbookImbalance(orderbook) {
     return (bidVol - askVol) / (bidVol + askVol); // -1 a 1
 }
 
-function identifyMarketRegime(rsi, volatility, trendScore) {
-    if (volatility < 0.3 && Math.abs(rsi - 50) < 10) return 'RANGING'; // Lateral
-    if (trendScore > 2.5 && rsi > 60) return 'BULL_TREND'; // Tendência Forte de Alta
-    if (trendScore < 0.5 && rsi < 40) return 'BEAR_TREND'; // Tendência Forte de Baixa
+function identifyMarketRegime(rsi, volatility, trendScore, adx) {
+    const strongTrend = adx > 25;
+    if (volatility < 0.3 && !strongTrend) return 'RANGING'; // Lateral
+    if (trendScore > 2.5 && strongTrend) return 'BULL_TREND'; // Tendência Forte de Alta
+    if (trendScore < 0.5 && strongTrend) return 'BEAR_TREND'; // Tendência Forte de Baixa
     if (trendScore > 1.5) return 'BULLISH'; // Tendência Leve de Alta
     if (trendScore < 1.5) return 'BEARISH'; // Tendência Leve de Baixa
     return 'NEUTRAL';
@@ -298,7 +350,8 @@ function fetchPricePrediction(midPrice, orderbook) {
     if (imbalance < -0.2) trendScore -= 0.5; // Pressão de venda
     if (histAnalysis.recentBias > 0) trendScore += 0.5;
     
-    const regime = identifyMarketRegime(rsi, volatility, trendScore);
+    const adx = calculateADX(priceHistory, 14);
+    const regime = identifyMarketRegime(rsi, volatility, trendScore, adx);
     const trend = trendScore > 2 ? 'up' : (trendScore < 1.5 ? 'down' : 'neutral');
     let rsiConf = Math.abs(rsi - 50) / 50; // 0-1
     let emaConf = Math.abs(emaShort - emaLong) / (emaLong || 1); // Normalizado pelo preço
@@ -767,8 +820,13 @@ async function runCycle() {
         // Ajuste baseado em RSI (zonas de exaustão)
         if (pred.rsi > 70 || pred.rsi < 30) dynamicSpreadPct *= 1.1;
         
-        // Limita spread máximo a 0.5% (muito mais conservador)
-        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.005);
+        // Profit Guard: Garantir lucro líquido real acima das taxas (Maker: 0.30%, Taker: 0.70%)
+        // Usamos 0.8% como spread mínimo de segurança para cobrir taxas e slippage
+        const minSafetySpread = 0.008; 
+        if (dynamicSpreadPct < minSafetySpread) dynamicSpreadPct = minSafetySpread;
+        
+        // Limita spread máximo a 1.5% (mais flexível para capturar lucro em alta volatilidade)
+        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.015);
         currentSpreadPct = dynamicSpreadPct;
 
         let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, ORDER_SIZE * (1 + volatilityPct / 100)));
