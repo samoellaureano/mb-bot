@@ -447,13 +447,13 @@ async function placeOrder(side, price, qty) {
             stopPrice: 0,
             type: 'limit'
         };
-        const orderId = SIMULATE ? `${side}_SIM_${Date.now()}` : (await MB.placeOrder(orderData.side)).orderId;
+        const orderId = SIMULATE ? `${side}_SIM_${Date.now()}` : (await MB.placeOrder(orderData)).orderId;
         activeOrders.set(side, {
             id: orderId,
             side,
             price,
             qty,
-            status: 'working',
+            status: 'open',
             cyclePlaced: cycleCount,
             timestamp: Date.now(),
             feeRate: feeRate // ADICIONADO: feeRate

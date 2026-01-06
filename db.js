@@ -175,6 +175,10 @@ class Database {
             this.log('ERROR', `Dados de ordem inválidos: ${JSON.stringify(order)}`);
             throw new Error('Invalid order data');
         }
+        // Adicionar context ao order se fornecido
+        if (context && !order.note) {
+            order.note = context;
+        }
         return this.saveOrder(order);
     }
 
@@ -194,7 +198,7 @@ class Database {
                 order.status || 'open',
                 parseFloat(order.filledQty || 0),
                 timestamp,
-                order.note || context || null,
+                order.note || null,
                 order.externalId || null,
                 parseFloat(order.pnl || 0),
                 (err) => {

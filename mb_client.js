@@ -293,48 +293,55 @@ function simulateResponse(endpoint, method, params, body) {
     };
 
     const handler = simulations[ep]?.[method];
-    if (handler && typeof handler === 'function') return handler(params, body);
+    if (handler && typeof handler === 'function') return handler();
     return {success: true, data: null};
 }
 
 // =========================================
 // ===== Trading Functions =================
-async function placeOrder(side, price, quantity = ORDER_SIZE, stopPrice = 0, cost = 100, externalId = null) {
+async function placeOrder(orderDataOrSide, price, quantity = ORDER_SIZE, stopPrice = 0, cost = 100, externalId = null) {
     const MIN_QTY = 0.0000015;
-    const qty = Math.max(quantity, MIN_QTY);
-    const finalExternalId = externalId || `ORD_${Date.now()}`;
-
-    log('INFO', `Placing ${side.toUpperCase()} order: ${qty} ${PAIR} at ${price || 'market price'}`);
-
-    if (SIMULATE) {
-        return simulateResponse(`/accounts/{accountId}/{symbol}/orders`, 'POST', {}, {
+    
+    // Suporte para ambos: objeto orderData ou parâmetros individuais
+    let orderData;
+    if (typeof orderDataOrSide === 'object') {
+        // Recebeu objeto orderData
+        orderData = orderDataOrSide;
+    } else {
+        // Recebeu parâmetros individuais (modo legado)
+        const side = orderDataOrSide;
+        const qty = Math.max(quantity, MIN_QTY);
+        const finalExternalId = externalId || `ORD_${Date.now()}`;
+        
+        orderData = {
             async: true,
-            cost: side === 'buy' ? cost : undefined,
             externalId: finalExternalId,
             limitPrice: price,
             qty: qty.toString(),
             side: side.toLowerCase(),
             stopPrice,
             type: 'limit'
-        });
+        };
+        if (side === 'buy') orderData.cost = cost;
+    }
+
+    log('INFO', `Placing ${orderData.side.toUpperCase()} order: ${orderData.qty} ${PAIR} at ${orderData.limitPrice || 'market price'}`);
+
+    if (SIMULATE) {
+        return simulateResponse(`/accounts/{accountId}/{symbol}/orders`, 'POST', {}, orderData);
     }
 
     await MercadoBitcoinAuth.ensureAuthenticated();
     const ticker = await getTicker();
-    const limitPrice = Math.round(price || (side === 'buy' ? ticker.last * (1 - SPREAD_PCT) : ticker.last * (1 + SPREAD_PCT)));
+    const limitPrice = Math.round(orderData.limitPrice || (orderData.side === 'buy' ? ticker.last * (1 - SPREAD_PCT) : ticker.last * (1 + SPREAD_PCT)));
 
-    const orderData = {
-        async: true,
-        externalId: finalExternalId,
-        limitPrice,
-        qty: qty.toString(),
-        side: side.toLowerCase(),
-        stopPrice,
-        type: 'limit', ...(side === 'buy' ? {cost} : {})
+    const finalOrderData = {
+        ...orderData,
+        limitPrice
     };
-    log('INFO', `Final order parameters:`, orderData);
+    log('INFO', `Final order parameters:`, finalOrderData);
 
-    return makeRequest(`/accounts/${accountId}/${PAIR}/orders`, 'POST', {}, orderData);
+    return makeRequest(`/accounts/${accountId}/${PAIR}/orders`, 'POST', {}, finalOrderData);
 }
 
 async function cancelOrder(orderId) {
