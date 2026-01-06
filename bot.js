@@ -280,7 +280,8 @@ function identifyMarketRegime(rsi, volatility, trendScore) {
 
 function fetchPricePrediction(midPrice, orderbook) {
     priceHistory.push(midPrice);
-    if (priceHistory.length > 60) priceHistory.shift();
+    // Otimização de memória: Mantém apenas o necessário para os indicadores (60 períodos)
+    if (priceHistory.length > 100) priceHistory.splice(0, priceHistory.length - 60);
     const rsi = calculateRSI(priceHistory, 12);
     const emaShort = calculateEMA(priceHistory, 8);
     const emaLong = calculateEMA(priceHistory, 20);
@@ -787,9 +788,9 @@ async function runCycle() {
                 regimeSizeMult = 1.2;   // Aumenta a mão na alta
                 break;
             case 'BEAR_TREND':
-                regimeSpreadMult = 1.5; // Spread mais largo para se proteger
-                regimeBiasMult = 1.5;   // Viés de venda mais forte
-                regimeSizeMult = 0.8;   // Diminui a mão na queda
+                regimeSpreadMult = 2.0; // Spread 2x maior para garantir lucro na recuperação
+                regimeBiasMult = 1.8;   // Viés de venda/proteção muito forte
+                regimeSizeMult = 0.7;   // Mão bem leve na queda
                 break;
             case 'RANGING':
                 regimeSpreadMult = 1.2; // Spread maior para capturar oscilação lateral

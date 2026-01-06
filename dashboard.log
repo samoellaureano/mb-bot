@@ -4,3 +4,450 @@ nohup: ignoring input
 [03:47:25] [DASHBOARD INFO] Carregados 7 fills históricos do banco de dados. 
 [03:47:25] [DASHBOARD INFO] Loaded PNL history with 36 points from /home/ubuntu/mb-bot/pnl_history.json 
 [03:47:25] [DASHBOARD INFO] Dashboard ready at http://localhost:3001 - Mode: LIVE 
+2026-01-06T03:47:30.305Z [WARN]   Token expired/near expiry, reauthenticating...
+2026-01-06T03:47:30.305Z [INFO]   API_KEY: bdb29a91...
+2026-01-06T03:47:30.306Z [INFO]   API_SECRET: e14075f1...
+2026-01-06T03:47:32.079Z [INFO]   Account ID: f02d1506...
+2026-01-06T03:47:32.080Z [INFO]   Access Token: eyJhbGci...
+2026-01-06T03:47:32.080Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+03:47:34.454 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":66,"filled_orders":7,"cancelled_orders":54,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para RSI (1/13). Retornando neutro (50). 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (1/8). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (1/20). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (1/12). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (1/26). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (1/9). Usando último preço. 
+[03:47:34] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508285.00. 
+[03:47:34] [DASHBOARD WARN] Dados insuficientes para calcular volatilidade. Retornando 0.1%. 
+[03:47:34] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:47:34] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '508285.00',
+  emaLong: '508285.00',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '508285.00'
+}
+03:47:34.903 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":66,"filled_orders":7,"cancelled_orders":54,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para RSI (2/13). Retornando neutro (50). 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (2/8). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (2/20). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (2/12). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (2/26). Usando último preço. 
+[03:47:34] [DASHBOARD WARN] Histórico insuficiente para EMA (2/9). Usando último preço. 
+[03:47:34] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508285.00. 
+[03:47:34] [DASHBOARD WARN] Nenhum retorno válido para calcular volatilidade. Retornando 0.1%. 
+[03:47:34] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:47:34] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '508285.00',
+  emaLong: '508285.00',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '508285.00'
+}
+03:47:40.246 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":67,"filled_orders":7,"cancelled_orders":54,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:47:40] [DASHBOARD WARN] Histórico insuficiente para RSI (3/13). Retornando neutro (50). 
+[03:47:40] [DASHBOARD WARN] Histórico insuficiente para EMA (3/8). Usando último preço. 
+[03:47:40] [DASHBOARD WARN] Histórico insuficiente para EMA (3/20). Usando último preço. 
+[03:47:40] [DASHBOARD WARN] Histórico insuficiente para EMA (3/12). Usando último preço. 
+[03:47:40] [DASHBOARD WARN] Histórico insuficiente para EMA (3/26). Usando último preço. 
+[03:47:40] [DASHBOARD WARN] Histórico insuficiente para EMA (3/9). Usando último preço. 
+[03:47:40] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508285.50. 
+[03:47:40] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[03:47:40] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:47:40] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '508285.50',
+  emaLong: '508285.50',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '508285.50'
+}
+03:47:45.645 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":67,"filled_orders":7,"cancelled_orders":54,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:47:45] [DASHBOARD WARN] Histórico insuficiente para RSI (4/13). Retornando neutro (50). 
+[03:47:45] [DASHBOARD WARN] Histórico insuficiente para EMA (4/8). Usando último preço. 
+[03:47:45] [DASHBOARD WARN] Histórico insuficiente para EMA (4/20). Usando último preço. 
+[03:47:45] [DASHBOARD WARN] Histórico insuficiente para EMA (4/12). Usando último preço. 
+[03:47:45] [DASHBOARD WARN] Histórico insuficiente para EMA (4/26). Usando último preço. 
+[03:47:45] [DASHBOARD WARN] Histórico insuficiente para EMA (4/9). Usando último preço. 
+[03:47:45] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508285.00. 
+[03:47:45] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[03:47:45] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:47:45] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '508285.00',
+  emaLong: '508285.00',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '508285.00'
+}
+03:47:50.313 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":68,"filled_orders":7,"cancelled_orders":55,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:47:50] [DASHBOARD WARN] Histórico insuficiente para RSI (5/13). Retornando neutro (50). 
+[03:47:50] [DASHBOARD WARN] Histórico insuficiente para EMA (5/8). Usando último preço. 
+[03:47:50] [DASHBOARD WARN] Histórico insuficiente para EMA (5/20). Usando último preço. 
+[03:47:50] [DASHBOARD WARN] Histórico insuficiente para EMA (5/12). Usando último preço. 
+[03:47:50] [DASHBOARD WARN] Histórico insuficiente para EMA (5/26). Usando último preço. 
+[03:47:50] [DASHBOARD WARN] Histórico insuficiente para EMA (5/9). Usando último preço. 
+[03:47:50] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508285.50. 
+[03:47:50] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[03:47:50] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:47:50] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '508285.50',
+  emaLong: '508285.50',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '508285.50'
+}
+03:47:55.889 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":68,"filled_orders":7,"cancelled_orders":55,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:47:55] [DASHBOARD WARN] Histórico insuficiente para RSI (6/13). Retornando neutro (50). 
+[03:47:55] [DASHBOARD WARN] Histórico insuficiente para EMA (6/8). Usando último preço. 
+[03:47:55] [DASHBOARD WARN] Histórico insuficiente para EMA (6/20). Usando último preço. 
+[03:47:55] [DASHBOARD WARN] Histórico insuficiente para EMA (6/12). Usando último preço. 
+[03:47:55] [DASHBOARD WARN] Histórico insuficiente para EMA (6/26). Usando último preço. 
+[03:47:55] [DASHBOARD WARN] Histórico insuficiente para EMA (6/9). Usando último preço. 
+[03:47:55] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508285.50. 
+[03:47:55] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[03:47:55] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:47:55] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '508285.50',
+  emaLong: '508285.50',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '508285.50'
+}
+03:48:00.390 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":69,"filled_orders":7,"cancelled_orders":56,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:00] [DASHBOARD WARN] Histórico insuficiente para RSI (7/13). Retornando neutro (50). 
+[03:48:00] [DASHBOARD WARN] Histórico insuficiente para EMA (7/8). Usando último preço. 
+[03:48:00] [DASHBOARD WARN] Histórico insuficiente para EMA (7/20). Usando último preço. 
+[03:48:00] [DASHBOARD WARN] Histórico insuficiente para EMA (7/12). Usando último preço. 
+[03:48:00] [DASHBOARD WARN] Histórico insuficiente para EMA (7/26). Usando último preço. 
+[03:48:00] [DASHBOARD WARN] Histórico insuficiente para EMA (7/9). Usando último preço. 
+[03:48:00] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508285.00. 
+[03:48:00] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[03:48:00] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:00] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '508285.00',
+  emaLong: '508285.00',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '508285.00'
+}
+03:48:05.510 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":69,"filled_orders":7,"cancelled_orders":56,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:05] [DASHBOARD WARN] Histórico insuficiente para RSI (8/13). Retornando neutro (50). 
+[03:48:05] [DASHBOARD INFO] EMA(8) calculada: 508282.15. 
+[03:48:05] [DASHBOARD WARN] Histórico insuficiente para EMA (8/20). Usando último preço. 
+[03:48:05] [DASHBOARD WARN] Histórico insuficiente para EMA (8/12). Usando último preço. 
+[03:48:05] [DASHBOARD WARN] Histórico insuficiente para EMA (8/26). Usando último preço. 
+[03:48:05] [DASHBOARD WARN] Histórico insuficiente para EMA (8/9). Usando último preço. 
+[03:48:05] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508271.50. 
+[03:48:05] [DASHBOARD INFO] Volatilidade calculada: 0.04%. 
+[03:48:05] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:05] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '508282.15',
+  emaLong: '508271.50',
+  volatility: '0.04',
+  macd: '0.00',
+  signal: '508271.50'
+}
+03:48:10.391 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":57,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:10] [DASHBOARD WARN] Histórico insuficiente para RSI (9/13). Retornando neutro (50). 
+[03:48:10] [DASHBOARD INFO] EMA(8) calculada: 508279.45. 
+[03:48:10] [DASHBOARD WARN] Histórico insuficiente para EMA (9/20). Usando último preço. 
+[03:48:10] [DASHBOARD WARN] Histórico insuficiente para EMA (9/12). Usando último preço. 
+[03:48:10] [DASHBOARD WARN] Histórico insuficiente para EMA (9/26). Usando último preço. 
+[03:48:10] [DASHBOARD INFO] EMA(9) calculada: 508279.96. 
+[03:48:10] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508279.96. 
+[03:48:10] [DASHBOARD INFO] Volatilidade calculada: 0.04%. 
+[03:48:10] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:10] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '508279.45',
+  emaLong: '508270.00',
+  volatility: '0.04',
+  macd: '0.00',
+  signal: '508279.96'
+}
+03:48:15.524 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":57,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:15] [DASHBOARD WARN] Histórico insuficiente para RSI (10/13). Retornando neutro (50). 
+[03:48:15] [DASHBOARD INFO] EMA(8) calculada: 508273.86. 
+[03:48:15] [DASHBOARD WARN] Histórico insuficiente para EMA (10/20). Usando último preço. 
+[03:48:15] [DASHBOARD WARN] Histórico insuficiente para EMA (10/12). Usando último preço. 
+[03:48:15] [DASHBOARD WARN] Histórico insuficiente para EMA (10/26). Usando último preço. 
+[03:48:15] [DASHBOARD INFO] EMA(9) calculada: 508274.77. 
+[03:48:15] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508274.77. 
+[03:48:15] [DASHBOARD INFO] Volatilidade calculada: 0.05%. 
+[03:48:15] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:15] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '508273.86',
+  emaLong: '508254.00',
+  volatility: '0.05',
+  macd: '0.00',
+  signal: '508274.77'
+}
+03:48:20.309 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:20] [DASHBOARD WARN] Histórico insuficiente para RSI (11/13). Retornando neutro (50). 
+[03:48:20] [DASHBOARD INFO] EMA(8) calculada: 508268.60. 
+[03:48:20] [DASHBOARD WARN] Histórico insuficiente para EMA (11/20). Usando último preço. 
+[03:48:20] [DASHBOARD WARN] Histórico insuficiente para EMA (11/12). Usando último preço. 
+[03:48:20] [DASHBOARD WARN] Histórico insuficiente para EMA (11/26). Usando último preço. 
+[03:48:20] [DASHBOARD INFO] EMA(9) calculada: 508269.98. 
+[03:48:20] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=508269.98. 
+[03:48:20] [DASHBOARD INFO] Volatilidade calculada: 0.05%. 
+[03:48:20] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:20] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '508268.60',
+  emaLong: '508250.50',
+  volatility: '0.05',
+  macd: '0.00',
+  signal: '508269.98'
+}
+03:48:25.467 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:25] [DASHBOARD WARN] Histórico insuficiente para RSI (12/13). Retornando neutro (50). 
+[03:48:25] [DASHBOARD INFO] EMA(8) calculada: 508263.43. 
+[03:48:25] [DASHBOARD WARN] Histórico insuficiente para EMA (12/20). Usando último preço. 
+[03:48:25] [DASHBOARD INFO] EMA(12) calculada: 508268.55. 
+[03:48:25] [DASHBOARD WARN] Histórico insuficiente para EMA (12/26). Usando último preço. 
+[03:48:25] [DASHBOARD INFO] EMA(9) calculada: 508264.92. 
+[03:48:25] [DASHBOARD INFO] MACD calculado: MACD=23.55, Signal=508264.92. 
+[03:48:25] [DASHBOARD INFO] Volatilidade calculada: 0.04%. 
+[03:48:25] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:25] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '508263.43',
+  emaLong: '508245.00',
+  volatility: '0.04',
+  macd: '23.55',
+  signal: '508264.92'
+}
+03:48:30.421 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:30] [DASHBOARD INFO] RSI calculado: 2.02. 
+[03:48:30] [DASHBOARD INFO] EMA(8) calculada: 508257.66. 
+[03:48:30] [DASHBOARD WARN] Histórico insuficiente para EMA (13/20). Usando último preço. 
+[03:48:30] [DASHBOARD INFO] EMA(12) calculada: 508263.77. 
+[03:48:30] [DASHBOARD WARN] Histórico insuficiente para EMA (13/26). Usando último preço. 
+[03:48:30] [DASHBOARD INFO] EMA(9) calculada: 508259.50. 
+[03:48:30] [DASHBOARD INFO] MACD calculado: MACD=26.27, Signal=508259.50. 
+[03:48:30] [DASHBOARD INFO] Volatilidade calculada: 0.04%. 
+[03:48:30] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:30] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '2.02',
+  emaShort: '508257.66',
+  emaLong: '508237.50',
+  volatility: '0.04',
+  macd: '26.27',
+  signal: '508259.50'
+}
+03:48:35.491 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:35] [DASHBOARD INFO] RSI calculado: 1.69. 
+[03:48:35] [DASHBOARD INFO] EMA(8) calculada: 508251.01. 
+[03:48:35] [DASHBOARD WARN] Histórico insuficiente para EMA (14/20). Usando último preço. 
+[03:48:35] [DASHBOARD INFO] EMA(12) calculada: 508258.33. 
+[03:48:35] [DASHBOARD WARN] Histórico insuficiente para EMA (14/26). Usando último preço. 
+[03:48:35] [DASHBOARD INFO] EMA(9) calculada: 508253.20. 
+[03:48:35] [DASHBOARD INFO] MACD calculado: MACD=30.33, Signal=508253.20. 
+[03:48:35] [DASHBOARD INFO] Volatilidade calculada: 0.04%. 
+[03:48:35] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:35] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '1.69',
+  emaShort: '508251.01',
+  emaLong: '508228.00',
+  volatility: '0.04',
+  macd: '30.33',
+  signal: '508253.20'
+}
+03:48:40.436 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:40] [DASHBOARD INFO] RSI calculado: 0.85. 
+[03:48:40] [DASHBOARD INFO] EMA(8) calculada: 508244.08. 
+[03:48:40] [DASHBOARD WARN] Histórico insuficiente para EMA (15/20). Usando último preço. 
+[03:48:40] [DASHBOARD INFO] EMA(12) calculada: 508253.60. 
+[03:48:40] [DASHBOARD WARN] Histórico insuficiente para EMA (15/26). Usando último preço. 
+[03:48:40] [DASHBOARD INFO] EMA(9) calculada: 508248.09. 
+[03:48:40] [DASHBOARD INFO] MACD calculado: MACD=25.60, Signal=508248.09. 
+[03:48:40] [DASHBOARD INFO] Volatilidade calculada: 0.04%. 
+[03:48:40] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:40] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '0.85',
+  emaShort: '508244.08',
+  emaLong: '508228.00',
+  volatility: '0.04',
+  macd: '25.60',
+  signal: '508248.09'
+}
+03:48:45.463 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:45] [DASHBOARD INFO] RSI calculado: 25.81. 
+[03:48:45] [DASHBOARD INFO] EMA(8) calculada: 508244.64. 
+[03:48:45] [DASHBOARD WARN] Histórico insuficiente para EMA (16/20). Usando último preço. 
+[03:48:45] [DASHBOARD INFO] EMA(12) calculada: 508252.73. 
+[03:48:45] [DASHBOARD WARN] Histórico insuficiente para EMA (16/26). Usando último preço. 
+[03:48:45] [DASHBOARD INFO] EMA(9) calculada: 508246.16. 
+[03:48:45] [DASHBOARD INFO] MACD calculado: MACD=5.23, Signal=508246.16. 
+[03:48:45] [DASHBOARD INFO] Volatilidade calculada: 0.06%. 
+[03:48:45] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:45] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '25.81',
+  emaShort: '508244.64',
+  emaLong: '508247.50',
+  volatility: '0.06',
+  macd: '5.23',
+  signal: '508246.16'
+}
+03:48:50.320 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:50] [DASHBOARD INFO] RSI calculado: 23.49. 
+[03:48:50] [DASHBOARD INFO] EMA(8) calculada: 508241.80. 
+[03:48:50] [DASHBOARD WARN] Histórico insuficiente para EMA (17/20). Usando último preço. 
+[03:48:50] [DASHBOARD INFO] EMA(12) calculada: 508251.00. 
+[03:48:50] [DASHBOARD WARN] Histórico insuficiente para EMA (17/26). Usando último preço. 
+[03:48:50] [DASHBOARD INFO] EMA(9) calculada: 508245.03. 
+[03:48:50] [DASHBOARD INFO] MACD calculado: MACD=9.50, Signal=508245.03. 
+[03:48:50] [DASHBOARD INFO] Volatilidade calculada: 0.06%. 
+[03:48:50] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:50] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '23.49',
+  emaShort: '508241.80',
+  emaLong: '508241.50',
+  volatility: '0.06',
+  macd: '9.50',
+  signal: '508245.03'
+}
+03:48:55.646 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":7,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:48:55] [DASHBOARD INFO] RSI calculado: 8.78. 
+[03:48:55] [DASHBOARD INFO] EMA(8) calculada: 508210.38. 
+[03:48:55] [DASHBOARD WARN] Histórico insuficiente para EMA (18/20). Usando último preço. 
+[03:48:55] [DASHBOARD INFO] EMA(12) calculada: 508228.09. 
+[03:48:55] [DASHBOARD WARN] Histórico insuficiente para EMA (18/26). Usando último preço. 
+[03:48:55] [DASHBOARD INFO] EMA(9) calculada: 508214.38. 
+[03:48:55] [DASHBOARD INFO] MACD calculado: MACD=125.59, Signal=508214.38. 
+[03:48:55] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:48:55] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:48:55] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '8.78',
+  emaShort: '508210.38',
+  emaLong: '508102.50',
+  volatility: '0.27',
+  macd: '125.59',
+  signal: '508214.38'
+}
+03:49:00.313 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:49:00] [DASHBOARD INFO] RSI calculado: 8.41. 
+[03:49:00] [DASHBOARD INFO] EMA(8) calculada: 508183.33. 
+[03:49:00] [DASHBOARD WARN] Histórico insuficiente para EMA (19/20). Usando último preço. 
+[03:49:00] [DASHBOARD INFO] EMA(12) calculada: 508205.33. 
+[03:49:00] [DASHBOARD WARN] Histórico insuficiente para EMA (19/26). Usando último preço. 
+[03:49:00] [DASHBOARD INFO] EMA(9) calculada: 508189.43. 
+[03:49:00] [DASHBOARD INFO] MACD calculado: MACD=113.33, Signal=508189.43. 
+[03:49:00] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[03:49:00] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:49:00] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '8.41',
+  emaShort: '508183.33',
+  emaLong: '508092.00',
+  volatility: '0.26',
+  macd: '113.33',
+  signal: '508189.43'
+}
+03:49:05.577 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:49:05] [DASHBOARD INFO] RSI calculado: 6.95. 
+[03:49:05] [DASHBOARD INFO] EMA(8) calculada: 508148.26. 
+[03:49:05] [DASHBOARD INFO] EMA(20) calculada: 508210.92. 
+[03:49:05] [DASHBOARD INFO] EMA(12) calculada: 508178.16. 
+[03:49:05] [DASHBOARD WARN] Histórico insuficiente para EMA (20/26). Usando último preço. 
+[03:49:05] [DASHBOARD INFO] EMA(9) calculada: 508156.81. 
+[03:49:05] [DASHBOARD INFO] MACD calculado: MACD=148.16, Signal=508156.81. 
+[03:49:05] [DASHBOARD INFO] Volatilidade calculada: 0.27%. 
+[03:49:05] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:49:05] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '6.95',
+  emaShort: '508148.26',
+  emaLong: '508210.92',
+  volatility: '0.27',
+  macd: '148.16',
+  signal: '508156.81'
+}
+03:49:10.708 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":70,"filled_orders":8,"cancelled_orders":58,"total_pnl":-0.05827218630004685,"avg_fill_value":...
+[03:49:10] [DASHBOARD INFO] RSI calculado: 6.98. 
+[03:49:10] [DASHBOARD INFO] EMA(8) calculada: 508120.59. 
+[03:49:10] [DASHBOARD INFO] EMA(20) calculada: 508193.64. 
+[03:49:10] [DASHBOARD INFO] EMA(12) calculada: 508153.13. 
+[03:49:10] [DASHBOARD WARN] Histórico insuficiente para EMA (21/26). Usando último preço. 
+[03:49:10] [DASHBOARD INFO] EMA(9) calculada: 508130.34. 
+[03:49:10] [DASHBOARD INFO] MACD calculado: MACD=123.63, Signal=508130.34. 
+[03:49:10] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[03:49:10] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[03:49:10] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '6.98',
+  emaShort: '508120.59',
+  emaLong: '508193.64',
+  volatility: '0.26',
+  macd: '123.63',
+  signal: '508130.34'
+}
