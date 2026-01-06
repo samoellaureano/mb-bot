@@ -198,7 +198,7 @@ function simulateResponse(endpoint, method, params, body) {
             }]
         },
 
-        '/accounts/{accountId}/balances': {
+        '/accounts/.*./balances': {
             GET: () => [
                 {
                     symbol: 'BRL',
@@ -215,7 +215,7 @@ function simulateResponse(endpoint, method, params, body) {
             ]
         },
 
-        '/accounts/{accountId}/{symbol}/orders': {
+        '/accounts/.*./.*/orders': {
             POST: () => {
                 const qty = parseFloat(body.qty);
                 const price = parseFloat(body.limitPrice) || marketPrice;
@@ -261,7 +261,7 @@ function simulateResponse(endpoint, method, params, body) {
             }
         },
 
-        '/accounts/{accountId}/{symbol}/orders/{orderId}': {
+        '/accounts/.*./.*/orders/.*': {
             DELETE: () => ({status: 'cancelled', orderId: params.orderId, message: 'Order cancelled (simulated)'}),
             GET: () => {
                 const qty = ORDER_SIZE;
@@ -279,7 +279,7 @@ function simulateResponse(endpoint, method, params, body) {
             }
         },
 
-        '/{symbol}/orderbook': {
+        '/.*/orderbook': {
             GET: () => {
                 const levels = params.limit ? parseInt(params.limit) : 10;
                 const asks = [], bids = [];
@@ -292,9 +292,19 @@ function simulateResponse(endpoint, method, params, body) {
         }
     };
 
-    const handler = simulations[ep]?.[method];
-    if (handler && typeof handler === 'function') return handler();
-    return {success: true, data: null};
+    let handler = null;
+    for (const pattern in simulations) {
+        const regex = new RegExp(`^${pattern}$`);
+        if (regex.test(ep)) {
+            handler = simulations[pattern][method];
+            break;
+        }
+    }
+    if (handler && typeof handler === 'function') {
+        const result = handler();
+        return result;
+    }
+    return null;
 }
 
 // =========================================

@@ -1,0 +1,63 @@
+
+> mb-bot@1.0.0 dashboard
+> node dashboard.js
+
+00:08:08.471 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+00:08:08.474 [INFO]   [DB] Carregados 4 fills históricos. 
+[00:08:08] [DASHBOARD INFO] Carregados 4 fills históricos do banco de dados. 
+[00:08:08] [DASHBOARD INFO] Loaded PNL history with 879 points from /home/ubuntu/mb-bot/pnl_history.json 
+[00:08:08] [DASHBOARD INFO] Dashboard ready at http://localhost:3001 - Mode: SIMULATE 
+2026-01-06T00:08:13.198Z [WARN]   Token expired/near expiry, reauthenticating...
+2026-01-06T00:08:13.198Z [INFO]   Authentication (SIMULATE): Bearer token generated
+00:08:13.201 [INFO]   [DB] Consultadas 24 ordens. 
+[00:08:13] [DASHBOARD DEBUG] Simulated data fetched {
+  ticker: {
+    pair: 'BTC-BRL',
+    last: '296621.81',
+    buy: '296503.17',
+    sell: '296740.46',
+    high: '298104.92',
+    low: '295138.71',
+    open: '296028.57',
+    vol: '24.193',
+    date: 1.767658093199e+21
+  },
+  balances: [
+    {
+      symbol: 'BRL',
+      available: '10000.00',
+      on_hold: '0.00',
+      total: '10000.00'
+    },
+    {
+      symbol: 'BTC',
+      available: '0.05000000',
+      on_hold: '0.00000000',
+      total: '0.05000000'
+    }
+  ],
+  ordersCount: 24,
+  orderbookKeys: [ 'asks', 'bids', 'timestamp' ]
+}
+[00:08:13] [DASHBOARD DEBUG] Saved PNL history with 881 points to /home/ubuntu/mb-bot/pnl_history.json 
+[00:08:13] [DASHBOARD WARN] Histórico insuficiente para RSI (1/13). Retornando neutro (50). 
+[00:08:13] [DASHBOARD WARN] Histórico insuficiente para EMA (1/8). Usando último preço. 
+[00:08:13] [DASHBOARD WARN] Histórico insuficiente para EMA (1/20). Usando último preço. 
+[00:08:13] [DASHBOARD WARN] Histórico insuficiente para EMA (1/12). Usando último preço. 
+[00:08:13] [DASHBOARD WARN] Histórico insuficiente para EMA (1/26). Usando último preço. 
+[00:08:13] [DASHBOARD WARN] Histórico insuficiente para EMA (1/9). Usando último preço. 
+[00:08:13] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=296621.82. 
+[00:08:13] [DASHBOARD WARN] Dados insuficientes para calcular volatilidade. Retornando 0.1%. 
+[00:08:13] [DASHBOARD INFO] Análise fills históricos: Bias=0.00%, Sucesso=25.00%, PnL médio=0.01. 
+[00:08:13] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '1.00',
+  rsi: '50.00',
+  emaShort: '296621.82',
+  emaLong: '296621.82',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '296621.82'
+}
+Killed

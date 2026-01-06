@@ -322,38 +322,49 @@ async function getLiveData() {
             await mbClient.authenticate();
         }
         const accountId = mbClient.getAccountId();
-        const [ticker, balances] = await Promise.all([
-            mbClient.getTicker(),
-            mbClient.getBalances(accountId)
-        ]);
+        
+        let ticker, balances, orders, orderbook;
 
-        const ordersResponse = await axios.get(`https://api.mercadobitcoin.net/api/v4/accounts/${accountId}/orders`, {
-            params: {status: 'all', symbol: mbClient.PAIR, limit: 100},
-            headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`},
-            timeout: 10000
-        });
-
-        let orders;
-        if (ordersResponse.data && Array.isArray(ordersResponse.data.items)) {
-            orders = ordersResponse.data.items;
-        } else if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
-            orders = ordersResponse.data;
+        if (SIMULATE) {
+            // Em modo simulação, usar funções do mbClient que já tratam simulação
+            ticker = await mbClient.getTicker();
+            balances = await mbClient.getBalances();
+            orders = await db.getOrders({limit: 100}) || []; // Pegar ordens do banco local
+            orderbook = await mbClient.getOrderBook(10);
+            if (DEBUG) log('DEBUG', 'Simulated data fetched', { ticker, balances, ordersCount: orders.length, orderbookKeys: orderbook ? Object.keys(orderbook) : 'null' });
         } else {
-            log('WARN', 'Unexpected orders response structure, initializing empty orders:', ordersResponse.data);
-            orders = [];
-        }
+            // Em modo real, usar chamadas de API
+            [ticker, balances] = await Promise.all([
+                mbClient.getTicker(),
+                mbClient.getBalances()
+            ]);
 
-        let orderbook;
-        try {
-            const response = await axios.get(`https://api.mercadobitcoin.net/api/v4/${mbClient.PAIR}/orderbook?limit=100`, {
-                timeout: 10000,
-                headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`}
+            const ordersResponse = await axios.get(`https://api.mercadobitcoin.net/api/v4/accounts/${accountId}/orders`, {
+                params: {status: 'all', symbol: mbClient.PAIR, limit: 100},
+                headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`},
+                timeout: 10000
             });
-            orderbook = {bids: response.data.bids.slice(0, 10), asks: response.data.asks.slice(0, 10)};
-        } catch (e) {
-            log('ERROR', 'Failed to fetch orderbook, using last ticker price:', e.message);
-            const mid = parseFloat(ticker.last);
-            orderbook = {bids: [[mid, 0.01]], asks: [[mid, 0.01]], fallback: true};
+
+            if (ordersResponse.data && Array.isArray(ordersResponse.data.items)) {
+                orders = ordersResponse.data.items;
+            } else if (ordersResponse.data && Array.isArray(ordersResponse.data)) {
+                orders = ordersResponse.data;
+            } else {
+                log('WARN', 'Unexpected orders response structure, initializing empty orders:', ordersResponse.data);
+                orders = [];
+            }
+
+            try {
+                const response = await axios.get(`https://api.mercadobitcoin.net/api/v4/${mbClient.PAIR.replace('-', '')}/orderbook?limit=100`, {
+                    timeout: 10000,
+                    headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`}
+                });
+                orderbook = {bids: response.data.bids.slice(0, 10), asks: response.data.asks.slice(0, 10)};
+            } catch (e) {
+                log('ERROR', 'Failed to fetch orderbook, using last ticker price:', e.message);
+                const mid = parseFloat(ticker.last);
+                orderbook = {bids: [[mid, 0.01]], asks: [[mid, 0.01]], fallback: true};
+            }
         }
 
         const fills = orders.filter(o => o.status === 'filled').length;
@@ -586,7 +597,7 @@ async function getLiveData() {
 }
 
 // ===== API status atualizado =====
-app.get('/api/status', async (req, res) => {
+app.get('/api/data', async (req, res) => {
     requestCount++;
     const forceRefresh = req.query.refresh === 'true';
     const now = Date.now();
@@ -647,7 +658,7 @@ app.get('/', (req, res) => {
 });
 
 // 404
-app.use('/api/*', (req, res) => res.status(404).json({error: 'API endpoint not found', path: req.path}));
+app.use('/api/v1/*', (req, res) => res.status(404).json({error: 'API endpoint not found', path: req.path}));
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -667,8 +678,10 @@ process.on('SIGTERM', () => {
 });
 
 // Start server and load history
-Promise.all([loadPnlHistory(), loadHistoricalFills()]).then(() => {
-    app.listen(PORT, '0.0.0.0', () => log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`));
+db.init().then(() => {
+    Promise.all([loadPnlHistory(), loadHistoricalFills()]).then(() => {
+        app.listen(PORT, '0.0.0.0', () => log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`));
+    });
 });
 
 module.exports = app;
