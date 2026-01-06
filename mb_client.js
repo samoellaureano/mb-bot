@@ -372,7 +372,8 @@ async function getTicker() {
 
 async function getOrderBook(limit = 10) {
     if (SIMULATE) return simulateResponse(`/${PAIR}/orderbook`, 'GET', {limit});
-    return makeRequest(`/${PAIR.replace('-', '')}/orderbook`, 'GET', {limit});
+    // API v4 usa o par com hífen: BTC-BRL
+    return makeRequest(`/${PAIR}/orderbook`, 'GET', {limit});
 }
 
 async function getOpenOrders() {

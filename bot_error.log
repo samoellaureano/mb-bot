@@ -2728,3 +2728,405 @@
 00:19:44.807 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 21 | Cancelamentos: 0 
 00:19:44.807 [INFO]   [Bot] Taxa de Fill: 161.5% | Preço Médio Fill: 654259.13 BRL | Uptime: 24min 
 00:19:44.807 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:19:58.843 [INFO]   [Bot] Iniciando ciclo 97. 
+00:19:59.951 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507174.00, Best Ask=507503.00. 
+00:19:59.951 [INFO]   [Bot] Volatilidade calculada: 0.45%. 
+00:19:59.951 [DEBUG]  [Bot] Volatilidade no ciclo 97: 0.45% 
+00:19:59.951 [INFO]   [Bot] RSI calculado: 3.45. 
+00:19:59.951 [INFO]   [Bot] EMA(8) calculada: 507343.33. 
+00:19:59.951 [INFO]   [Bot] EMA(20) calculada: 507360.64. 
+00:19:59.952 [INFO]   [Bot] EMA(12) calculada: 507345.37. 
+00:19:59.952 [INFO]   [Bot] EMA(26) calculada: 507371.94. 
+00:19:59.952 [INFO]   [Bot] EMA(9) calculada: 507343.98. 
+00:19:59.952 [INFO]   [Bot] MACD calculado: MACD=-26.57, Signal=507343.98. 
+00:19:59.952 [INFO]   [Bot] Volatilidade calculada: 0.46%. 
+00:19:59.952 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:19:59.952 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"3819.56","expectedProfit":"0.00","rsi":"3.45","emaShort":"507343.33","emaLong":"507360.64"...
+00:19:59.952 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:19:59.952 [INFO]   [Bot] Viés de tendência: -0.114587 (Tendência: down). 
+00:19:59.952 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:19:59.952 [SUCCESS] [Bot] PnL positivo: 90.62 BRL. Bom desempenho! 
+00:19:59.952 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:19:59.952 [INFO]   [Bot] Ciclo: 97 | Mid Price: 507338.50 | Tendência: down 
+00:19:59.952 [INFO]   [Bot] RSI: 3.45 | EMA Curta: 507343.33 | EMA Longa: 507360.64 
+00:19:59.952 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.46% 
+00:19:59.952 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 3819.56 
+00:19:59.952 [INFO]   [Bot] Spread: 1.000% | Buy Price: 499753.79 | Sell Price: 504776.44 
+00:19:59.952 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 50.27 
+00:19:59.952 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: -0.114587 | Total Bias: -0.010000 
+00:19:59.952 [INFO]   [Bot] PnL Total: 90.62 BRL | ROI: 3.96% | PnL Não Realizado: 48.06 BRL 
+00:19:59.952 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:19:59.952 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 21 | Cancelamentos: 0 
+00:19:59.952 [INFO]   [Bot] Taxa de Fill: 161.5% | Preço Médio Fill: 654259.13 BRL | Uptime: 24min 
+00:19:59.952 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:20:13.852 [INFO]   [Bot] Iniciando ciclo 98. 
+00:20:14.933 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507093.00, Best Ask=507489.00. 
+00:20:14.933 [INFO]   [Bot] Volatilidade calculada: 0.46%. 
+00:20:14.933 [DEBUG]  [Bot] Volatilidade no ciclo 98: 0.46% 
+00:20:14.933 [INFO]   [Bot] RSI calculado: 0.81. 
+00:20:14.933 [INFO]   [Bot] EMA(8) calculada: 507322.72. 
+00:20:14.933 [INFO]   [Bot] EMA(20) calculada: 507342.40. 
+00:20:14.933 [INFO]   [Bot] EMA(12) calculada: 507329.93. 
+00:20:14.933 [INFO]   [Bot] EMA(26) calculada: 507349.64. 
+00:20:14.933 [INFO]   [Bot] EMA(9) calculada: 507324.86. 
+00:20:14.933 [INFO]   [Bot] MACD calculado: MACD=-19.72, Signal=507324.86. 
+00:20:14.933 [INFO]   [Bot] Volatilidade calculada: 0.46%. 
+00:20:14.933 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:20:14.933 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"5146.88","expectedProfit":"0.00","rsi":"0.81","emaShort":"507322.72","emaLong":"507342.40"...
+00:20:14.933 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:20:14.933 [INFO]   [Bot] Viés de tendência: -0.154406 (Tendência: down). 
+00:20:14.934 [INFO]   [Bot] Cancelando ordem BUY buy_SIM_1767658679804 @ R$504841.11, Qty: 0.00009500. 
+00:20:14.934 [WARN]   [Bot] Erro ao cancelar ordem buy_SIM_1767658679804: context is not defined. Removendo localmente para evitar loops. 
+00:20:14.934 [WARN]   [Bot] Reprecificando ordem BUY por drift (0.39%). 
+00:20:14.934 [INFO]   [Bot] Cancelando ordem SELL sell_SIM_1767658679804 @ R$509914.89, Qty: 0.00009471. 
+00:20:14.934 [WARN]   [Bot] Erro ao cancelar ordem sell_SIM_1767658679804: context is not defined. Removendo localmente para evitar loops. 
+00:20:14.934 [WARN]   [Bot] Reprecificando ordem SELL por drift (0.42%). 
+00:20:14.934 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:20:14.934 [SUCCESS] [Bot] PnL positivo: 90.62 BRL. Bom desempenho! 
+00:20:14.934 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:20:14.934 [INFO]   [Bot] Ciclo: 98 | Mid Price: 507291.00 | Tendência: down 
+00:20:14.934 [INFO]   [Bot] RSI: 0.81 | EMA Curta: 507322.72 | EMA Longa: 507342.40 
+00:20:14.934 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.46% 
+00:20:14.934 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 5146.88 
+00:20:14.934 [INFO]   [Bot] Spread: 0.181% | Buy Price: 501763.87 | Sell Price: 502672.31 
+00:20:14.934 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 4.02 
+00:20:14.934 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: -0.154406 | Total Bias: -0.010000 
+00:20:14.934 [INFO]   [Bot] PnL Total: 90.62 BRL | ROI: 3.96% | PnL Não Realizado: 48.06 BRL 
+00:20:14.934 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:20:14.934 [INFO]   [Bot] Ordens Ativas: 0 | Fills: 21 | Cancelamentos: 0 
+00:20:14.934 [INFO]   [Bot] Taxa de Fill: 161.5% | Preço Médio Fill: 654259.13 BRL | Uptime: 24min 
+00:20:14.934 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:20:28.858 [INFO]   [Bot] Iniciando ciclo 99. 
+00:20:29.865 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507186.00, Best Ask=507503.00. 
+00:20:29.865 [INFO]   [Bot] Volatilidade calculada: 0.46%. 
+00:20:29.865 [DEBUG]  [Bot] Volatilidade no ciclo 99: 0.46% 
+00:20:29.865 [INFO]   [Bot] RSI calculado: 46.75. 
+00:20:29.865 [INFO]   [Bot] EMA(8) calculada: 507329.52. 
+00:20:29.865 [INFO]   [Bot] EMA(20) calculada: 507342.44. 
+00:20:29.865 [INFO]   [Bot] EMA(12) calculada: 507334.00. 
+00:20:29.865 [INFO]   [Bot] EMA(26) calculada: 507354.86. 
+00:20:29.865 [INFO]   [Bot] EMA(9) calculada: 507331.98. 
+00:20:29.865 [INFO]   [Bot] MACD calculado: MACD=-20.86, Signal=507331.98. 
+00:20:29.865 [INFO]   [Bot] Volatilidade calculada: 0.47%. 
+00:20:29.865 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:20:29.865 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"4864.58","expectedProfit":"0.00","rsi":"46.75","emaShort":"507329.52","emaLong":"507342.44...
+00:20:29.865 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:20:29.865 [INFO]   [Bot] Viés de tendência: -0.145938 (Tendência: down). 
+00:20:29.865 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:20:29.865 [SUCCESS] [Bot] PnL positivo: 90.62 BRL. Bom desempenho! 
+00:20:29.865 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:20:29.865 [INFO]   [Bot] Ciclo: 99 | Mid Price: 507344.50 | Tendência: down 
+00:20:29.865 [INFO]   [Bot] RSI: 46.75 | EMA Curta: 507329.52 | EMA Longa: 507342.44 
+00:20:29.865 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.47% 
+00:20:29.865 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 4864.58 
+00:20:29.865 [INFO]   [Bot] Spread: 1.000% | Buy Price: 499759.70 | Sell Price: 504782.41 
+00:20:29.865 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 119.50 
+00:20:29.865 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: -0.145938 | Total Bias: -0.010000 
+00:20:29.865 [INFO]   [Bot] PnL Total: 90.62 BRL | ROI: 3.96% | PnL Não Realizado: 48.06 BRL 
+00:20:29.865 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:20:29.865 [INFO]   [Bot] Ordens Ativas: 0 | Fills: 21 | Cancelamentos: 0 
+00:20:29.865 [INFO]   [Bot] Taxa de Fill: 161.5% | Preço Médio Fill: 654259.13 BRL | Uptime: 25min 
+00:20:29.865 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:20:43.868 [INFO]   [Bot] Iniciando ciclo 100. 
+00:20:45.044 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507186.00, Best Ask=507503.00. 
+00:20:45.045 [INFO]   [Bot] Volatilidade calculada: 0.47%. 
+00:20:45.045 [DEBUG]  [Bot] Volatilidade no ciclo 100: 0.47% 
+00:20:45.045 [INFO]   [Bot] RSI calculado: 46.96. 
+00:20:45.045 [INFO]   [Bot] EMA(8) calculada: 507335.44. 
+00:20:45.045 [INFO]   [Bot] EMA(20) calculada: 507339.64. 
+00:20:45.045 [INFO]   [Bot] EMA(12) calculada: 507337.05. 
+00:20:45.045 [INFO]   [Bot] EMA(26) calculada: 507353.38. 
+00:20:45.045 [INFO]   [Bot] EMA(9) calculada: 507335.04. 
+00:20:45.045 [INFO]   [Bot] MACD calculado: MACD=-16.33, Signal=507335.04. 
+00:20:45.045 [INFO]   [Bot] Volatilidade calculada: 0.47%. 
+00:20:45.045 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:20:45.045 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"6213.19","expectedProfit":"0.00","rsi":"46.96","emaShort":"507335.44","emaLong":"507339.64...
+00:20:45.045 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:20:45.045 [INFO]   [Bot] Viés de tendência: -0.186396 (Tendência: down). 
+00:20:45.045 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:20:45.045 [SUCCESS] [Bot] PnL positivo: 90.62 BRL. Bom desempenho! 
+00:20:45.045 [SUCCESS] [Bot] Otimização: Aumentando tamanho para 0.000047, reduzindo spread para 0.975% (PnL positivo). 
+00:20:45.045 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:20:45.045 [INFO]   [Bot] Ciclo: 100 | Mid Price: 507344.50 | Tendência: down 
+00:20:45.045 [INFO]   [Bot] RSI: 46.96 | EMA Curta: 507335.44 | EMA Longa: 507339.64 
+00:20:45.045 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.47% 
+00:20:45.045 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 6213.19 
+00:20:45.045 [INFO]   [Bot] Spread: 1.000% | Buy Price: 499759.70 | Sell Price: 504782.41 
+00:20:45.045 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 119.15 
+00:20:45.046 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: -0.186396 | Total Bias: -0.010000 
+00:20:45.046 [INFO]   [Bot] PnL Total: 90.62 BRL | ROI: 3.96% | PnL Não Realizado: 48.06 BRL 
+00:20:45.046 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:20:45.046 [INFO]   [Bot] Ordens Ativas: 0 | Fills: 21 | Cancelamentos: 0 
+00:20:45.046 [INFO]   [Bot] Taxa de Fill: 161.5% | Preço Médio Fill: 654259.13 BRL | Uptime: 25min 
+00:20:45.046 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:20:58.870 [INFO]   [Bot] Iniciando ciclo 101. 
+00:20:59.819 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507276.00, Best Ask=507503.00. 
+00:20:59.819 [INFO]   [Bot] Volatilidade calculada: 0.47%. 
+00:20:59.819 [DEBUG]  [Bot] Volatilidade no ciclo 101: 0.47% 
+00:20:59.819 [INFO]   [Bot] RSI calculado: 61.76. 
+00:20:59.819 [INFO]   [Bot] EMA(8) calculada: 507350.43. 
+00:20:59.819 [INFO]   [Bot] EMA(20) calculada: 507348.69. 
+00:20:59.819 [INFO]   [Bot] EMA(12) calculada: 507350.13. 
+00:20:59.819 [INFO]   [Bot] EMA(26) calculada: 507352.92. 
+00:20:59.819 [INFO]   [Bot] EMA(9) calculada: 507354.64. 
+00:20:59.819 [INFO]   [Bot] MACD calculado: MACD=-2.79, Signal=507354.64. 
+00:20:59.819 [INFO]   [Bot] Volatilidade calculada: 0.48%. 
+00:20:59.819 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:20:59.819 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"36308.39","expectedProfit":"1.00","rsi":"61.76","emaShort":"507350.43","emaLong":"50734...
+00:20:59.819 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:20:59.819 [INFO]   [Bot] Viés de tendência: 0.000000 (Tendência: neutral). 
+00:20:59.819 [ERROR]  [Bot] Falha ao colocar ordem BUY: context is not defined. 
+00:20:59.820 [ERROR]  [Bot] Falha ao colocar ordem SELL: context is not defined. 
+00:20:59.820 [SUCCESS] [Bot] PnL positivo: 90.63 BRL. Bom desempenho! 
+00:20:59.820 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:20:59.820 [INFO]   [Bot] Ciclo: 101 | Mid Price: 507389.50 | Tendência: neutral 
+00:20:59.820 [INFO]   [Bot] RSI: 61.76 | EMA Curta: 507350.43 | EMA Longa: 507348.69 
+00:20:59.820 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.48% 
+00:20:59.820 [INFO]   [Bot] Score Lucro Esperado: 1.00 | Confiança: 36308.39 
+00:20:59.820 [INFO]   [Bot] Spread: 1.000% | Buy Price: 504856.01 | Sell Price: 509929.94 
+00:20:59.820 [INFO]   [Bot] Tamanho Ordens: 0.00009500 BTC | Depth Factor: 130.50 
+00:20:59.820 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: 0.000000 | Total Bias: 0.000007 
+00:20:59.820 [INFO]   [Bot] PnL Total: 90.63 BRL | ROI: 3.96% | PnL Não Realizado: 48.07 BRL 
+00:20:59.820 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:20:59.820 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 21 | Cancelamentos: 0 
+00:20:59.820 [INFO]   [Bot] Taxa de Fill: 140.0% | Preço Médio Fill: 654259.13 BRL | Uptime: 25min 
+00:20:59.820 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:21:13.880 [INFO]   [Bot] Iniciando ciclo 102. 
+00:21:14.956 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507276.00, Best Ask=507503.00. 
+00:21:14.956 [INFO]   [Bot] Volatilidade calculada: 0.48%. 
+00:21:14.956 [DEBUG]  [Bot] Volatilidade no ciclo 102: 0.48% 
+00:21:14.956 [INFO]   [Bot] RSI calculado: 67.47. 
+00:21:14.956 [INFO]   [Bot] EMA(8) calculada: 507373.03. 
+00:21:14.956 [INFO]   [Bot] EMA(20) calculada: 507356.09. 
+00:21:14.956 [INFO]   [Bot] EMA(12) calculada: 507361.31. 
+00:21:14.956 [INFO]   [Bot] EMA(26) calculada: 507357.80. 
+00:21:14.956 [INFO]   [Bot] EMA(9) calculada: 507362.09. 
+00:21:14.956 [INFO]   [Bot] MACD calculado: MACD=3.51, Signal=507362.09. 
+00:21:14.956 [INFO]   [Bot] Volatilidade calculada: 0.48%. 
+00:21:14.956 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:21:14.956 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"28927.61","expectedProfit":"1.00","rsi":"67.47","emaShort":"507373.03","emaLong":"50735...
+00:21:14.956 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:21:14.956 [INFO]   [Bot] Viés de tendência: 0.000000 (Tendência: neutral). 
+00:21:14.957 [SUCCESS] [Bot] PnL positivo: 90.63 BRL. Bom desempenho! 
+00:21:14.957 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:21:14.957 [INFO]   [Bot] Ciclo: 102 | Mid Price: 507389.50 | Tendência: neutral 
+00:21:14.957 [INFO]   [Bot] RSI: 67.47 | EMA Curta: 507373.03 | EMA Longa: 507356.09 
+00:21:14.957 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.48% 
+00:21:14.957 [INFO]   [Bot] Score Lucro Esperado: 1.00 | Confiança: 28927.61 
+00:21:14.957 [INFO]   [Bot] Spread: 1.000% | Buy Price: 504856.01 | Sell Price: 509929.94 
+00:21:14.957 [INFO]   [Bot] Tamanho Ordens: 0.00009500 BTC | Depth Factor: 130.50 
+00:21:14.957 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: 0.000000 | Total Bias: 0.000007 
+00:21:14.957 [INFO]   [Bot] PnL Total: 90.63 BRL | ROI: 3.96% | PnL Não Realizado: 48.07 BRL 
+00:21:14.957 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:21:14.957 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 21 | Cancelamentos: 0 
+00:21:14.957 [INFO]   [Bot] Taxa de Fill: 140.0% | Preço Médio Fill: 654259.13 BRL | Uptime: 25min 
+00:21:14.957 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:21:28.889 [INFO]   [Bot] Iniciando ciclo 103. 
+00:21:29.838 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507276.00, Best Ask=507503.00. 
+00:21:29.839 [INFO]   [Bot] Volatilidade calculada: 0.48%. 
+00:21:29.839 [DEBUG]  [Bot] Volatilidade no ciclo 103: 0.48% 
+00:21:29.839 [INFO]   [Bot] RSI calculado: 67.47. 
+00:21:29.839 [INFO]   [Bot] EMA(8) calculada: 507379.54. 
+00:21:29.839 [INFO]   [Bot] EMA(20) calculada: 507362.08. 
+00:21:29.839 [INFO]   [Bot] EMA(12) calculada: 507362.92. 
+00:21:29.839 [INFO]   [Bot] EMA(26) calculada: 507359.15. 
+00:21:29.839 [INFO]   [Bot] EMA(9) calculada: 507377.70. 
+00:21:29.839 [INFO]   [Bot] MACD calculado: MACD=3.77, Signal=507377.70. 
+00:21:29.839 [INFO]   [Bot] Volatilidade calculada: 0.49%. 
+00:21:29.839 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:21:29.839 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"26909.41","expectedProfit":"1.00","rsi":"67.47","emaShort":"507379.54","emaLong":"50736...
+00:21:29.839 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:21:29.839 [INFO]   [Bot] Viés de tendência: 0.000000 (Tendência: neutral). 
+00:21:29.839 [SUCCESS] [Bot] PnL positivo: 90.63 BRL. Bom desempenho! 
+00:21:29.839 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:21:29.839 [INFO]   [Bot] Ciclo: 103 | Mid Price: 507389.50 | Tendência: neutral 
+00:21:29.839 [INFO]   [Bot] RSI: 67.47 | EMA Curta: 507379.54 | EMA Longa: 507362.08 
+00:21:29.839 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.49% 
+00:21:29.839 [INFO]   [Bot] Score Lucro Esperado: 1.00 | Confiança: 26909.41 
+00:21:29.839 [INFO]   [Bot] Spread: 1.000% | Buy Price: 504856.01 | Sell Price: 509929.94 
+00:21:29.839 [INFO]   [Bot] Tamanho Ordens: 0.00009500 BTC | Depth Factor: 130.50 
+00:21:29.839 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: 0.000000 | Total Bias: 0.000007 
+00:21:29.839 [INFO]   [Bot] PnL Total: 90.63 BRL | ROI: 3.96% | PnL Não Realizado: 48.07 BRL 
+00:21:29.839 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:21:29.839 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 21 | Cancelamentos: 0 
+00:21:29.839 [INFO]   [Bot] Taxa de Fill: 140.0% | Preço Médio Fill: 654259.13 BRL | Uptime: 26min 
+00:21:29.839 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:21:43.898 [INFO]   [Bot] Iniciando ciclo 104. 
+00:21:44.835 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507265.00, Best Ask=507503.00. 
+00:21:44.835 [INFO]   [Bot] Volatilidade calculada: 0.48%. 
+00:21:44.835 [DEBUG]  [Bot] Volatilidade no ciclo 104: 0.48% 
+00:21:44.835 [INFO]   [Bot] RSI calculado: 94.71. 
+00:21:44.835 [INFO]   [Bot] EMA(8) calculada: 507387.33. 
+00:21:44.835 [INFO]   [Bot] EMA(20) calculada: 507366.13. 
+00:21:44.835 [INFO]   [Bot] EMA(12) calculada: 507376.11. 
+00:21:44.835 [INFO]   [Bot] EMA(26) calculada: 507362.69. 
+00:21:44.835 [INFO]   [Bot] EMA(9) calculada: 507379.97. 
+00:21:44.835 [INFO]   [Bot] MACD calculado: MACD=13.42, Signal=507379.97. 
+00:21:44.835 [INFO]   [Bot] Volatilidade calculada: 0.49%. 
+00:21:44.835 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:21:44.835 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"7561.63","expectedProfit":"1.00","rsi":"94.71","emaShort":"507387.33","emaLong":"507366...
+00:21:44.835 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:21:44.835 [INFO]   [Bot] Viés de tendência: 0.000000 (Tendência: neutral). 
+00:21:44.835 [INFO]   [Bot] Cancelando ordem BUY buy_SIM_1767658859819 @ R$504856.01, Qty: 0.00009500. 
+00:21:44.835 [WARN]   [Bot] Erro ao cancelar ordem buy_SIM_1767658859819: context is not defined. Removendo localmente para evitar loops. 
+00:21:44.835 [WARN]   [Bot] Reprecificando ordem BUY por drift (0.36%). 
+00:21:44.835 [ERROR]  [Bot] Falha ao colocar ordem BUY: context is not defined. 
+00:21:44.836 [INFO]   [Bot] Cancelando ordem SELL sell_SIM_1767658859820 @ R$509929.94, Qty: 0.00009471. 
+00:21:44.836 [WARN]   [Bot] Erro ao cancelar ordem sell_SIM_1767658859820: context is not defined. Removendo localmente para evitar loops. 
+00:21:44.836 [WARN]   [Bot] Reprecificando ordem SELL por drift (0.36%). 
+00:21:44.836 [ERROR]  [Bot] Falha ao colocar ordem SELL: context is not defined. 
+00:21:44.836 [SUCCESS] [Bot] PnL positivo: 90.63 BRL. Bom desempenho! 
+00:21:44.836 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:21:44.836 [INFO]   [Bot] Ciclo: 104 | Mid Price: 507384.00 | Tendência: neutral 
+00:21:44.836 [INFO]   [Bot] RSI: 94.71 | EMA Curta: 507387.33 | EMA Longa: 507366.13 
+00:21:44.836 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.49% 
+00:21:44.836 [INFO]   [Bot] Score Lucro Esperado: 1.00 | Confiança: 7561.63 
+00:21:44.836 [INFO]   [Bot] Spread: 0.280% | Buy Price: 506676.82 | Sell Price: 508098.14 
+00:21:44.836 [INFO]   [Bot] Tamanho Ordens: 0.00009500 BTC | Depth Factor: 6.22 
+00:21:44.836 [INFO]   [Bot] Viés Inventário: 0.000007 | Viés Tendência: 0.000000 | Total Bias: 0.000007 
+00:21:44.836 [INFO]   [Bot] PnL Total: 90.63 BRL | ROI: 3.96% | PnL Não Realizado: 48.07 BRL 
+00:21:44.836 [INFO]   [Bot] Posição BTC: 0.00009473 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:21:44.836 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 21 | Cancelamentos: 0 
+00:21:44.836 [INFO]   [Bot] Taxa de Fill: 123.5% | Preço Médio Fill: 654259.13 BRL | Uptime: 26min 
+00:21:44.836 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:21:58.904 [INFO]   [Bot] Iniciando ciclo 105. 
+00:21:59.930 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507093.00, Best Ask=507442.00. 
+00:21:59.931 [INFO]   [Bot] Volatilidade calculada: 0.50%. 
+00:21:59.931 [DEBUG]  [Bot] Volatilidade no ciclo 105: 0.50% 
+00:21:59.931 [INFO]   [Bot] RSI calculado: 26.95. 
+00:21:59.931 [INFO]   [Bot] EMA(8) calculada: 507339.99. 
+00:21:59.931 [INFO]   [Bot] EMA(20) calculada: 507346.41. 
+00:21:59.931 [INFO]   [Bot] EMA(12) calculada: 507345.26. 
+00:21:59.931 [INFO]   [Bot] EMA(26) calculada: 507349.11. 
+00:21:59.931 [INFO]   [Bot] EMA(9) calculada: 507344.31. 
+00:21:59.931 [INFO]   [Bot] MACD calculado: MACD=-3.85, Signal=507344.31. 
+00:21:59.931 [INFO]   [Bot] Volatilidade calculada: 0.50%. 
+00:21:59.931 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:21:59.931 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"26368.16","expectedProfit":"0.00","rsi":"26.95","emaShort":"507339.99","emaLong":"507346.4...
+00:21:59.931 [INFO]   [Bot] Viés de inventário: 0.000007. 
+00:21:59.931 [INFO]   [Bot] Viés de tendência: -0.791045 (Tendência: down). 
+00:21:59.932 [ERROR]  [Bot] Erro no ciclo 105: context is not defined. 
+00:22:13.913 [INFO]   [Bot] Iniciando ciclo 106. 
+00:22:14.551 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507093.00, Best Ask=507438.00. 
+00:22:14.551 [INFO]   [Bot] Volatilidade calculada: 0.50%. 
+00:22:14.552 [DEBUG]  [Bot] Volatilidade no ciclo 106: 0.50% 
+00:22:14.552 [INFO]   [Bot] RSI calculado: 26.63. 
+00:22:14.552 [INFO]   [Bot] EMA(8) calculada: 507310.56. 
+00:22:14.552 [INFO]   [Bot] EMA(20) calculada: 507331.73. 
+00:22:14.552 [INFO]   [Bot] EMA(12) calculada: 507328.67. 
+00:22:14.552 [INFO]   [Bot] EMA(26) calculada: 507337.12. 
+00:22:14.552 [INFO]   [Bot] EMA(9) calculada: 507315.94. 
+00:22:14.552 [INFO]   [Bot] MACD calculado: MACD=-8.45, Signal=507315.94. 
+00:22:14.552 [INFO]   [Bot] Volatilidade calculada: 0.50%. 
+00:22:14.552 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:22:14.552 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"12014.35","expectedProfit":"0.00","rsi":"26.63","emaShort":"507310.56","emaLong":"507331.7...
+00:22:14.552 [INFO]   [Bot] Viés de inventário: 0.000020. 
+00:22:14.552 [INFO]   [Bot] Viés de tendência: -0.360431 (Tendência: down). 
+00:22:14.553 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:22:14.553 [ALERT]  [Bot] PnL baixo: 42.57 BRL (limite: 50). Verifique a estratégia! 
+00:22:14.553 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:22:14.553 [INFO]   [Bot] Ciclo: 106 | Mid Price: 507265.50 | Tendência: down 
+00:22:14.553 [INFO]   [Bot] RSI: 26.63 | EMA Curta: 507310.56 | EMA Longa: 507331.73 
+00:22:14.553 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.50% 
+00:22:14.553 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 12014.35 
+00:22:14.553 [INFO]   [Bot] Spread: 0.090% | Buy Price: 501966.86 | Sell Price: 502418.83 
+00:22:14.553 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 0.12 
+00:22:14.553 [INFO]   [Bot] Viés Inventário: 0.000020 | Viés Tendência: -0.360431 | Total Bias: -0.010000 
+00:22:14.553 [INFO]   [Bot] PnL Total: 42.57 BRL | ROI: 3.96% | PnL Não Realizado: 0.01 BRL 
+00:22:14.553 [INFO]   [Bot] Posição BTC: 0.00000002 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:22:14.553 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 22 | Cancelamentos: 0 
+00:22:14.553 [INFO]   [Bot] Taxa de Fill: 129.4% | Preço Médio Fill: 654259.13 BRL | Uptime: 26min 
+00:22:14.553 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:22:28.922 [INFO]   [Bot] Iniciando ciclo 107. 
+00:22:29.519 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507093.00, Best Ask=507433.00. 
+00:22:29.519 [INFO]   [Bot] Volatilidade calculada: 0.50%. 
+00:22:29.519 [DEBUG]  [Bot] Volatilidade no ciclo 107: 0.50% 
+00:22:29.519 [INFO]   [Bot] RSI calculado: 0.00. 
+00:22:29.519 [INFO]   [Bot] EMA(8) calculada: 507291.03. 
+00:22:29.519 [INFO]   [Bot] EMA(20) calculada: 507312.85. 
+00:22:29.519 [INFO]   [Bot] EMA(12) calculada: 507310.02. 
+00:22:29.519 [INFO]   [Bot] EMA(26) calculada: 507326.61. 
+00:22:29.519 [INFO]   [Bot] EMA(9) calculada: 507296.88. 
+00:22:29.519 [INFO]   [Bot] MACD calculado: MACD=-16.59, Signal=507296.88. 
+00:22:29.519 [INFO]   [Bot] Volatilidade calculada: 0.50%. 
+00:22:29.519 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:22:29.519 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"6115.65","expectedProfit":"0.00","rsi":"0.00","emaShort":"507291.03","emaLong":"507312.85"...
+00:22:29.520 [INFO]   [Bot] Viés de inventário: 0.000020. 
+00:22:29.520 [INFO]   [Bot] Viés de tendência: -0.183469 (Tendência: down). 
+00:22:29.520 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:22:29.520 [ALERT]  [Bot] PnL baixo: 42.57 BRL (limite: 50). Verifique a estratégia! 
+00:22:29.520 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:22:29.520 [INFO]   [Bot] Ciclo: 107 | Mid Price: 507263.00 | Tendência: down 
+00:22:29.520 [INFO]   [Bot] RSI: 0.00 | EMA Curta: 507291.03 | EMA Longa: 507312.85 
+00:22:29.520 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.50% 
+00:22:29.520 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 6115.65 
+00:22:29.520 [INFO]   [Bot] Spread: 0.090% | Buy Price: 501964.38 | Sell Price: 502416.36 
+00:22:29.520 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 0.12 
+00:22:29.520 [INFO]   [Bot] Viés Inventário: 0.000020 | Viés Tendência: -0.183469 | Total Bias: -0.010000 
+00:22:29.520 [INFO]   [Bot] PnL Total: 42.57 BRL | ROI: 3.96% | PnL Não Realizado: 0.01 BRL 
+00:22:29.520 [INFO]   [Bot] Posição BTC: 0.00000002 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:22:29.520 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 22 | Cancelamentos: 0 
+00:22:29.520 [INFO]   [Bot] Taxa de Fill: 129.4% | Preço Médio Fill: 654259.13 BRL | Uptime: 27min 
+00:22:29.520 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:22:43.932 [INFO]   [Bot] Iniciando ciclo 108. 
+00:22:44.930 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507093.00, Best Ask=507439.00. 
+00:22:44.930 [INFO]   [Bot] Volatilidade calculada: 0.49%. 
+00:22:44.930 [DEBUG]  [Bot] Volatilidade no ciclo 108: 0.49% 
+00:22:44.930 [INFO]   [Bot] RSI calculado: 2.32. 
+00:22:44.930 [INFO]   [Bot] EMA(8) calculada: 507265.54. 
+00:22:44.930 [INFO]   [Bot] EMA(20) calculada: 507311.58. 
+00:22:44.930 [INFO]   [Bot] EMA(12) calculada: 507297.52. 
+00:22:44.930 [INFO]   [Bot] EMA(26) calculada: 507316.14. 
+00:22:44.930 [INFO]   [Bot] EMA(9) calculada: 507285.17. 
+00:22:44.930 [INFO]   [Bot] MACD calculado: MACD=-18.62, Signal=507285.17. 
+00:22:44.930 [INFO]   [Bot] Volatilidade calculada: 0.46%. 
+00:22:44.930 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:22:44.930 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"5448.76","expectedProfit":"0.00","rsi":"2.32","emaShort":"507265.54","emaLong":"507311.58"...
+00:22:44.930 [INFO]   [Bot] Viés de inventário: 0.000020. 
+00:22:44.930 [INFO]   [Bot] Viés de tendência: -0.163463 (Tendência: down). 
+00:22:44.930 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:22:44.930 [ALERT]  [Bot] PnL baixo: 42.57 BRL (limite: 50). Verifique a estratégia! 
+00:22:44.930 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:22:44.930 [INFO]   [Bot] Ciclo: 108 | Mid Price: 507266.00 | Tendência: down 
+00:22:44.930 [INFO]   [Bot] RSI: 2.32 | EMA Curta: 507265.54 | EMA Longa: 507311.58 
+00:22:44.930 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.46% 
+00:22:44.930 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 5448.76 
+00:22:44.930 [INFO]   [Bot] Spread: 0.090% | Buy Price: 501967.35 | Sell Price: 502419.33 
+00:22:44.930 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 0.12 
+00:22:44.930 [INFO]   [Bot] Viés Inventário: 0.000020 | Viés Tendência: -0.163463 | Total Bias: -0.010000 
+00:22:44.930 [INFO]   [Bot] PnL Total: 42.57 BRL | ROI: 3.96% | PnL Não Realizado: 0.01 BRL 
+00:22:44.930 [INFO]   [Bot] Posição BTC: 0.00000002 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:22:44.930 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 22 | Cancelamentos: 0 
+00:22:44.930 [INFO]   [Bot] Taxa de Fill: 129.4% | Preço Médio Fill: 654259.13 BRL | Uptime: 27min 
+00:22:44.930 [INFO]   [Bot] ──────────────────────────────────────────── 
+00:22:58.941 [INFO]   [Bot] Iniciando ciclo 109. 
+00:23:04.065 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=507093.00, Best Ask=507402.00. 
+00:23:04.065 [INFO]   [Bot] Volatilidade calculada: 0.45%. 
+00:23:04.065 [DEBUG]  [Bot] Volatilidade no ciclo 109: 0.45% 
+00:23:04.065 [INFO]   [Bot] RSI calculado: 2.03. 
+00:23:04.065 [INFO]   [Bot] EMA(8) calculada: 507258.15. 
+00:23:04.065 [INFO]   [Bot] EMA(20) calculada: 507299.95. 
+00:23:04.065 [INFO]   [Bot] EMA(12) calculada: 507282.57. 
+00:23:04.065 [INFO]   [Bot] EMA(26) calculada: 507306.35. 
+00:23:04.065 [INFO]   [Bot] EMA(9) calculada: 507259.10. 
+00:23:04.065 [INFO]   [Bot] MACD calculado: MACD=-23.78, Signal=507259.10. 
+00:23:04.065 [INFO]   [Bot] Volatilidade calculada: 0.45%. 
+00:23:04.065 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+00:23:04.065 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"4267.39","expectedProfit":"0.00","rsi":"2.03","emaShort":"507258.15","emaLong":"507299.95"...
+00:23:04.065 [INFO]   [Bot] Viés de inventário: 0.000020. 
+00:23:04.065 [INFO]   [Bot] Viés de tendência: -0.128022 (Tendência: down). 
+00:23:04.065 [INFO]   [Bot] Score de lucro baixo (0.00 < 0.1). Não colocando ordens. 
+00:23:04.065 [ALERT]  [Bot] PnL baixo: 42.57 BRL (limite: 50). Verifique a estratégia! 
+00:23:04.065 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+00:23:04.065 [INFO]   [Bot] Ciclo: 109 | Mid Price: 507247.50 | Tendência: down 
+00:23:04.065 [INFO]   [Bot] RSI: 2.03 | EMA Curta: 507258.15 | EMA Longa: 507299.95 
+00:23:04.065 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 0.45% 
+00:23:04.065 [INFO]   [Bot] Score Lucro Esperado: 0.00 | Confiança: 4267.39 
+00:23:04.065 [INFO]   [Bot] Spread: 0.090% | Buy Price: 501949.05 | Sell Price: 502401.00 
+00:23:04.065 [INFO]   [Bot] Tamanho Ordens: 0.00004500 BTC | Depth Factor: 0.10 
+00:23:04.065 [INFO]   [Bot] Viés Inventário: 0.000020 | Viés Tendência: -0.128022 | Total Bias: -0.010000 
+00:23:04.065 [INFO]   [Bot] PnL Total: 42.57 BRL | ROI: 3.96% | PnL Não Realizado: 0.01 BRL 
+00:23:04.065 [INFO]   [Bot] Posição BTC: 0.00000002 | Saldo BRL: 1000.00 | Saldo BTC: 0.00100000 
+00:23:04.066 [INFO]   [Bot] Ordens Ativas: 2 | Fills: 22 | Cancelamentos: 0 
+00:23:04.066 [INFO]   [Bot] Taxa de Fill: 129.4% | Preço Médio Fill: 654259.13 BRL | Uptime: 27min 
+00:23:04.066 [INFO]   [Bot] ──────────────────────────────────────────── 
