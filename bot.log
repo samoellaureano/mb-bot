@@ -5949,3 +5949,64 @@
 03:01:57.823 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.76","expectedProfit":"0.05","rsi":"99.99","emaShort":"490440.58","emaLong":"454737.98","volatility":"3.00","macd":"28960.20","signal":"490415.69"}
 03:01:57.846 [DEBUG]  [Bot] Convicção calculada: 61.2% | Tendência: UP | Força: MODERATE
 03:01:57.875 [ERROR]  [Bot] Erro no ciclo 5: Cannot access 'activeSession' before initialization.
+03:02:10.200 [INFO]   [DB] Estatísticas consultadas (Sessão: Últimas 24h): | {"cycles":0,"total_orders":356,"filled_orders":43,"cancelled_orders":297,"total_pnl":214.68120866815747,"avg_fill_value":5.5089149081990705,"avg_spread":0,"uptime":"0min","fill_rate":"12.1"}
+03:02:11.406 [INFO]   [DB] Estatísticas consultadas (Sessão: Últimas 24h): | {"cycles":0,"total_orders":356,"filled_orders":43,"cancelled_orders":297,"total_pnl":214.68120866815747,"avg_fill_value":5.5089149081990705,"avg_spread":0,"uptime":"0min","fill_rate":"12.1"}
+03:02:27.068 [INFO]   [Bot] Iniciando ciclo 6.
+03:02:27.364 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490352.00, Best Ask=490712.00.
+03:02:27.391 [DEBUG]  [DB] Preço BTC armazenado: R$ 490532.00
+03:02:27.405 [INFO]   [Bot] Volatilidade calculada: 3.00%.
+03:02:27.437 [DEBUG]  [Bot] Volatilidade no ciclo 6: 3.00%
+03:02:27.474 [INFO]   [Bot] RSI calculado: 99.99.
+03:02:27.512 [INFO]   [Bot] EMA(8) calculada: 490476.83.
+03:02:27.544 [INFO]   [Bot] EMA(20) calculada: 461488.58.
+03:02:27.578 [INFO]   [Bot] EMA(12) calculada: 490433.91.
+03:02:27.611 [INFO]   [Bot] EMA(26) calculada: 450987.34.
+03:02:27.660 [INFO]   [Bot] EMA(9) calculada: 490470.83.
+03:02:27.699 [INFO]   [Bot] MACD calculado: MACD=39446.57, Signal=490470.83.
+03:02:27.727 [INFO]   [Bot] Volatilidade calculada: 3.00%.
+03:02:27.762 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=100.00%, PnL médio=5.47.
+03:02:27.798 [INFO]   [Bot] ADX calculado: 99.99.
+03:02:27.835 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.75","expectedProfit":"0.05","rsi":"99.99","emaShort":"490476.83","emaLong":"461488.58","volatility":"3.00","macd":"39446.57","signal":"490470.83"}
+03:02:27.873 [DEBUG]  [Bot] Convicção calculada: 60.4% | Tendência: UP | Força: MODERATE
+03:02:27.909 [ERROR]  [Bot] Erro no ciclo 6: Cannot access 'activeSession' before initialization.
+03:02:41.420 [INFO]   [DB] Estatísticas consultadas (Sessão: Últimas 24h): | {"cycles":0,"total_orders":356,"filled_orders":43,"cancelled_orders":297,"total_pnl":214.68120866815747,"avg_fill_value":5.5089149081990705,"avg_spread":0,"uptime":"0min","fill_rate":"12.1"}
+03:02:57.083 [INFO]   [Bot] Iniciando ciclo 7.
+03:02:57.355 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490314.00, Best Ask=490641.00.
+03:02:57.387 [DEBUG]  [DB] Preço BTC armazenado: R$ 490477.50
+03:02:57.391 [INFO]   [Bot] Volatilidade calculada: 3.00%.
+03:02:57.419 [DEBUG]  [Bot] Volatilidade no ciclo 7: 3.00%
+03:02:57.451 [INFO]   [Bot] RSI calculado: 81.15.
+03:02:57.479 [INFO]   [Bot] EMA(8) calculada: 490476.02.
+03:02:57.511 [INFO]   [Bot] EMA(20) calculada: 467004.69.
+03:02:57.545 [INFO]   [Bot] EMA(12) calculada: 490462.92.
+03:02:57.576 [INFO]   [Bot] EMA(26) calculada: 456881.44.
+03:02:57.606 [INFO]   [Bot] EMA(9) calculada: 490473.34.
+03:02:57.638 [INFO]   [Bot] MACD calculado: MACD=33581.49, Signal=490473.34.
+03:02:57.672 [INFO]   [Bot] Volatilidade calculada: 3.00%.
+03:02:57.698 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=100.00%, PnL médio=5.47.
+03:02:57.725 [INFO]   [Bot] ADX calculado: 99.95.
+03:02:57.768 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.64","expectedProfit":"0.05","rsi":"81.15","emaShort":"490476.02","emaLong":"467004.69","volatility":"3.00","macd":"33581.49","signal":"490473.34"}
+03:02:57.792 [DEBUG]  [Bot] Convicção calculada: 59.8% | Tendência: UP | Força: WEAK
+03:02:57.823 [ERROR]  [Bot] Erro no ciclo 7: Cannot access 'activeSession' before initialization.
+03:03:15.208 [INFO]   [DB] Estatísticas consultadas (Sessão: Últimas 24h): | {"cycles":0,"total_orders":356,"filled_orders":43,"cancelled_orders":297,"total_pnl":214.68120866815747,"avg_fill_value":5.5089149081990705,"avg_spread":0,"uptime":"0min","fill_rate":"12.1"}
+03:03:16.952 [INFO]   [DB] Estatísticas consultadas (Sessão: Últimas 24h): | {"cycles":0,"total_orders":356,"filled_orders":43,"cancelled_orders":297,"total_pnl":214.68120866815747,"avg_fill_value":5.5089149081990705,"avg_spread":0,"uptime":"0min","fill_rate":"12.1"}
+03:03:27.096 [INFO]   [Bot] Iniciando ciclo 8.
+03:03:27.348 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490237.00, Best Ask=490631.00.
+03:03:27.368 [DEBUG]  [DB] Preço BTC armazenado: R$ 490434.00
+03:03:27.387 [INFO]   [Bot] Volatilidade calculada: 3.00%.
+03:03:27.417 [DEBUG]  [Bot] Volatilidade no ciclo 8: 3.00%
+03:03:27.447 [INFO]   [Bot] RSI calculado: 57.85.
+03:03:27.474 [INFO]   [Bot] EMA(8) calculada: 490476.50.
+03:03:27.504 [INFO]   [Bot] EMA(20) calculada: 471512.26.
+03:03:27.534 [INFO]   [Bot] EMA(12) calculada: 490454.84.
+03:03:27.570 [INFO]   [Bot] EMA(26) calculada: 461928.48.
+03:03:27.600 [INFO]   [Bot] EMA(9) calculada: 490458.32.
+03:03:27.630 [INFO]   [Bot] MACD calculado: MACD=28526.37, Signal=490458.32.
+03:03:27.662 [INFO]   [Bot] Volatilidade calculada: 3.00%.
+03:03:27.692 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=100.00%, PnL médio=5.47.
+03:03:27.723 [INFO]   [Bot] ADX calculado: 99.89.
+03:03:27.753 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.50","expectedProfit":"0.04","rsi":"57.85","emaShort":"490476.50","emaLong":"471512.26","volatility":"3.00","macd":"28526.37","signal":"490458.32"}
+03:03:27.782 [DEBUG]  [Bot] Convicção calculada: 59.2% | Tendência: NEUTRAL | Força: WEAK
+03:03:27.816 [ERROR]  [Bot] Erro no ciclo 8: Cannot access 'activeSession' before initialization.
+03:03:35.172 [WARN]   [Bot] SIGINT recebido. Encerrando com segurança...
+03:03:35.248 [WARN]   [Bot] SIGINT recebido. Encerrando com segurança...
