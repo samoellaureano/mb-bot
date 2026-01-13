@@ -12,6 +12,10 @@ const fs = require('fs').promises;
 const mbClient = require('./mb_client');
 const axios = require('axios');
 const db = require('./db');
+const ExternalTrendValidator = require('./external_trend_validator');
+
+// Instância do validador externo
+const trendValidator = new ExternalTrendValidator();
 
 // Config
 const SIMULATE = process.env.SIMULATE === 'true';
@@ -78,7 +82,34 @@ let cache = {timestamp: 0, data: null, valid: false};
 
 // -------------------- INDICADORES --------------------
 let priceHistory = [];
+let priceHistoryWithTimestamps = []; // NOVO: histórico de preço com timestamps para gráfico
 let historicalFills = []; // ADICIONADO para análise de fills
+
+// ===== CARREGAR HISTÓRICO DE PREÇOS DO BANCO =====
+async function loadPriceHistoryFromDB() {
+    try {
+        log('INFO', 'Iniciando carregamento de histórico de preços...');
+        const prices = await Promise.race([
+            db.getPriceHistory(24, 500),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]);
+        
+        if (prices && prices.length > 0) {
+            priceHistory = prices.map(p => p.price);
+            priceHistoryWithTimestamps = prices.map(p => ({
+                price: p.price,
+                timestamp: new Date(p.timestamp * 1000).toISOString()
+            }));
+            log('INFO', `Carregados ${prices.length} preços históricos do banco de dados.`);
+        } else {
+            log('INFO', 'Nenhum histórico de preço encontrado no banco. Iniciando novo histórico.');
+        }
+    } catch (e) {
+        log('WARN', `Erro ao carregar histórico de preços: ${e.message}. Continuando com histórico vazio.`);
+        priceHistory = [];
+        priceHistoryWithTimestamps = [];
+    }
+}
 
 function calculateRSI(prices, period = 12) {
     if (prices.length < period + 1) {
@@ -172,7 +203,12 @@ function analyzeHistoricalFills() {
 
 function fetchPricePrediction(midPrice) {
     priceHistory.push(midPrice);
+    priceHistoryWithTimestamps.push({
+        price: midPrice,
+        timestamp: new Date().toISOString()
+    });
     if (priceHistory.length > 60) priceHistory.shift();
+    if (priceHistoryWithTimestamps.length > 120) priceHistoryWithTimestamps.shift();
 
     const rsi = calculateRSI(priceHistory, 12);
     const emaShort = calculateEMA(priceHistory, 8);
@@ -408,17 +444,24 @@ async function getLiveData() {
 
         let btcPosition = 0;
         let totalCost = 0;
-        let totalPnL = 0; // Reset para cálculo limpo a cada requisição
+        let realizedPnL = 0; // PnL realizado das vendas
+        let totalInvested = 0; // Capital total investido
         const newPnlHistoryWithTimestamps = [];
 
-        // Carregar fills históricos do banco para cálculo real
+        // Carregar PnL realizado do banco de dados (sem valores hardcoded)
         const dbStats = await db.getStats({hours: 24});
-        totalPnL = dbStats.total_pnl || 0;
+        realizedPnL = dbStats.total_pnl || 0;
         
-        // Em modo simulação, adicionamos o valor base
-        if (SIMULATE) totalPnL += 42.56;
+        // IMPORTANTE: Capital inicial FIXO de R$ 220,00 para cálculo de ROI
+        const INITIAL_CAPITAL = 220.00; // Capital inicial fixo para cálculo de performance
+        const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.total || 0);
+        const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.total || 0);
+        const currentBalance = brlBalance + (btcBalance * mid); // Saldo atual em BRL
+        const initialCapitalInvested = INITIAL_CAPITAL; // Sempre usar R$ 220,00 como base
+        
+        log('DEBUG', `Database PnL: ${realizedPnL}, Capital Base: R$ ${INITIAL_CAPITAL.toFixed(2)}, Saldo Atual: R$ ${currentBalance.toFixed(2)}`);
 
-        // Re-calcular posição e custo médio para PnL não realizado
+        // Re-calcular posição e custo médio usando FIFO para PnL não realizado
         let filledOrders = orders
             .filter(o => o.status === 'filled')
             .map(o => ({
@@ -428,9 +471,9 @@ async function getLiveData() {
                 feeRate: o.feeRate || (o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER),
                 timestamp: o.created_at ? new Date(o.created_at * 1000).toISOString() : new Date().toISOString()
             }))
-            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Ordenar por timestamp para FIFO
 
-        let totalInvested = 0;
+        // Calcular posição atual e custo base usando FIFO
         filledOrders.forEach(o => {
             const fee = o.qty * o.price * o.feeRate;
             if (o.side === 'buy') {
@@ -439,21 +482,38 @@ async function getLiveData() {
                 totalCost += cost;
                 totalInvested += cost; // Capital total que entrou na estratégia
             } else if (o.side === 'sell' && btcPosition > 0) {
+                const sellAmount = Math.min(o.qty, btcPosition);
                 const avgPrice = totalCost / btcPosition;
-                btcPosition -= o.qty;
-                totalCost -= avgPrice * o.qty;
+                btcPosition -= sellAmount;
+                totalCost -= avgPrice * sellAmount;
+                
+                // Garantir que não fique negativo
+                if (btcPosition <= 0) {
+                    btcPosition = 0;
+                    totalCost = 0;
+                }
             }
-            if (btcPosition < 0) btcPosition = 0;
-            if (totalCost < 0) totalCost = 0;
         });
+        
+        // Garantir valores positivos
+        btcPosition = Math.max(0, btcPosition);
+        totalCost = Math.max(0, totalCost);
 
         if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();
+
+        // Calcular PnL não realizado
+        const unrealizedPnL = btcPosition > 0 && totalCost > 0 ? 
+            (btcPosition * mid) - totalCost : 0;
+        
+        // PnL CORRETO = Variação do Patrimônio Total (Saldo Atual - Capital Inicial)
+        const totalPnL = currentBalance - INITIAL_CAPITAL;
+        
+        log('DEBUG', `PnL Real: Saldo Atual=${currentBalance.toFixed(2)} - Capital Inicial=${INITIAL_CAPITAL.toFixed(2)} = ${totalPnL.toFixed(2)} | DB PnL=${realizedPnL.toFixed(2)} | Unrealized=${unrealizedPnL.toFixed(2)} | Position=${btcPosition.toFixed(8)} BTC`);
 
         const lastTimestamp = pnlTimestamps.length > 0 ? new Date(pnlTimestamps[pnlTimestamps.length - 1]) : null;
         const currentTime = new Date(now);
         if (!lastTimestamp || (currentTime - lastTimestamp) >= 60000) {
-            const unrealizedPnL = btcPosition > 0 ? btcPosition * (mid - (totalCost / btcPosition)) : 0;
-            const newPnlValue = parseFloat((totalPnL + unrealizedPnL).toFixed(8));
+            const newPnlValue = parseFloat(totalPnL.toFixed(8));
             newPnlHistoryWithTimestamps.push({value: newPnlValue, timestamp: currentTime.toISOString()});
         }
 
@@ -467,8 +527,7 @@ async function getLiveData() {
         pnlTimestamps = uniqueData.map(item => item.timestamp).slice(-MAX_PNL_HISTORY_POINTS);
         await savePnlHistory();
 
-        const unrealizedPnL = btcPosition > 0 ? btcPosition * (mid - (totalCost / btcPosition)) : 0;
-        totalPnL = parseFloat((totalPnL + unrealizedPnL).toFixed(8));
+        // Usar o totalPnL já calculado (não recalcular novamente)
 
         const correctedOrders = orders.map(o => {
             const createdAt = o.created_at ? new Date(o.created_at * 1000).toISOString() : null;
@@ -509,6 +568,19 @@ async function getLiveData() {
         const pred = fetchPricePrediction(mid);
         const trendBias = pred.trend === 'up' ? pred.confidence * BIAS_FACTOR * 1.5
             : (pred.trend === 'down' ? -pred.confidence * BIAS_FACTOR * 1.5 : 0);
+
+        // Obter dados de tendência externa - ADICIONADO
+        let externalTrend = null;
+        try {
+            externalTrend = await trendValidator.analyzeCombinedTrend();
+            log('DEBUG', 'External trend data obtained', {
+                trend: externalTrend.trend,
+                score: externalTrend.score,
+                confidence: externalTrend.confidence
+            });
+        } catch (error) {
+            log('WARN', 'Failed to get external trend data:', error.message);
+        }
 
         return {
             timestamp: new Date().toISOString(),
@@ -553,6 +625,8 @@ async function getLiveData() {
                 monthlyPnL: getMonthlyPnL(pnlHistory, pnlTimestamps).toFixed(8),
                 pnlHistory: [...pnlHistory],
                 pnlTimestamps: [...pnlTimestamps],
+                priceHistory: priceHistoryWithTimestamps.map(p => p.price),
+                priceTimestamps: priceHistoryWithTimestamps.map(p => p.timestamp),
                 fillRate: orders.length ? ((fills / orders.length) * 100).toFixed(1) + '%' : '0%',
                 avgSpread: spreadPct.toFixed(2),
                 dynamicSpread: (dynamicSpreadPct * 100).toFixed(2) + '%',
@@ -570,7 +644,10 @@ async function getLiveData() {
                 emaLong: parseFloat(pred.emaLong.toFixed(2)),
                 volatility: parseFloat(pred.volatility.toFixed(2)),
                 regime: pred.regime,
-                roi: totalInvested > 0 ? ((totalPnL / totalInvested) * 100).toFixed(2) : (SIMULATE ? 3.96 : 0.00)
+                roi: initialCapitalInvested > 0 ? parseFloat(((totalPnL / initialCapitalInvested) * 100).toFixed(4)) : 0,
+                initialCapital: parseFloat(initialCapitalInvested.toFixed(2)),
+                totalInvestedInOrders: totalInvested,
+                debugCapital: initialCapitalInvested
             },
             config: {
                 simulate: SIMULATE,
@@ -605,6 +682,33 @@ async function getLiveData() {
                 lastObUpdate: new Date().toISOString(),
                 activeOrdersCount: activeOrders.length,
                 totalOrdersCount: orders.length
+            },
+            externalTrend: externalTrend ? {
+                trend: externalTrend.trend,
+                score: externalTrend.score,
+                confidence: externalTrend.confidence,
+                sources: {
+                    coinGecko: externalTrend.sources?.coinGecko || null,
+                    binance: externalTrend.sources?.binance || null,
+                    fearGreed: externalTrend.sources?.fearGreed || null
+                },
+                timestamp: externalTrend.timestamp,
+                botAlignment: pred.trend === externalTrend.trend ? 'aligned' : 'divergent',
+                details: {
+                    botTrend: pred.trend,
+                    externalTrend: externalTrend.trend,
+                    botConfidence: pred.confidence,
+                    externalConfidence: externalTrend.confidence
+                }
+            } : {
+                error: 'Dados externos não disponíveis',
+                sources: {
+                    coinGecko: null,
+                    binance: null,
+                    fearGreed: null
+                },
+                botTrend: pred.trend,
+                botConfidence: pred.confidence
             }
         };
     } catch (err) {
@@ -652,6 +756,60 @@ app.get('/api/data', async (req, res) => {
     res.json(cache.data);
 });
 
+// ===== API: Sessões de Recuperação =====
+app.get('/api/recovery', async (req, res) => {
+    try {
+        const active = await db.getActiveRecoverySession();
+        const points = active ? await db.getRecoveryPoints(active.id, {limit: 500}) : [];
+        const sessions = await db.getRecoverySessions({limit: 10});
+        res.json({activeSession: active || null, points, sessions});
+    } catch (err) {
+        log('ERROR', 'Erro ao consultar recuperação:', err.message);
+        res.status(500).json({error: err.message});
+    }
+});
+
+// Reset manual de sessão de recuperação (atualiza baseline para PnL atual do portfólio, mantém sessão ativa)
+app.post('/api/recovery/reset', async (req, res) => {
+    try {
+        const active = await db.getActiveRecoverySession();
+        if (active) {
+            // Preferir PnL atual calculado pela função getLiveData (totalPnL)
+            let newBaseline = null;
+            try {
+                const live = await getLiveData();
+                log('DEBUG', 'Live data for reset', {liveStats: live && live.stats ? live.stats.totalPnL : null});
+                if (live && live.stats && typeof live.stats.totalPnL === 'number') {
+                    newBaseline = parseFloat(live.stats.totalPnL.toFixed(2));
+                }
+            } catch (e) {
+                log('WARN', 'Não foi possível obter PnL ao vivo:', e.message);
+            }
+
+            // Se não conseguimos o PnL ao vivo, fallback para último ponto
+            if (newBaseline === null) {
+                const lastPoint = await db.getLastRecoveryPoint(active.id);
+                newBaseline = lastPoint ? parseFloat(lastPoint.pnl) : (active.initial_pnl !== undefined ? parseFloat(active.initial_pnl) : parseFloat(active.baseline));
+            }
+
+            // Atualizar baseline da sessão ativa para o novo valor (não encerrar)
+            await db.updateRecoveryBaseline(active.id, newBaseline);
+            // Registrar timestamp do reset manual para evitar reversões imediatas
+            const now = Math.floor(Date.now() / 1000);
+            await db.updateManualBaselineTimestamp(active.id, now);
+
+            log('INFO', `[API] Baseline da sessão ${active.id} atualizado para: R$ ${newBaseline.toFixed(2)}`);
+            log('INFO', `[API] Sessão permanece ativa com novo baseline`);
+            res.json({success: true, message: 'Baseline atualizado para o PnL atual (ou último ponto se indisponível). Sessão permanece ativa.', baseline: newBaseline});
+            return;
+        }
+        res.json({success: false, message: 'Nenhuma sessão ativa encontrada.'});
+    } catch (err) {
+        log('ERROR', 'Erro ao resetar baseline:', err.message);
+        res.status(500).json({error: err.message});
+    }
+});
+
 // Health check
 app.get('/health', (req, res) => {
     const now = Date.now();
@@ -696,7 +854,7 @@ process.on('SIGTERM', () => {
 
 // Start server and load history
 db.init().then(() => {
-    Promise.all([loadPnlHistory(), loadHistoricalFills()]).then(() => {
+    Promise.all([loadPnlHistory(), loadHistoricalFills(), loadPriceHistoryFromDB()]).then(() => {
         app.listen(PORT, '0.0.0.0', () => log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`));
     });
 });

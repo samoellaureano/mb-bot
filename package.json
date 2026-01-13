@@ -15,12 +15,15 @@
     "backtest:sample": "node backtester.js ./data/sample_candles.csv",
     "stats": "node -e \"require('./db').getStats({hours:24}).then(console.log)\"",
     "stats:live": "node -e \"require('./db').getStats({hours:1}).then(console.log)\"",
+    "validate-pnl": "node -e \"require('./mb_client').getTicker().then(t => require('./db').validatePnL(t.last).then(console.log))\"",
     "orders": "node -e \"require('./db').getOrders({limit:20}).then(console.log)\"",
     "clean": "npm run clean:db && npm run clean:cache",
     "clean:db": "rm -f database/*.db && echo '✅ Database cleaned'",
     "clean:cache": "rm -rf node_modules/.cache && echo '✅ Cache cleaned'",
     "test": "npm run test-client && npm run stats",
     "test-client": "node test-client.js",
+    "test-pnl": "node test_pnl_validation.js",
+    "test-trading": "node test_trading_validation.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "migrate": "node migrate.js",
@@ -30,7 +33,12 @@
     "debug": "DEBUG=true SIMULATE=true node --inspect bot.js",
     "profile": "node --prof bot.js",
     "logs": "tail -f exec-live.log exec-dashboard.log 2>/dev/null || echo 'No log files found'",
-    "setup": "npm install && npm run migrate && echo '✅ Setup complete!'"
+    "setup": "npm install && npm run migrate && echo '✅ Setup complete!'",
+    "test:live": "node test_live_complete.js",
+    "test:live:full": "npm run test:live -- --full",
+    "test:conviction": "node test_confidence_system.js",
+    "test:analyzer": "node conviction_analyzer.js",
+    "test:examples": "node exemplos_conviccao.js"
   },
   "bin": {
     "mb-bot": "bin/cli.js"

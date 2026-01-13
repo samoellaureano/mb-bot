@@ -1,0 +1,1218 @@
+
+> mb-bot@1.0.0 live
+> SIMULATE=false node bot.js
+
+23:12:46.528 [INFO]   [Bot] Inicializando bot... 
+23:12:46.533 [INFO]   [Bot] Inicializando banco de dados... 
+23:12:46.624 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+23:12:46.626 [SUCCESS] [Bot] Banco de dados inicializado. 
+23:12:46.650 [INFO]   [Bot] Autenticando Mercado Bitcoin... 
+2026-01-12T23:12:46.677Z [INFO]   API_KEY: bdb29a91...
+2026-01-12T23:12:46.678Z [INFO]   API_SECRET: e14075f1...
+2026-01-12T23:12:47.949Z [INFO]   Account ID: f02d1506...
+2026-01-12T23:12:47.950Z [INFO]   Access Token: eyJhbGci...
+2026-01-12T23:12:47.950Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+23:12:47.952 [SUCCESS] [Bot] Autenticado com sucesso. 
+23:12:47.956 [INFO]   [Bot] Iniciando warmup com velas históricas para evitar decisões ruins iniciais. 
+23:12:48.152 [INFO]   [Bot] Buscadas 82 velas históricas válidas. 
+23:12:48.159 [SUCCESS] [Bot] Warmup completo com 60 velas históricas. 
+23:12:48.190 [INFO]   [Bot] Carregando fills históricos... 
+23:12:48.234 [INFO]   [DB] Carregados 0 fills históricos. 
+23:12:48.248 [SUCCESS] [Bot] Carregados 0 fills históricos. 
+23:12:48.275 [INFO]   [Bot] Iniciando loop principal. 
+23:12:48.310 [INFO]   [Bot] Iniciando ciclo 1. 
+23:12:48.354 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+23:12:48 [TREND INFO] Iniciando análise de tendência externa... 
+23:12:48 [TREND INFO] CoinGecko Score: 52
+23:12:48 [TREND INFO] Binance Score: 60
+23:12:48 [TREND INFO] Fear & Greed Score: 27
+23:12:48 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:12:49.017 [SUCCESS] [Bot] Tendência Externa: NEUTRAL (Score: 50/100, Confiança: 100%) 
+23:12:49.203 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489798.00, Best Ask=490286.00. 
+23:12:49.210 [INFO]   [Bot] Volatilidade calculada: 2.09%. 
+23:12:49.245 [DEBUG]  [Bot] Volatilidade no ciclo 1: 2.09% 
+23:12:49.274 [INFO]   [Bot] RSI calculado: 44.37. 
+23:12:49.306 [INFO]   [Bot] EMA(8) calculada: 490087.07. 
+23:12:49.331 [INFO]   [Bot] EMA(20) calculada: 490208.63. 
+23:12:49.357 [INFO]   [Bot] EMA(12) calculada: 490033.38. 
+23:12:49.397 [INFO]   [Bot] EMA(26) calculada: 490283.45. 
+23:12:49.433 [INFO]   [Bot] EMA(9) calculada: 490014.31. 
+23:12:49.472 [INFO]   [Bot] MACD calculado: MACD=-250.07, Signal=490014.31. 
+23:12:49.500 [INFO]   [Bot] Volatilidade calculada: 2.09%. 
+23:12:49.530 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:12:49.559 [INFO]   [Bot] ADX calculado: 11.56. 
+23:12:49.595 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.39","expectedProfit":"0.02","rsi":"44.37","emaShort":"490087.07","emaLong":"490208.63","...
+23:12:49.627 [DEBUG]  [Bot] Convicção calculada: 44.8% | Tendência: DOWN | Força: VERY_WEAK 
+23:12:50.265 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:12:50.301 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:12:50.350 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.28). Ignorando compra. 
+23:12:50.380 [ERROR]  [Bot] Erro no ciclo 1: DEBUG is not defined. 
+23:12:50.415 [SUCCESS] [Bot] Bot operacional - SIMULATE=false 
+23:13:20.434 [INFO]   [Bot] Iniciando ciclo 2. 
+23:13:20.696 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489943.00, Best Ask=490218.00. 
+23:13:20.699 [INFO]   [Bot] Volatilidade calculada: 2.07%. 
+23:13:20.723 [DEBUG]  [Bot] Volatilidade no ciclo 2: 2.07% 
+23:13:20.749 [INFO]   [Bot] RSI calculado: 52.64. 
+23:13:20.773 [INFO]   [Bot] EMA(8) calculada: 490032.75. 
+23:13:20.795 [INFO]   [Bot] EMA(20) calculada: 490156.09. 
+23:13:20.814 [INFO]   [Bot] EMA(12) calculada: 490079.16. 
+23:13:20.837 [INFO]   [Bot] EMA(26) calculada: 490225.09. 
+23:13:20.861 [INFO]   [Bot] EMA(9) calculada: 490024.07. 
+23:13:20.885 [INFO]   [Bot] MACD calculado: MACD=-145.93, Signal=490024.07. 
+23:13:20.907 [INFO]   [Bot] Volatilidade calculada: 2.07%. 
+23:13:20.930 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:13:20.962 [INFO]   [Bot] ADX calculado: 11.09. 
+23:13:20.992 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.37","expectedProfit":"0.03","rsi":"52.64","emaShort":"490032.75","emaLong":"490156.09","...
+23:13:21.023 [DEBUG]  [Bot] Convicção calculada: 48.8% | Tendência: DOWN | Força: VERY_WEAK 
+23:13:21.263 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:13:21.266 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:13:21.299 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.30). Ignorando compra. 
+23:13:21.334 [ERROR]  [Bot] Erro no ciclo 2: DEBUG is not defined. 
+23:13:50.449 [INFO]   [Bot] Iniciando ciclo 3. 
+23:13:50.710 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489944.00, Best Ask=490203.00. 
+23:13:50.718 [INFO]   [Bot] Volatilidade calculada: 2.05%. 
+23:13:50.751 [DEBUG]  [Bot] Volatilidade no ciclo 3: 2.05% 
+23:13:50.795 [INFO]   [Bot] RSI calculado: 57.87. 
+23:13:50.823 [INFO]   [Bot] EMA(8) calculada: 490081.33. 
+23:13:50.926 [INFO]   [Bot] EMA(20) calculada: 490160.43. 
+23:13:50.971 [INFO]   [Bot] EMA(12) calculada: 490092.64. 
+23:13:50.994 [INFO]   [Bot] EMA(26) calculada: 490200.60. 
+23:13:51.013 [INFO]   [Bot] EMA(9) calculada: 490079.07. 
+23:13:51.037 [INFO]   [Bot] MACD calculado: MACD=-107.96, Signal=490079.07. 
+23:13:51.064 [INFO]   [Bot] Volatilidade calculada: 2.05%. 
+23:13:51.088 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:13:51.112 [INFO]   [Bot] ADX calculado: 10.72. 
+23:13:51.141 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.40","expectedProfit":"0.03","rsi":"57.87","emaShort":"490081.33","emaLong":"490160.43","...
+23:13:51.182 [DEBUG]  [Bot] Convicção calculada: 48.8% | Tendência: DOWN | Força: VERY_WEAK 
+23:13:51.707 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:13:51.734 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:13:51.766 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.30). Ignorando compra. 
+23:13:51.794 [ERROR]  [Bot] Erro no ciclo 3: DEBUG is not defined. 
+23:14:20.464 [INFO]   [Bot] Iniciando ciclo 4. 
+23:14:20.771 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489906.00, Best Ask=490204.00. 
+23:14:20.777 [INFO]   [Bot] Volatilidade calculada: 2.03%. 
+23:14:20.804 [DEBUG]  [Bot] Volatilidade no ciclo 4: 2.03% 
+23:14:20.835 [INFO]   [Bot] RSI calculado: 66.09. 
+23:14:20.860 [INFO]   [Bot] EMA(8) calculada: 490060.23. 
+23:14:20.887 [INFO]   [Bot] EMA(20) calculada: 490102.95. 
+23:14:20.913 [INFO]   [Bot] EMA(12) calculada: 490025.54. 
+23:14:20.945 [INFO]   [Bot] EMA(26) calculada: 490194.64. 
+23:14:20.972 [INFO]   [Bot] EMA(9) calculada: 490100.55. 
+23:14:20.998 [INFO]   [Bot] MACD calculado: MACD=-169.10, Signal=490100.55. 
+23:14:21.024 [INFO]   [Bot] Volatilidade calculada: 2.03%. 
+23:14:21.053 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:14:21.081 [INFO]   [Bot] ADX calculado: 10.51. 
+23:14:21.106 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.45","expectedProfit":"0.03","rsi":"66.09","emaShort":"490060.23","emaLong":"490102.95","...
+23:14:21.130 [DEBUG]  [Bot] Convicção calculada: 54.1% | Tendência: UP | Força: WEAK 
+23:14:21.408 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:14:21.414 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:14:21.441 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 2.60). Ignorando compra. 
+23:14:21.463 [ERROR]  [Bot] Erro no ciclo 4: DEBUG is not defined. 
+23:14:50.476 [INFO]   [Bot] Iniciando ciclo 5. 
+23:14:50.742 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490031.00, Best Ask=490212.00. 
+23:14:50.747 [INFO]   [Bot] Volatilidade calculada: 2.02%. 
+23:14:50.770 [DEBUG]  [Bot] Volatilidade no ciclo 5: 2.02% 
+23:14:50.792 [INFO]   [Bot] RSI calculado: 55.27. 
+23:14:50.814 [INFO]   [Bot] EMA(8) calculada: 490089.59. 
+23:14:50.834 [INFO]   [Bot] EMA(20) calculada: 490054.34. 
+23:14:50.859 [INFO]   [Bot] EMA(12) calculada: 490088.14. 
+23:14:50.890 [INFO]   [Bot] EMA(26) calculada: 490155.13. 
+23:14:50.915 [INFO]   [Bot] EMA(9) calculada: 490081.89. 
+23:14:50.940 [INFO]   [Bot] MACD calculado: MACD=-66.99, Signal=490081.89. 
+23:14:50.964 [INFO]   [Bot] Volatilidade calculada: 2.02%. 
+23:14:50.980 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:14:51.003 [INFO]   [Bot] ADX calculado: 9.80. 
+23:14:51.025 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.38","expectedProfit":"0.03","rsi":"55.27","emaShort":"490089.59","emaLong":"490054.34...
+23:14:51.047 [DEBUG]  [Bot] Convicção calculada: 61.2% | Tendência: UP | Força: MODERATE 
+23:14:51.286 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:14:51.290 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:14:51.313 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 3.91). Ignorando compra. 
+23:14:51.337 [ERROR]  [Bot] Erro no ciclo 5: DEBUG is not defined. 
+23:15:20.491 [INFO]   [Bot] Iniciando ciclo 6. 
+23:15:20.738 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490031.00, Best Ask=490257.00. 
+23:15:20.744 [INFO]   [Bot] Volatilidade calculada: 2.00%. 
+23:15:20.772 [DEBUG]  [Bot] Volatilidade no ciclo 6: 2.00% 
+23:15:20.799 [INFO]   [Bot] RSI calculado: 32.12. 
+23:15:20.824 [INFO]   [Bot] EMA(8) calculada: 490110.15. 
+23:15:20.854 [INFO]   [Bot] EMA(20) calculada: 490102.92. 
+23:15:20.887 [INFO]   [Bot] EMA(12) calculada: 490095.19. 
+23:15:20.913 [INFO]   [Bot] EMA(26) calculada: 490172.87. 
+23:15:20.940 [INFO]   [Bot] EMA(9) calculada: 490108.39. 
+23:15:20.968 [INFO]   [Bot] MACD calculado: MACD=-77.69, Signal=490108.39. 
+23:15:20.990 [INFO]   [Bot] Volatilidade calculada: 2.00%. 
+23:15:21.014 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:15:21.036 [INFO]   [Bot] ADX calculado: 8.99. 
+23:15:21.080 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.46","expectedProfit":"0.03","rsi":"32.12","emaShort":"490110.15","emaLong":"490102.92","...
+23:15:21.104 [DEBUG]  [Bot] Convicção calculada: 55.2% | Tendência: UP | Força: WEAK 
+23:15:21.359 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:15:21.363 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:15:21.393 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 2.60). Ignorando compra. 
+23:15:21.418 [ERROR]  [Bot] Erro no ciclo 6: DEBUG is not defined. 
+23:15:50.507 [INFO]   [Bot] Iniciando ciclo 7. 
+23:15:50.798 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490031.00, Best Ask=490261.00. 
+23:15:50.803 [INFO]   [Bot] Volatilidade calculada: 1.98%. 
+23:15:50.822 [DEBUG]  [Bot] Volatilidade no ciclo 7: 1.98% 
+23:15:50.847 [INFO]   [Bot] RSI calculado: 83.55. 
+23:15:50.877 [INFO]   [Bot] EMA(8) calculada: 490121.83. 
+23:15:50.898 [INFO]   [Bot] EMA(20) calculada: 490122.57. 
+23:15:50.923 [INFO]   [Bot] EMA(12) calculada: 490114.81. 
+23:15:50.949 [INFO]   [Bot] EMA(26) calculada: 490131.17. 
+23:15:50.973 [INFO]   [Bot] EMA(9) calculada: 490121.18. 
+23:15:51.003 [INFO]   [Bot] MACD calculado: MACD=-16.36, Signal=490121.18. 
+23:15:51.032 [INFO]   [Bot] Volatilidade calculada: 1.98%. 
+23:15:51.056 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:15:51.082 [INFO]   [Bot] ADX calculado: 8.27. 
+23:15:51.107 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.55","expectedProfit":"0.03","rsi":"83.55","emaShort":"490121.83","emaLong":"490122.57","...
+23:15:51.129 [DEBUG]  [Bot] Convicção calculada: 46.4% | Tendência: NEUTRAL | Força: VERY_WEAK 
+23:15:51.382 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:15:51.388 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:15:51.419 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.30). Ignorando compra. 
+23:15:51.467 [ERROR]  [Bot] Erro no ciclo 7: DEBUG is not defined. 
+23:16:20.522 [INFO]   [Bot] Iniciando ciclo 8. 
+23:16:20.774 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490031.00, Best Ask=490261.00. 
+23:16:20.777 [INFO]   [Bot] Volatilidade calculada: 1.98%. 
+23:16:20.810 [DEBUG]  [Bot] Volatilidade no ciclo 8: 1.98% 
+23:16:20.836 [INFO]   [Bot] RSI calculado: 78.11. 
+23:16:20.915 [INFO]   [Bot] EMA(8) calculada: 490140.29. 
+23:16:20.986 [INFO]   [Bot] EMA(20) calculada: 490066.47. 
+23:16:21.097 [INFO]   [Bot] EMA(12) calculada: 490122.72. 
+23:16:21.188 [INFO]   [Bot] EMA(26) calculada: 490081.26. 
+23:16:21.214 [INFO]   [Bot] EMA(9) calculada: 490128.13. 
+23:16:21.242 [INFO]   [Bot] MACD calculado: MACD=41.46, Signal=490128.13. 
+23:16:21.276 [INFO]   [Bot] Volatilidade calculada: 1.98%. 
+23:16:21.315 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:16:21.352 [INFO]   [Bot] ADX calculado: 7.65. 
+23:16:21.389 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.52","expectedProfit":"0.04","rsi":"78.11","emaShort":"490140.29","emaLong":"490066.47...
+23:16:21.413 [DEBUG]  [Bot] Convicção calculada: 57.1% | Tendência: UP | Força: WEAK 
+23:16:21.689 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:16:21.702 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:16:21.726 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 2.66). Ignorando compra. 
+23:16:21.783 [ERROR]  [Bot] Erro no ciclo 8: DEBUG is not defined. 
+23:16:50.538 [INFO]   [Bot] Iniciando ciclo 9. 
+23:16:50.791 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490045.00, Best Ask=490344.00. 
+23:16:50.812 [INFO]   [Bot] Volatilidade calculada: 1.97%. 
+23:16:50.859 [DEBUG]  [Bot] Volatilidade no ciclo 9: 1.97% 
+23:16:50.878 [INFO]   [Bot] RSI calculado: 88.29. 
+23:16:50.902 [INFO]   [Bot] EMA(8) calculada: 490164.72. 
+23:16:50.926 [INFO]   [Bot] EMA(20) calculada: 490127.45. 
+23:16:50.959 [INFO]   [Bot] EMA(12) calculada: 490140.62. 
+23:16:50.985 [INFO]   [Bot] EMA(26) calculada: 490129.69. 
+23:16:51.007 [INFO]   [Bot] EMA(9) calculada: 490159.16. 
+23:16:51.031 [INFO]   [Bot] MACD calculado: MACD=10.93, Signal=490159.16. 
+23:16:51.054 [INFO]   [Bot] Volatilidade calculada: 1.97%. 
+23:16:51.085 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:16:51.117 [INFO]   [Bot] ADX calculado: 6.71. 
+23:16:51.146 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.58","expectedProfit":"0.03","rsi":"88.29","emaShort":"490164.72","emaLong":"490127.45...
+23:16:51.177 [DEBUG]  [Bot] Convicção calculada: 57.2% | Tendência: UP | Força: WEAK 
+23:16:51.436 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:16:51.444 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:16:51.478 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 2.60). Ignorando compra. 
+23:16:51.502 [ERROR]  [Bot] Erro no ciclo 9: DEBUG is not defined. 
+23:17:20.553 [INFO]   [Bot] Iniciando ciclo 10. 
+23:17:20.824 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490042.00, Best Ask=490212.00. 
+23:17:20.922 [INFO]   [Bot] Volatilidade calculada: 1.95%. 
+23:17:20.992 [DEBUG]  [Bot] Volatilidade no ciclo 10: 1.95% 
+23:17:21.019 [INFO]   [Bot] Fase de teste concluída. Iniciando operação normal. 
+23:17:21.048 [INFO]   [Bot] RSI calculado: 67.39. 
+23:17:21.171 [INFO]   [Bot] EMA(8) calculada: 490150.08. 
+23:17:21.204 [INFO]   [Bot] EMA(20) calculada: 490120.19. 
+23:17:21.242 [INFO]   [Bot] EMA(12) calculada: 490145.71. 
+23:17:21.285 [INFO]   [Bot] EMA(26) calculada: 490139.96. 
+23:17:21.312 [INFO]   [Bot] EMA(9) calculada: 490150.00. 
+23:17:21.382 [INFO]   [Bot] MACD calculado: MACD=5.75, Signal=490150.00. 
+23:17:21.409 [INFO]   [Bot] Volatilidade calculada: 1.95%. 
+23:17:21.443 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:17:21.476 [INFO]   [Bot] ADX calculado: 6.59. 
+23:17:21.514 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.45","expectedProfit":"0.03","rsi":"67.39","emaShort":"490150.08","emaLong":"490120.19...
+23:17:21.562 [DEBUG]  [Bot] Convicção calculada: 61.1% | Tendência: UP | Força: MODERATE 
+23:17:21.942 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:17:21.946 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:17:21.968 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 7.81). Ignorando compra. 
+23:17:21.992 [ERROR]  [Bot] Erro no ciclo 10: DEBUG is not defined. 
+23:17:50.561 [INFO]   [Bot] Iniciando ciclo 11. 
+23:17:50.851 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489906.00, Best Ask=490148.00. 
+23:17:50.855 [INFO]   [Bot] Volatilidade calculada: 1.94%. 
+23:17:50.878 [DEBUG]  [Bot] Volatilidade no ciclo 11: 1.94% 
+23:17:50.905 [INFO]   [Bot] RSI calculado: 30.35. 
+23:17:50.938 [INFO]   [Bot] EMA(8) calculada: 490101.46. 
+23:17:50.965 [INFO]   [Bot] EMA(20) calculada: 490108.49. 
+23:17:50.986 [INFO]   [Bot] EMA(12) calculada: 490115.02. 
+23:17:50.999 [INFO]   [Bot] EMA(26) calculada: 490062.09. 
+23:17:51.024 [INFO]   [Bot] EMA(9) calculada: 490105.93. 
+23:17:51.053 [INFO]   [Bot] MACD calculado: MACD=52.93, Signal=490105.93. 
+23:17:51.084 [INFO]   [Bot] Volatilidade calculada: 1.94%. 
+23:17:51.114 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:17:51.143 [INFO]   [Bot] ADX calculado: 7.82. 
+23:17:51.184 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.46","expectedProfit":"0.02","rsi":"30.35","emaShort":"490101.46","emaLong":"490108.49","...
+23:17:51.211 [DEBUG]  [Bot] Convicção calculada: 42.7% | Tendência: DOWN | Força: VERY_WEAK 
+23:17:51.242 [WARN]   [Bot] Confiança baixa (42.7%). Operando em modo conservador com spread expandido. 
+23:17:51.843 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:17:51.848 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:17:51.871 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.53). Ignorando compra. 
+23:17:51.895 [ERROR]  [Bot] Erro no ciclo 11: DEBUG is not defined. 
+23:18:20.576 [INFO]   [Bot] Iniciando ciclo 12. 
+23:18:20.832 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489908.00, Best Ask=490308.00. 
+23:18:20.838 [INFO]   [Bot] Volatilidade calculada: 1.92%. 
+23:18:20.858 [DEBUG]  [Bot] Volatilidade no ciclo 12: 1.92% 
+23:18:20.888 [INFO]   [Bot] RSI calculado: 43.98. 
+23:18:20.906 [INFO]   [Bot] EMA(8) calculada: 490110.54. 
+23:18:20.933 [INFO]   [Bot] EMA(20) calculada: 490107.45. 
+23:18:20.963 [INFO]   [Bot] EMA(12) calculada: 490113.30. 
+23:18:20.995 [INFO]   [Bot] EMA(26) calculada: 490107.25. 
+23:18:21.020 [INFO]   [Bot] EMA(9) calculada: 490106.68. 
+23:18:21.045 [INFO]   [Bot] MACD calculado: MACD=6.05, Signal=490106.68. 
+23:18:21.070 [INFO]   [Bot] Volatilidade calculada: 1.92%. 
+23:18:21.098 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:18:21.129 [INFO]   [Bot] ADX calculado: 7.48. 
+23:18:21.151 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.38","expectedProfit":"0.02","rsi":"43.98","emaShort":"490110.54","emaLong":"490107.45","...
+23:18:21.173 [DEBUG]  [Bot] Convicção calculada: 53.2% | Tendência: NEUTRAL | Força: WEAK 
+23:18:21.458 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:18:21.462 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:18:21.487 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.10). Ignorando compra. 
+23:18:21.517 [ERROR]  [Bot] Erro no ciclo 12: DEBUG is not defined. 
+23:18:50.592 [INFO]   [Bot] Iniciando ciclo 13. 
+23:18:50.934 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489908.00, Best Ask=490315.00. 
+23:18:50.941 [INFO]   [Bot] Volatilidade calculada: 1.91%. 
+23:18:50.964 [DEBUG]  [Bot] Volatilidade no ciclo 13: 1.91% 
+23:18:50.993 [INFO]   [Bot] RSI calculado: 44.26. 
+23:18:51.015 [INFO]   [Bot] EMA(8) calculada: 490101.88. 
+23:18:51.042 [INFO]   [Bot] EMA(20) calculada: 490105.69. 
+23:18:51.068 [INFO]   [Bot] EMA(12) calculada: 490112.79. 
+23:18:51.092 [INFO]   [Bot] EMA(26) calculada: 490101.28. 
+23:18:51.118 [INFO]   [Bot] EMA(9) calculada: 490113.62. 
+23:18:51.155 [INFO]   [Bot] MACD calculado: MACD=11.51, Signal=490113.62. 
+23:18:51.190 [INFO]   [Bot] Volatilidade calculada: 1.91%. 
+23:18:51.225 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:18:51.263 [INFO]   [Bot] ADX calculado: 7.13. 
+23:18:51.289 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.38","expectedProfit":"0.02","rsi":"44.26","emaShort":"490101.88","emaLong":"490105.69","...
+23:18:51.316 [DEBUG]  [Bot] Convicção calculada: 44.1% | Tendência: DOWN | Força: VERY_WEAK 
+23:18:51.347 [WARN]   [Bot] Confiança baixa (44.1%). Operando em modo conservador com spread expandido. 
+23:18:51.609 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:18:51.618 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:18:51.660 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.53). Ignorando compra. 
+23:18:51.695 [ERROR]  [Bot] Erro no ciclo 13: DEBUG is not defined. 
+23:19:20.608 [INFO]   [Bot] Iniciando ciclo 14. 
+23:19:20.877 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489910.00, Best Ask=490190.00. 
+23:19:20.881 [INFO]   [Bot] Volatilidade calculada: 1.89%. 
+23:19:20.911 [DEBUG]  [Bot] Volatilidade no ciclo 14: 1.89% 
+23:19:20.937 [INFO]   [Bot] RSI calculado: 36.74. 
+23:19:20.963 [INFO]   [Bot] EMA(8) calculada: 490067.99. 
+23:19:20.991 [INFO]   [Bot] EMA(20) calculada: 490104.57. 
+23:19:21.019 [INFO]   [Bot] EMA(12) calculada: 490101.49. 
+23:19:21.048 [INFO]   [Bot] EMA(26) calculada: 490099.17. 
+23:19:21.075 [INFO]   [Bot] EMA(9) calculada: 490083.47. 
+23:19:21.103 [INFO]   [Bot] MACD calculado: MACD=2.32, Signal=490083.47. 
+23:19:21.134 [INFO]   [Bot] Volatilidade calculada: 1.89%. 
+23:19:21.160 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:19:21.190 [INFO]   [Bot] ADX calculado: 7.89. 
+23:19:21.219 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.42","expectedProfit":"0.02","rsi":"36.74","emaShort":"490067.99","emaLong":"490104.57","...
+23:19:21.276 [DEBUG]  [Bot] Convicção calculada: 45.1% | Tendência: NEUTRAL | Força: VERY_WEAK 
+23:19:21.300 [WARN]   [Bot] Confiança baixa (45.1%). Operando em modo conservador com spread expandido. 
+23:19:21.891 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:19:21.895 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:19:21.923 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.53). Ignorando compra. 
+23:19:21.948 [ERROR]  [Bot] Erro no ciclo 14: DEBUG is not defined. 
+23:19:50.622 [INFO]   [Bot] Iniciando ciclo 15. 
+23:19:50.860 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489910.00, Best Ask=490189.00. 
+23:19:50.863 [INFO]   [Bot] Volatilidade calculada: 1.88%. 
+23:19:50.883 [DEBUG]  [Bot] Volatilidade no ciclo 15: 1.88% 
+23:19:50.907 [INFO]   [Bot] RSI calculado: 26.91. 
+23:19:50.941 [INFO]   [Bot] EMA(8) calculada: 490071.53. 
+23:19:50.967 [INFO]   [Bot] EMA(20) calculada: 490097.62. 
+23:19:50.993 [INFO]   [Bot] EMA(12) calculada: 490077.63. 
+23:19:51.021 [INFO]   [Bot] EMA(26) calculada: 490091.14. 
+23:19:51.047 [INFO]   [Bot] EMA(9) calculada: 490060.50. 
+23:19:51.075 [INFO]   [Bot] MACD calculado: MACD=-13.51, Signal=490060.50. 
+23:19:51.096 [INFO]   [Bot] Volatilidade calculada: 1.88%. 
+23:19:51.140 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:19:51.163 [INFO]   [Bot] ADX calculado: 8.56. 
+23:19:51.192 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.48","expectedProfit":"0.02","rsi":"26.91","emaShort":"490071.53","emaLong":"490097.62","...
+23:19:51.221 [DEBUG]  [Bot] Convicção calculada: 48.0% | Tendência: DOWN | Força: VERY_WEAK 
+23:19:51.247 [WARN]   [Bot] Confiança baixa (48.0%). Operando em modo conservador com spread expandido. 
+23:19:51.488 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:19:51.493 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:19:51.520 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.53). Ignorando compra. 
+23:19:51.546 [ERROR]  [Bot] Erro no ciclo 15: DEBUG is not defined. 
+23:20:20.637 [INFO]   [Bot] Iniciando ciclo 16. 
+23:20:20.896 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489910.00, Best Ask=490189.00. 
+23:20:20.902 [INFO]   [Bot] Volatilidade calculada: 1.88%. 
+23:20:20.927 [DEBUG]  [Bot] Volatilidade no ciclo 16: 1.88% 
+23:20:20.953 [INFO]   [Bot] RSI calculado: 34.28. 
+23:20:20.980 [INFO]   [Bot] EMA(8) calculada: 490063.30. 
+23:20:21.007 [INFO]   [Bot] EMA(20) calculada: 490089.16. 
+23:20:21.034 [INFO]   [Bot] EMA(12) calculada: 490056.17. 
+23:20:21.064 [INFO]   [Bot] EMA(26) calculada: 490082.69. 
+23:20:21.090 [INFO]   [Bot] EMA(9) calculada: 490065.24. 
+23:20:21.115 [INFO]   [Bot] MACD calculado: MACD=-26.53, Signal=490065.24. 
+23:20:21.153 [INFO]   [Bot] Volatilidade calculada: 1.88%. 
+23:20:21.181 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:20:21.209 [INFO]   [Bot] ADX calculado: 9.14. 
+23:20:21.237 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.44","expectedProfit":"0.02","rsi":"34.28","emaShort":"490063.30","emaLong":"490089.16","...
+23:20:21.265 [DEBUG]  [Bot] Convicção calculada: 42.8% | Tendência: DOWN | Força: VERY_WEAK 
+23:20:21.293 [WARN]   [Bot] Confiança baixa (42.8%). Operando em modo conservador com spread expandido. 
+23:20:21.568 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:20:21.578 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:20:21.614 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.53). Ignorando compra. 
+23:20:21.631 [ERROR]  [Bot] Erro no ciclo 16: DEBUG is not defined. 
+23:20:50.652 [INFO]   [Bot] Iniciando ciclo 17. 
+23:20:50.905 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489910.00, Best Ask=490189.00. 
+23:20:50.911 [INFO]   [Bot] Volatilidade calculada: 1.88%. 
+23:20:50.936 [DEBUG]  [Bot] Volatilidade no ciclo 17: 1.88% 
+23:20:50.960 [INFO]   [Bot] RSI calculado: 57.68. 
+23:20:50.979 [INFO]   [Bot] EMA(8) calculada: 490049.61. 
+23:20:51.000 [INFO]   [Bot] EMA(20) calculada: 490081.97. 
+23:20:51.027 [INFO]   [Bot] EMA(12) calculada: 490065.19. 
+23:20:51.050 [INFO]   [Bot] EMA(26) calculada: 490086.95. 
+23:20:51.076 [INFO]   [Bot] EMA(9) calculada: 490059.95. 
+23:20:51.106 [INFO]   [Bot] MACD calculado: MACD=-21.76, Signal=490059.95. 
+23:20:51.138 [INFO]   [Bot] Volatilidade calculada: 1.88%. 
+23:20:51.165 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:20:51.194 [INFO]   [Bot] ADX calculado: 9.64. 
+23:20:51.221 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.39","expectedProfit":"0.03","rsi":"57.68","emaShort":"490049.61","emaLong":"490081.97","...
+23:20:51.252 [DEBUG]  [Bot] Convicção calculada: 48.1% | Tendência: DOWN | Força: VERY_WEAK 
+23:20:51.284 [WARN]   [Bot] Confiança baixa (48.1%). Operando em modo conservador com spread expandido. 
+23:20:51.534 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:20:51.578 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:20:51.613 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.56). Ignorando compra. 
+23:20:51.646 [ERROR]  [Bot] Erro no ciclo 17: DEBUG is not defined. 
+23:21:20.668 [INFO]   [Bot] Iniciando ciclo 18. 
+23:21:20.918 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489948.00, Best Ask=490190.00. 
+23:21:20.927 [INFO]   [Bot] Volatilidade calculada: 1.86%. 
+23:21:20.952 [DEBUG]  [Bot] Volatilidade no ciclo 18: 1.86% 
+23:21:20.978 [INFO]   [Bot] RSI calculado: 27.06. 
+23:21:21.001 [INFO]   [Bot] EMA(8) calculada: 490057.20. 
+23:21:21.022 [INFO]   [Bot] EMA(20) calculada: 490086.17. 
+23:21:21.047 [INFO]   [Bot] EMA(12) calculada: 490066.74. 
+23:21:21.074 [INFO]   [Bot] EMA(26) calculada: 490087.43. 
+23:21:21.103 [INFO]   [Bot] EMA(9) calculada: 490056.60. 
+23:21:21.129 [INFO]   [Bot] MACD calculado: MACD=-20.69, Signal=490056.60. 
+23:21:21.154 [INFO]   [Bot] Volatilidade calculada: 1.86%. 
+23:21:21.177 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:21:21.202 [INFO]   [Bot] ADX calculado: 9.37. 
+23:21:21.223 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.48","expectedProfit":"0.02","rsi":"27.06","emaShort":"490057.20","emaLong":"490086.17","...
+23:21:21.249 [DEBUG]  [Bot] Convicção calculada: 50.3% | Tendência: NEUTRAL | Força: WEAK 
+23:21:21.504 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:21:21.511 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:21:21.541 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.09). Ignorando compra. 
+23:21:21.575 [ERROR]  [Bot] Erro no ciclo 18: DEBUG is not defined. 
+23:21:50.672 [INFO]   [Bot] Iniciando ciclo 19. 
+23:21:50.953 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489948.00, Best Ask=490190.00. 
+23:21:50.958 [INFO]   [Bot] Volatilidade calculada: 1.86%. 
+23:21:50.985 [DEBUG]  [Bot] Volatilidade no ciclo 19: 1.86% 
+23:21:51.009 [INFO]   [Bot] RSI calculado: 23.93. 
+23:21:51.034 [INFO]   [Bot] EMA(8) calculada: 490061.86. 
+23:21:51.061 [INFO]   [Bot] EMA(20) calculada: 490073.93. 
+23:21:51.087 [INFO]   [Bot] EMA(12) calculada: 490059.10. 
+23:21:51.112 [INFO]   [Bot] EMA(26) calculada: 490085.07. 
+23:21:51.137 [INFO]   [Bot] EMA(9) calculada: 490061.01. 
+23:21:51.158 [INFO]   [Bot] MACD calculado: MACD=-25.97, Signal=490061.01. 
+23:21:51.180 [INFO]   [Bot] Volatilidade calculada: 1.86%. 
+23:21:51.208 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:21:51.258 [INFO]   [Bot] ADX calculado: 9.14. 
+23:21:51.282 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.50","expectedProfit":"0.02","rsi":"23.93","emaShort":"490061.86","emaLong":"490073.93","...
+23:21:51.307 [DEBUG]  [Bot] Convicção calculada: 50.3% | Tendência: NEUTRAL | Força: WEAK 
+23:21:51.622 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:21:51.637 [WARN]   [Bot] Saldo BTC muito baixo (0.00000005 < 0.00002000). Apenas ordens de compra serão colocadas. 
+23:21:51.672 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.09). Ignorando compra. 
+23:21:51.693 [ERROR]  [Bot] Erro no ciclo 19: DEBUG is not defined. 
+23:22:20.688 [INFO]   [Bot] Iniciando ciclo 20. 
+23:22:20.988 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489948.00, Best Ask=490190.00. 
+23:22:20.992 [INFO]   [Bot] Volatilidade calculada: 1.86%. 
+23:22:21.015 [DEBUG]  [Bot] Volatilidade no ciclo 20: 1.86% 
+23:22:21.036 [INFO]   [Bot] RSI calculado: 97.50. 
+23:22:21.062 [INFO]   [Bot] EMA(8) calculada: 490064.68. 
+23:22:21.088 [INFO]   [Bot] EMA(20) calculada: 490059.53. 
+23:22:21.140 [INFO]   [Bot] EMA(12) calculada: 490061.84. 
+23:22:21.206 [INFO]   [Bot] EMA(26) calculada: 490082.78. 
+23:22:21.235 [INFO]   [Bot] EMA(9) calculada: 490063.89. 
+23:22:21.254 [INFO]   [Bot] MACD calculado: MACD=-20.94, Signal=490063.89. 
+23:22:21.272 [INFO]   [Bot] Volatilidade calculada: 1.86%. 
+23:22:21.308 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:22:21.342 [INFO]   [Bot] ADX calculado: 8.95. 
+23:22:21.377 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.63","expectedProfit":"0.04","rsi":"97.50","emaShort":"490064.68","emaLong":"490059.53...
+23:22:21.413 [DEBUG]  [Bot] Convicção calculada: 57.1% | Tendência: UP | Força: WEAK 
+23:22:21.700 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:22:21.706 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.30). Ignorando compra. 
+23:22:21.743 [ERROR]  [Bot] Erro no ciclo 20: DEBUG is not defined. 
+23:22:50.703 [INFO]   [Bot] Iniciando ciclo 21. 
+23:22:50.708 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+23:22:50 [TREND INFO] Iniciando análise de tendência externa... 
+23:22:51 [TREND INFO] CoinGecko Score: 52
+23:22:51 [TREND INFO] Binance Score: 60
+23:22:51 [TREND INFO] Fear & Greed Score: 27
+23:22:51 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:22:51.467 [SUCCESS] [Bot] Tendência Externa: NEUTRAL (Score: 50/100, Confiança: 100%) 
+23:22:51.730 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489953.00, Best Ask=490190.00. 
+23:22:51.736 [INFO]   [Bot] Volatilidade calculada: 1.86%. 
+23:22:51.761 [DEBUG]  [Bot] Volatilidade no ciclo 21: 1.86% 
+23:22:51.785 [INFO]   [Bot] RSI calculado: 99.01. 
+23:22:51.803 [INFO]   [Bot] EMA(8) calculada: 490069.99. 
+23:22:51.828 [INFO]   [Bot] EMA(20) calculada: 490072.64. 
+23:22:51.853 [INFO]   [Bot] EMA(12) calculada: 490064.59. 
+23:22:51.883 [INFO]   [Bot] EMA(26) calculada: 490087.73. 
+23:22:51.915 [INFO]   [Bot] EMA(9) calculada: 490066.63. 
+23:22:51.940 [INFO]   [Bot] MACD calculado: MACD=-23.14, Signal=490066.63. 
+23:22:51.961 [INFO]   [Bot] Volatilidade calculada: 1.61%. 
+23:22:51.981 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:22:52.000 [INFO]   [Bot] ADX calculado: 12.75. 
+23:22:52.023 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.62","expectedProfit":"0.03","rsi":"99.01","emaShort":"490069.99","emaLong":"490072.64","...
+23:22:52.045 [DEBUG]  [Bot] Convicção calculada: 46.3% | Tendência: NEUTRAL | Força: VERY_WEAK 
+23:22:52.072 [WARN]   [Bot] Confiança baixa (46.3%). Operando em modo conservador com spread expandido. 
+23:22:52.310 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:22:52.315 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.56). Ignorando compra. 
+23:22:52.340 [ERROR]  [Bot] Erro no ciclo 21: DEBUG is not defined. 
+23:23:20.709 [INFO]   [Bot] Iniciando ciclo 22. 
+23:23:20.977 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489959.00, Best Ask=490190.00. 
+23:23:20.980 [INFO]   [Bot] Volatilidade calculada: 1.58%. 
+23:23:21.004 [DEBUG]  [Bot] Volatilidade no ciclo 22: 1.58% 
+23:23:21.024 [INFO]   [Bot] RSI calculado: 99.01. 
+23:23:21.044 [INFO]   [Bot] EMA(8) calculada: 490071.77. 
+23:23:21.062 [INFO]   [Bot] EMA(20) calculada: 490073.45. 
+23:23:21.086 [INFO]   [Bot] EMA(12) calculada: 490067.40. 
+23:23:21.119 [INFO]   [Bot] EMA(26) calculada: 490076.71. 
+23:23:21.144 [INFO]   [Bot] EMA(9) calculada: 490071.56. 
+23:23:21.169 [INFO]   [Bot] MACD calculado: MACD=-9.31, Signal=490071.56. 
+23:23:21.195 [INFO]   [Bot] Volatilidade calculada: 1.58%. 
+23:23:21.222 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:23:21.252 [INFO]   [Bot] ADX calculado: 12.23. 
+23:23:21.281 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.62","expectedProfit":"0.03","rsi":"99.01","emaShort":"490071.77","emaLong":"490073.45","...
+23:23:21.306 [DEBUG]  [Bot] Convicção calculada: 46.3% | Tendência: NEUTRAL | Força: VERY_WEAK 
+23:23:21.335 [WARN]   [Bot] Confiança baixa (46.3%). Operando em modo conservador com spread expandido. 
+23:23:21.590 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.80). Considere depositar mais fundos. 
+23:23:21.601 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.55). Ignorando compra. 
+23:23:21.636 [ERROR]  [Bot] Erro no ciclo 22: DEBUG is not defined. 
+23:23:50.725 [INFO]   [Bot] Iniciando ciclo 23. 
+23:23:50.971 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=489966.00, Best Ask=490629.00. 
+23:23:50.979 [INFO]   [Bot] Volatilidade calculada: 1.59%. 
+23:23:51.008 [DEBUG]  [Bot] Volatilidade no ciclo 23: 1.59% 
+23:23:51.025 [INFO]   [Bot] RSI calculado: 99.01. 
+23:23:51.044 [INFO]   [Bot] EMA(8) calculada: 490160.95. 
+23:23:51.066 [INFO]   [Bot] EMA(20) calculada: 490105.79. 
+23:23:51.090 [INFO]   [Bot] EMA(12) calculada: 490135.38. 
+23:23:51.120 [INFO]   [Bot] EMA(26) calculada: 490094.69. 
+23:23:51.150 [INFO]   [Bot] EMA(9) calculada: 490152.90. 
+23:23:51.179 [INFO]   [Bot] MACD calculado: MACD=40.69, Signal=490152.90. 
+23:23:51.200 [INFO]   [Bot] Volatilidade calculada: 1.59%. 
+23:23:51.223 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:23:51.247 [INFO]   [Bot] ADX calculado: 17.11. 
+23:23:51.269 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.62","expectedProfit":"0.04","rsi":"99.01","emaShort":"490160.95","emaLong":"490105.79...
+23:23:51.295 [DEBUG]  [Bot] Convicção calculada: 57.5% | Tendência: UP | Força: WEAK 
+23:23:51.965 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:23:51.971 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:23:52.001 [ERROR]  [Bot] Erro no ciclo 23: DEBUG is not defined. 
+23:24:20.736 [INFO]   [Bot] Iniciando ciclo 24. 
+23:24:21.021 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490063.00, Best Ask=490516.00. 
+23:24:21.033 [INFO]   [Bot] Volatilidade calculada: 1.57%. 
+23:24:21.058 [DEBUG]  [Bot] Volatilidade no ciclo 24: 1.57% 
+23:24:21.088 [INFO]   [Bot] RSI calculado: 96.62. 
+23:24:21.121 [INFO]   [Bot] EMA(8) calculada: 490212.07. 
+23:24:21.149 [INFO]   [Bot] EMA(20) calculada: 490139.05. 
+23:24:21.179 [INFO]   [Bot] EMA(12) calculada: 490179.16. 
+23:24:21.210 [INFO]   [Bot] EMA(26) calculada: 490133.43. 
+23:24:21.289 [INFO]   [Bot] EMA(9) calculada: 490202.07. 
+23:24:21.334 [INFO]   [Bot] MACD calculado: MACD=45.72, Signal=490202.07. 
+23:24:21.387 [INFO]   [Bot] Volatilidade calculada: 1.57%. 
+23:24:21.405 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:24:21.460 [INFO]   [Bot] ADX calculado: 20.88. 
+23:24:21.603 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.61","expectedProfit":"0.04","rsi":"96.62","emaShort":"490212.07","emaLong":"490139.05...
+23:24:21.667 [DEBUG]  [Bot] Convicção calculada: 57.4% | Tendência: UP | Força: WEAK 
+23:24:21.951 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:24:21.954 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:24:21.980 [ERROR]  [Bot] Erro no ciclo 24: DEBUG is not defined. 
+23:24:50.752 [INFO]   [Bot] Iniciando ciclo 25. 
+23:24:51.008 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490149.00, Best Ask=490617.00. 
+23:24:51.013 [INFO]   [Bot] Volatilidade calculada: 1.55%. 
+23:24:51.042 [DEBUG]  [Bot] Volatilidade no ciclo 25: 1.55% 
+23:24:51.070 [INFO]   [Bot] RSI calculado: 97.58. 
+23:24:51.099 [INFO]   [Bot] EMA(8) calculada: 490280.00. 
+23:24:51.125 [INFO]   [Bot] EMA(20) calculada: 490183.30. 
+23:24:51.150 [INFO]   [Bot] EMA(12) calculada: 490237.05. 
+23:24:51.177 [INFO]   [Bot] EMA(26) calculada: 490169.51. 
+23:24:51.203 [INFO]   [Bot] EMA(9) calculada: 490267.48. 
+23:24:51.229 [INFO]   [Bot] MACD calculado: MACD=67.54, Signal=490267.48. 
+23:24:51.255 [INFO]   [Bot] Volatilidade calculada: 1.55%. 
+23:24:51.278 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:24:51.306 [INFO]   [Bot] ADX calculado: 25.84. 
+23:24:51.331 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.61","expectedProfit":"0.04","rsi":"97.58","emaShort":"490280.00","emaLong":"490183.30...
+23:24:51.355 [DEBUG]  [Bot] Convicção calculada: 57.6% | Tendência: UP | Força: WEAK 
+23:24:51.607 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:24:51.615 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:24:51.640 [ERROR]  [Bot] Erro no ciclo 25: DEBUG is not defined. 
+23:25:20.755 [INFO]   [Bot] Iniciando ciclo 26. 
+23:25:21.021 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490153.00, Best Ask=490615.00. 
+23:25:21.025 [INFO]   [Bot] Volatilidade calculada: 1.53%. 
+23:25:21.064 [DEBUG]  [Bot] Volatilidade no ciclo 26: 1.53% 
+23:25:21.092 [INFO]   [Bot] RSI calculado: 97.58. 
+23:25:21.120 [INFO]   [Bot] EMA(8) calculada: 490350.95. 
+23:25:21.145 [INFO]   [Bot] EMA(20) calculada: 490219.71. 
+23:25:21.176 [INFO]   [Bot] EMA(12) calculada: 490279.13. 
+23:25:21.201 [INFO]   [Bot] EMA(26) calculada: 490191.80. 
+23:25:21.228 [INFO]   [Bot] EMA(9) calculada: 490309.75. 
+23:25:21.256 [INFO]   [Bot] MACD calculado: MACD=87.33, Signal=490309.75. 
+23:25:21.280 [INFO]   [Bot] Volatilidade calculada: 1.53%. 
+23:25:21.307 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:25:21.337 [INFO]   [Bot] ADX calculado: 30.14. 
+23:25:21.364 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.61","expectedProfit":"0.04","rsi":"97.58","emaShort":"490350.95","emaLong":"490219.71...
+23:25:21.388 [DEBUG]  [Bot] Convicção calculada: 57.2% | Tendência: UP | Força: WEAK 
+23:25:21.745 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:25:21.749 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:25:21.776 [ERROR]  [Bot] Erro no ciclo 26: DEBUG is not defined. 
+23:25:50.770 [INFO]   [Bot] Iniciando ciclo 27. 
+23:25:51.060 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490153.00, Best Ask=490615.00. 
+23:25:51.065 [INFO]   [Bot] Volatilidade calculada: 1.53%. 
+23:25:51.092 [DEBUG]  [Bot] Volatilidade no ciclo 27: 1.53% 
+23:25:51.129 [INFO]   [Bot] RSI calculado: 97.56. 
+23:25:51.153 [INFO]   [Bot] EMA(8) calculada: 490362.94. 
+23:25:51.171 [INFO]   [Bot] EMA(20) calculada: 490252.15. 
+23:25:51.186 [INFO]   [Bot] EMA(12) calculada: 490309.32. 
+23:25:51.203 [INFO]   [Bot] EMA(26) calculada: 490219.15. 
+23:25:51.220 [INFO]   [Bot] EMA(9) calculada: 490360.42. 
+23:25:51.238 [INFO]   [Bot] MACD calculado: MACD=90.17, Signal=490360.42. 
+23:25:51.254 [INFO]   [Bot] Volatilidade calculada: 1.53%. 
+23:25:51.267 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:25:51.284 [INFO]   [Bot] ADX calculado: 33.84. 
+23:25:51.306 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.61","expectedProfit":"0.04","rsi":"97.56","emaShort":"490362.94","emaLong":"490252.15...
+23:25:51.324 [DEBUG]  [Bot] Convicção calculada: 57.3% | Tendência: UP | Força: WEAK 
+23:25:51.569 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:25:51.574 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:25:51.593 [ERROR]  [Bot] Erro no ciclo 27: DEBUG is not defined. 
+23:26:20.775 [INFO]   [Bot] Iniciando ciclo 28. 
+23:26:21.039 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490177.00, Best Ask=490617.00. 
+23:26:21.044 [INFO]   [Bot] Volatilidade calculada: 1.51%. 
+23:26:21.065 [DEBUG]  [Bot] Volatilidade no ciclo 28: 1.51% 
+23:26:21.090 [INFO]   [Bot] RSI calculado: 97.64. 
+23:26:21.114 [INFO]   [Bot] EMA(8) calculada: 490388.91. 
+23:26:21.141 [INFO]   [Bot] EMA(20) calculada: 490278.42. 
+23:26:21.173 [INFO]   [Bot] EMA(12) calculada: 490364.26. 
+23:26:21.199 [INFO]   [Bot] EMA(26) calculada: 490244.52. 
+23:26:21.226 [INFO]   [Bot] EMA(9) calculada: 490372.73. 
+23:26:21.261 [INFO]   [Bot] MACD calculado: MACD=119.74, Signal=490372.73. 
+23:26:21.299 [INFO]   [Bot] Volatilidade calculada: 1.51%. 
+23:26:21.324 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:26:21.345 [INFO]   [Bot] ADX calculado: 37.30. 
+23:26:21.376 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.61","expectedProfit":"0.04","rsi":"97.64","emaShort":"490388.91","emaLong":"490278.42...
+23:26:21.408 [DEBUG]  [Bot] Convicção calculada: 57.1% | Tendência: UP | Força: WEAK 
+23:26:21.715 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:26:21.727 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:26:21.763 [ERROR]  [Bot] Erro no ciclo 28: DEBUG is not defined. 
+23:26:50.783 [INFO]   [Bot] Iniciando ciclo 29. 
+23:26:51.042 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490239.00, Best Ask=490633.00. 
+23:26:51.072 [INFO]   [Bot] Volatilidade calculada: 1.49%. 
+23:26:51.097 [DEBUG]  [Bot] Volatilidade no ciclo 29: 1.49% 
+23:26:51.125 [INFO]   [Bot] RSI calculado: 94.82. 
+23:26:51.157 [INFO]   [Bot] EMA(8) calculada: 490407.65. 
+23:26:51.201 [INFO]   [Bot] EMA(20) calculada: 490307.01. 
+23:26:51.234 [INFO]   [Bot] EMA(12) calculada: 490383.56. 
+23:26:51.263 [INFO]   [Bot] EMA(26) calculada: 490271.84. 
+23:26:51.285 [INFO]   [Bot] EMA(9) calculada: 490405.55. 
+23:26:51.311 [INFO]   [Bot] MACD calculado: MACD=111.72, Signal=490405.55. 
+23:26:51.335 [INFO]   [Bot] Volatilidade calculada: 1.49%. 
+23:26:51.362 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:26:51.391 [INFO]   [Bot] ADX calculado: 41.07. 
+23:26:51.414 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.59","expectedProfit":"0.04","rsi":"94.82","emaShort":"490407.65","emaLong":"490307.01...
+23:26:51.437 [DEBUG]  [Bot] Convicção calculada: 57.2% | Tendência: UP | Força: WEAK 
+23:26:51.662 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:26:51.670 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:26:51.705 [ERROR]  [Bot] Erro no ciclo 29: DEBUG is not defined. 
+23:27:20.799 [INFO]   [Bot] Iniciando ciclo 30. 
+23:27:21.037 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490622.00, Best Ask=490947.00. 
+23:27:21.056 [INFO]   [Bot] Volatilidade calculada: 1.54%. 
+23:27:21.090 [DEBUG]  [Bot] Volatilidade no ciclo 30: 1.54% 
+23:27:21.126 [INFO]   [Bot] RSI calculado: 99.01. 
+23:27:21.160 [INFO]   [Bot] EMA(8) calculada: 490556.53. 
+23:27:21.189 [INFO]   [Bot] EMA(20) calculada: 490393.97. 
+23:27:21.212 [INFO]   [Bot] EMA(12) calculada: 490510.03. 
+23:27:21.243 [INFO]   [Bot] EMA(26) calculada: 490347.61. 
+23:27:21.276 [INFO]   [Bot] EMA(9) calculada: 490542.08. 
+23:27:21.311 [INFO]   [Bot] MACD calculado: MACD=162.42, Signal=490542.08. 
+23:27:21.345 [INFO]   [Bot] Volatilidade calculada: 1.54%. 
+23:27:21.374 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:27:21.403 [INFO]   [Bot] ADX calculado: 47.18. 
+23:27:21.432 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.62","expectedProfit":"0.03","rsi":"99.01","emaShort":"490556.53","emaLong":"490393.97...
+23:27:21.457 [DEBUG]  [Bot] Convicção calculada: 57.7% | Tendência: UP | Força: WEAK 
+23:27:21.721 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:27:21.725 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.20). Ignorando compra. 
+23:27:21.760 [ERROR]  [Bot] Erro no ciclo 30: DEBUG is not defined. 
+23:27:50.815 [INFO]   [Bot] Iniciando ciclo 31. 
+23:27:51.103 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490623.00, Best Ask=490946.00. 
+23:27:51.121 [INFO]   [Bot] Volatilidade calculada: 1.54%. 
+23:27:51.154 [DEBUG]  [Bot] Volatilidade no ciclo 31: 1.54% 
+23:27:51.187 [INFO]   [Bot] RSI calculado: 99.01. 
+23:27:51.216 [INFO]   [Bot] EMA(8) calculada: 490648.33. 
+23:27:51.243 [INFO]   [Bot] EMA(20) calculada: 490465.22. 
+23:27:51.297 [INFO]   [Bot] EMA(12) calculada: 490588.12. 
+23:27:51.325 [INFO]   [Bot] EMA(26) calculada: 490409.94. 
+23:27:51.363 [INFO]   [Bot] EMA(9) calculada: 490629.35. 
+23:27:51.398 [INFO]   [Bot] MACD calculado: MACD=178.18, Signal=490629.35. 
+23:27:51.433 [INFO]   [Bot] Volatilidade calculada: 1.54%. 
+23:27:51.457 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:27:51.482 [INFO]   [Bot] ADX calculado: 52.45. 
+23:27:51.511 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.62","expectedProfit":"0.04","rsi":"99.01","emaShort":"490648.33","emaLong":"490465.22...
+23:27:51.535 [DEBUG]  [Bot] Convicção calculada: 57.7% | Tendência: UP | Força: WEAK 
+23:27:51.798 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:27:51.804 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:27:51.842 [ERROR]  [Bot] Erro no ciclo 31: DEBUG is not defined. 
+23:28:20.829 [INFO]   [Bot] Iniciando ciclo 32. 
+23:28:21.173 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490626.00, Best Ask=490947.00. 
+23:28:21.190 [INFO]   [Bot] Volatilidade calculada: 1.52%. 
+23:28:21.220 [DEBUG]  [Bot] Volatilidade no ciclo 32: 1.52% 
+23:28:21.253 [INFO]   [Bot] RSI calculado: 99.01. 
+23:28:21.277 [INFO]   [Bot] EMA(8) calculada: 490708.14. 
+23:28:21.306 [INFO]   [Bot] EMA(20) calculada: 490553.63. 
+23:28:21.332 [INFO]   [Bot] EMA(12) calculada: 490644.47. 
+23:28:21.360 [INFO]   [Bot] EMA(26) calculada: 490463.66. 
+23:28:21.385 [INFO]   [Bot] EMA(9) calculada: 490687.32. 
+23:28:21.412 [INFO]   [Bot] MACD calculado: MACD=180.81, Signal=490687.32. 
+23:28:21.437 [INFO]   [Bot] Volatilidade calculada: 1.52%. 
+23:28:21.461 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:28:21.488 [INFO]   [Bot] ADX calculado: 57.01. 
+23:28:21.512 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.62","expectedProfit":"0.04","rsi":"99.01","emaShort":"490708.14","emaLong":"490553.63...
+23:28:21.541 [DEBUG]  [Bot] Convicção calculada: 57.7% | Tendência: UP | Força: WEAK 
+23:28:21.881 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:28:21.889 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:28:21.916 [ERROR]  [Bot] Erro no ciclo 32: DEBUG is not defined. 
+23:28:50.844 [INFO]   [Bot] Iniciando ciclo 33. 
+23:28:51.102 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490900.00, Best Ask=491020.00. 
+23:28:51.110 [INFO]   [Bot] Volatilidade calculada: 1.51%. 
+23:28:51.134 [DEBUG]  [Bot] Volatilidade no ciclo 33: 1.51% 
+23:28:51.158 [INFO]   [Bot] RSI calculado: 99.01. 
+23:28:51.179 [INFO]   [Bot] EMA(8) calculada: 490854.31. 
+23:28:51.212 [INFO]   [Bot] EMA(20) calculada: 490626.27. 
+23:28:51.242 [INFO]   [Bot] EMA(12) calculada: 490735.84. 
+23:28:51.271 [INFO]   [Bot] EMA(26) calculada: 490534.81. 
+23:28:51.288 [INFO]   [Bot] EMA(9) calculada: 490789.67. 
+23:28:51.318 [INFO]   [Bot] MACD calculado: MACD=201.03, Signal=490789.67. 
+23:28:51.345 [INFO]   [Bot] Volatilidade calculada: 1.51%. 
+23:28:51.376 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:28:51.403 [INFO]   [Bot] ADX calculado: 61.56. 
+23:28:51.433 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.62","expectedProfit":"0.04","rsi":"99.01","emaShort":"490854.31","emaLong":"490626.27...
+23:28:51.477 [DEBUG]  [Bot] Convicção calculada: 57.4% | Tendência: UP | Força: WEAK 
+23:28:51.725 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:28:51.729 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:28:51.756 [ERROR]  [Bot] Erro no ciclo 33: DEBUG is not defined. 
+23:29:20.859 [INFO]   [Bot] Iniciando ciclo 34. 
+23:29:21.142 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490626.00, Best Ask=491020.00. 
+23:29:21.167 [INFO]   [Bot] Volatilidade calculada: 1.50%. 
+23:29:21.199 [DEBUG]  [Bot] Volatilidade no ciclo 34: 1.50% 
+23:29:21.229 [INFO]   [Bot] RSI calculado: 80.43. 
+23:29:21.260 [INFO]   [Bot] EMA(8) calculada: 490841.94. 
+23:29:21.288 [INFO]   [Bot] EMA(20) calculada: 490674.59. 
+23:29:21.317 [INFO]   [Bot] EMA(12) calculada: 490765.85. 
+23:29:21.348 [INFO]   [Bot] EMA(26) calculada: 490576.33. 
+23:29:21.386 [INFO]   [Bot] EMA(9) calculada: 490839.09. 
+23:29:21.421 [INFO]   [Bot] MACD calculado: MACD=189.52, Signal=490839.09. 
+23:29:21.451 [INFO]   [Bot] Volatilidade calculada: 1.50%. 
+23:29:21.485 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:29:21.510 [INFO]   [Bot] ADX calculado: 59.65. 
+23:29:21.537 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.51","expectedProfit":"0.04","rsi":"80.43","emaShort":"490841.94","emaLong":"490674.59...
+23:29:21.570 [DEBUG]  [Bot] Convicção calculada: 57.2% | Tendência: UP | Força: WEAK 
+23:29:21.821 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:29:21.824 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:29:21.852 [ERROR]  [Bot] Erro no ciclo 34: DEBUG is not defined. 
+23:29:50.874 [INFO]   [Bot] Iniciando ciclo 35. 
+23:29:51.156 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490624.00, Best Ask=491020.00. 
+23:29:51.165 [INFO]   [Bot] Volatilidade calculada: 1.49%. 
+23:29:51.188 [DEBUG]  [Bot] Volatilidade no ciclo 35: 1.49% 
+23:29:51.214 [INFO]   [Bot] RSI calculado: 79.15. 
+23:29:51.237 [INFO]   [Bot] EMA(8) calculada: 490834.33. 
+23:29:51.261 [INFO]   [Bot] EMA(20) calculada: 490701.46. 
+23:29:51.290 [INFO]   [Bot] EMA(12) calculada: 490828.74. 
+23:29:51.319 [INFO]   [Bot] EMA(26) calculada: 490641.52. 
+23:29:51.348 [INFO]   [Bot] EMA(9) calculada: 490832.94. 
+23:29:51.379 [INFO]   [Bot] MACD calculado: MACD=187.22, Signal=490832.94. 
+23:29:51.407 [INFO]   [Bot] Volatilidade calculada: 1.49%. 
+23:29:51.439 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:29:51.470 [INFO]   [Bot] ADX calculado: 57.98. 
+23:29:51.503 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.50","expectedProfit":"0.03","rsi":"79.15","emaShort":"490834.33","emaLong":"490701.46...
+23:29:51.532 [DEBUG]  [Bot] Convicção calculada: 57.2% | Tendência: UP | Força: WEAK 
+23:29:51.787 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:29:51.792 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.19). Ignorando compra. 
+23:29:51.821 [ERROR]  [Bot] Erro no ciclo 35: DEBUG is not defined. 
+23:30:20.889 [INFO]   [Bot] Iniciando ciclo 36. 
+23:30:21.149 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490622.00, Best Ask=490937.00. 
+23:30:21.158 [INFO]   [Bot] Volatilidade calculada: 1.47%. 
+23:30:21.200 [DEBUG]  [Bot] Volatilidade no ciclo 36: 1.47% 
+23:30:21.235 [INFO]   [Bot] RSI calculado: 49.30. 
+23:30:21.259 [INFO]   [Bot] EMA(8) calculada: 490835.90. 
+23:30:21.285 [INFO]   [Bot] EMA(20) calculada: 490715.62. 
+23:30:21.309 [INFO]   [Bot] EMA(12) calculada: 490814.76. 
+23:30:21.337 [INFO]   [Bot] EMA(26) calculada: 490660.13. 
+23:30:21.358 [INFO]   [Bot] EMA(9) calculada: 490813.91. 
+23:30:21.386 [INFO]   [Bot] MACD calculado: MACD=154.63, Signal=490813.91. 
+23:30:21.410 [INFO]   [Bot] Volatilidade calculada: 1.47%. 
+23:30:21.438 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:30:21.465 [INFO]   [Bot] ADX calculado: 54.81. 
+23:30:21.491 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.33","expectedProfit":"0.02","rsi":"49.30","emaShort":"490835.90","emaLong":"490715.62","...
+23:30:21.520 [DEBUG]  [Bot] Convicção calculada: 53.0% | Tendência: NEUTRAL | Força: WEAK 
+23:30:21.766 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:30:21.780 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.09). Ignorando compra. 
+23:30:21.830 [ERROR]  [Bot] Erro no ciclo 36: DEBUG is not defined. 
+23:30:50.900 [INFO]   [Bot] Iniciando ciclo 37. 
+23:30:51.150 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490637.00, Best Ask=491084.00. 
+23:30:51.177 [INFO]   [Bot] Volatilidade calculada: 1.46%. 
+23:30:51.209 [DEBUG]  [Bot] Volatilidade no ciclo 37: 1.46% 
+23:30:51.233 [INFO]   [Bot] RSI calculado: 58.70. 
+23:30:51.267 [INFO]   [Bot] EMA(8) calculada: 490827.27. 
+23:30:51.295 [INFO]   [Bot] EMA(20) calculada: 490743.66. 
+23:30:51.322 [INFO]   [Bot] EMA(12) calculada: 490828.02. 
+23:30:51.350 [INFO]   [Bot] EMA(26) calculada: 490701.35. 
+23:30:51.368 [INFO]   [Bot] EMA(9) calculada: 490849.31. 
+23:30:51.401 [INFO]   [Bot] MACD calculado: MACD=126.66, Signal=490849.31. 
+23:30:51.428 [INFO]   [Bot] Volatilidade calculada: 1.46%. 
+23:30:51.455 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:30:51.482 [INFO]   [Bot] ADX calculado: 53.49. 
+23:30:51.510 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.38","expectedProfit":"0.04","rsi":"58.70","emaShort":"490827.27","emaLong":"490743.66...
+23:30:51.532 [DEBUG]  [Bot] Convicção calculada: 61.2% | Tendência: UP | Força: MODERATE 
+23:30:51.831 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:30:51.834 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 7.93). Ignorando compra. 
+23:30:51.866 [ERROR]  [Bot] Erro no ciclo 37: DEBUG is not defined. 
+23:31:20.906 [INFO]   [Bot] Iniciando ciclo 38. 
+23:31:21.157 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490690.00, Best Ask=491084.00. 
+23:31:21.162 [INFO]   [Bot] Volatilidade calculada: 1.44%. 
+23:31:21.202 [DEBUG]  [Bot] Volatilidade no ciclo 38: 1.44% 
+23:31:21.232 [INFO]   [Bot] RSI calculado: 60.89. 
+23:31:21.258 [INFO]   [Bot] EMA(8) calculada: 490850.74. 
+23:31:21.285 [INFO]   [Bot] EMA(20) calculada: 490774.93. 
+23:31:21.317 [INFO]   [Bot] EMA(12) calculada: 490868.14. 
+23:31:21.349 [INFO]   [Bot] EMA(26) calculada: 490727.97. 
+23:31:21.388 [INFO]   [Bot] EMA(9) calculada: 490848.17. 
+23:31:21.415 [INFO]   [Bot] MACD calculado: MACD=140.17, Signal=490848.17. 
+23:31:21.446 [INFO]   [Bot] Volatilidade calculada: 1.44%. 
+23:31:21.472 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:31:21.500 [INFO]   [Bot] ADX calculado: 52.78. 
+23:31:21.528 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.39","expectedProfit":"0.04","rsi":"60.89","emaShort":"490850.74","emaLong":"490774.93...
+23:31:21.552 [DEBUG]  [Bot] Convicção calculada: 65.0% | Tendência: UP | Força: MODERATE 
+23:31:21.842 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:31:21.919 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 7.93). Ignorando compra. 
+23:31:21.950 [ERROR]  [Bot] Erro no ciclo 38: DEBUG is not defined. 
+23:31:50.915 [INFO]   [Bot] Iniciando ciclo 39. 
+23:31:51.161 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490841.00, Best Ask=491084.00. 
+23:31:51.165 [INFO]   [Bot] Volatilidade calculada: 1.43%. 
+23:31:51.185 [DEBUG]  [Bot] Volatilidade no ciclo 39: 1.43% 
+23:31:51.202 [INFO]   [Bot] RSI calculado: 50.34. 
+23:31:51.229 [INFO]   [Bot] EMA(8) calculada: 490889.20. 
+23:31:51.256 [INFO]   [Bot] EMA(20) calculada: 490856.04. 
+23:31:51.275 [INFO]   [Bot] EMA(12) calculada: 490876.49. 
+23:31:51.292 [INFO]   [Bot] EMA(26) calculada: 490761.43. 
+23:31:51.309 [INFO]   [Bot] EMA(9) calculada: 490889.22. 
+23:31:51.335 [INFO]   [Bot] MACD calculado: MACD=115.06, Signal=490889.22. 
+23:31:51.361 [INFO]   [Bot] Volatilidade calculada: 1.43%. 
+23:31:51.385 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:31:51.413 [INFO]   [Bot] ADX calculado: 53.28. 
+23:31:51.440 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.32","expectedProfit":"0.04","rsi":"50.34","emaShort":"490889.20","emaLong":"490856.04...
+23:31:51.461 [DEBUG]  [Bot] Convicção calculada: 61.4% | Tendência: UP | Força: MODERATE 
+23:31:52.044 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:31:52.048 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 7.93). Ignorando compra. 
+23:31:52.073 [ERROR]  [Bot] Erro no ciclo 39: DEBUG is not defined. 
+23:32:20.933 [INFO]   [Bot] Iniciando ciclo 40. 
+23:32:21.172 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490853.00, Best Ask=491084.00. 
+23:32:21.175 [INFO]   [Bot] Volatilidade calculada: 1.41%. 
+23:32:21.201 [DEBUG]  [Bot] Volatilidade no ciclo 40: 1.41% 
+23:32:21.227 [INFO]   [Bot] RSI calculado: 81.29. 
+23:32:21.251 [INFO]   [Bot] EMA(8) calculada: 490931.37. 
+23:32:21.275 [INFO]   [Bot] EMA(20) calculada: 490876.44. 
+23:32:21.298 [INFO]   [Bot] EMA(12) calculada: 490902.49. 
+23:32:21.327 [INFO]   [Bot] EMA(26) calculada: 490792.73. 
+23:32:21.355 [INFO]   [Bot] EMA(9) calculada: 490913.20. 
+23:32:21.374 [INFO]   [Bot] MACD calculado: MACD=109.76, Signal=490913.20. 
+23:32:21.405 [INFO]   [Bot] Volatilidade calculada: 1.41%. 
+23:32:21.425 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:32:21.455 [INFO]   [Bot] ADX calculado: 53.81. 
+23:32:21.483 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.51","expectedProfit":"0.04","rsi":"81.29","emaShort":"490931.37","emaLong":"490876.44...
+23:32:21.515 [DEBUG]  [Bot] Convicção calculada: 57.3% | Tendência: UP | Força: WEAK 
+23:32:21.772 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:32:21.781 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.29). Ignorando compra. 
+23:32:21.815 [ERROR]  [Bot] Erro no ciclo 40: DEBUG is not defined. 
+23:32:50.948 [INFO]   [Bot] Iniciando ciclo 41. 
+23:32:50.954 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+23:32:50 [TREND INFO] Iniciando análise de tendência externa... 
+23:32:51 [TREND INFO] CoinGecko Score: 52
+23:32:51 [TREND INFO] Binance Score: 60
+23:32:51 [TREND INFO] Fear & Greed Score: 27
+23:32:51 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:32:51.568 [SUCCESS] [Bot] Tendência Externa: NEUTRAL (Score: 50/100, Confiança: 100%) 
+23:32:51.838 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490695.00, Best Ask=491091.00. 
+23:32:51.841 [INFO]   [Bot] Volatilidade calculada: 1.40%. 
+23:32:51.868 [DEBUG]  [Bot] Volatilidade no ciclo 41: 1.40% 
+23:32:51.892 [INFO]   [Bot] RSI calculado: 61.56. 
+23:32:51.910 [INFO]   [Bot] EMA(8) calculada: 490919.76. 
+23:32:51.925 [INFO]   [Bot] EMA(20) calculada: 490879.72. 
+23:32:51.947 [INFO]   [Bot] EMA(12) calculada: 490894.07. 
+23:32:51.969 [INFO]   [Bot] EMA(26) calculada: 490812.31. 
+23:32:51.995 [INFO]   [Bot] EMA(9) calculada: 490914.62. 
+23:32:52.020 [INFO]   [Bot] MACD calculado: MACD=81.76, Signal=490914.62. 
+23:32:52.047 [INFO]   [Bot] Volatilidade calculada: 1.40%. 
+23:32:52.072 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:32:52.099 [INFO]   [Bot] ADX calculado: 50.52. 
+23:32:52.120 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.39","expectedProfit":"0.03","rsi":"61.56","emaShort":"490919.76","emaLong":"490879.72...
+23:32:52.145 [DEBUG]  [Bot] Convicção calculada: 64.9% | Tendência: UP | Força: MODERATE 
+23:32:52.391 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:32:52.396 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 7.79). Ignorando compra. 
+23:32:52.436 [ERROR]  [Bot] Erro no ciclo 41: DEBUG is not defined. 
+23:33:20.963 [INFO]   [Bot] Iniciando ciclo 42. 
+23:33:21.196 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490810.00, Best Ask=491185.00. 
+23:33:21.204 [INFO]   [Bot] Volatilidade calculada: 1.40%. 
+23:33:21.236 [DEBUG]  [Bot] Volatilidade no ciclo 42: 1.40% 
+23:33:21.265 [INFO]   [Bot] RSI calculado: 79.54. 
+23:33:21.287 [INFO]   [Bot] EMA(8) calculada: 490960.58. 
+23:33:21.312 [INFO]   [Bot] EMA(20) calculada: 490924.53. 
+23:33:21.337 [INFO]   [Bot] EMA(12) calculada: 490934.36. 
+23:33:21.362 [INFO]   [Bot] EMA(26) calculada: 490885.84. 
+23:33:21.394 [INFO]   [Bot] EMA(9) calculada: 490947.31. 
+23:33:21.425 [INFO]   [Bot] MACD calculado: MACD=48.51, Signal=490947.31. 
+23:33:21.459 [INFO]   [Bot] Volatilidade calculada: 0.78%. 
+23:33:21.484 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:33:21.505 [INFO]   [Bot] ADX calculado: 55.54. 
+23:33:21.526 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.47","expectedProfit":"0.03","rsi":"79.54","emaShort":"490960.58","emaLong":"490924.53...
+23:33:21.562 [DEBUG]  [Bot] Convicção calculada: 57.2% | Tendência: UP | Força: WEAK 
+23:33:21.819 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:33:21.824 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.16). Ignorando compra. 
+23:33:21.854 [ERROR]  [Bot] Erro no ciclo 42: DEBUG is not defined. 
+23:33:50.976 [INFO]   [Bot] Iniciando ciclo 43. 
+23:33:51.222 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490679.00, Best Ask=491008.00. 
+23:33:51.229 [INFO]   [Bot] Volatilidade calculada: 0.82%. 
+23:33:51.257 [DEBUG]  [Bot] Volatilidade no ciclo 43: 0.82% 
+23:33:51.292 [INFO]   [Bot] RSI calculado: 48.08. 
+23:33:51.320 [INFO]   [Bot] EMA(8) calculada: 490915.13. 
+23:33:51.350 [INFO]   [Bot] EMA(20) calculada: 490891.32. 
+23:33:51.378 [INFO]   [Bot] EMA(12) calculada: 490912.12. 
+23:33:51.403 [INFO]   [Bot] EMA(26) calculada: 490879.80. 
+23:33:51.431 [INFO]   [Bot] EMA(9) calculada: 490918.04. 
+23:33:51.452 [INFO]   [Bot] MACD calculado: MACD=32.32, Signal=490918.04. 
+23:33:51.477 [INFO]   [Bot] Volatilidade calculada: 0.82%. 
+23:33:51.501 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:33:51.528 [INFO]   [Bot] ADX calculado: 48.71. 
+23:33:51.554 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.30","expectedProfit":"0.02","rsi":"48.08","emaShort":"490915.13","emaLong":"490891.32","...
+23:33:51.577 [DEBUG]  [Bot] Convicção calculada: 53.1% | Tendência: NEUTRAL | Força: WEAK 
+23:33:51.815 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:33:51.823 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.07). Ignorando compra. 
+23:33:51.847 [ERROR]  [Bot] Erro no ciclo 43: DEBUG is not defined. 
+23:34:20.988 [INFO]   [Bot] Iniciando ciclo 44. 
+23:34:21.235 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490505.00, Best Ask=490821.00. 
+23:34:21.241 [INFO]   [Bot] Volatilidade calculada: 0.86%. 
+23:34:21.271 [DEBUG]  [Bot] Volatilidade no ciclo 44: 0.86% 
+23:34:21.297 [INFO]   [Bot] RSI calculado: 31.21. 
+23:34:21.323 [INFO]   [Bot] EMA(8) calculada: 490805.41. 
+23:34:21.346 [INFO]   [Bot] EMA(20) calculada: 490849.76. 
+23:34:21.373 [INFO]   [Bot] EMA(12) calculada: 490851.53. 
+23:34:21.409 [INFO]   [Bot] EMA(26) calculada: 490849.14. 
+23:34:21.469 [INFO]   [Bot] EMA(9) calculada: 490826.87. 
+23:34:21.574 [INFO]   [Bot] MACD calculado: MACD=2.39, Signal=490826.87. 
+23:34:21.609 [INFO]   [Bot] Volatilidade calculada: 0.86%. 
+23:34:21.667 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:34:21.704 [INFO]   [Bot] ADX calculado: 45.14. 
+23:34:21.740 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.41","expectedProfit":"0.02","rsi":"31.21","emaShort":"490805.41","emaLong":"490849.76","...
+23:34:21.791 [DEBUG]  [Bot] Convicção calculada: 42.5% | Tendência: DOWN | Força: VERY_WEAK 
+23:34:21.820 [WARN]   [Bot] Confiança baixa (42.5%). Operando em modo conservador com spread expandido. 
+23:34:22.096 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:34:22.102 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.06). Ignorando compra. 
+23:34:22.143 [ERROR]  [Bot] Erro no ciclo 44: DEBUG is not defined. 
+23:34:51.003 [INFO]   [Bot] Iniciando ciclo 45. 
+23:34:51.252 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490487.00, Best Ask=490832.00. 
+23:34:51.257 [INFO]   [Bot] Volatilidade calculada: 0.85%. 
+23:34:51.277 [DEBUG]  [Bot] Volatilidade no ciclo 45: 0.85% 
+23:34:51.293 [INFO]   [Bot] RSI calculado: 21.09. 
+23:34:51.309 [INFO]   [Bot] EMA(8) calculada: 490761.76. 
+23:34:51.327 [INFO]   [Bot] EMA(20) calculada: 490809.51. 
+23:34:51.342 [INFO]   [Bot] EMA(12) calculada: 490797.80. 
+23:34:51.359 [INFO]   [Bot] EMA(26) calculada: 490845.55. 
+23:34:51.381 [INFO]   [Bot] EMA(9) calculada: 490758.51. 
+23:34:51.399 [INFO]   [Bot] MACD calculado: MACD=-47.75, Signal=490758.51. 
+23:34:51.419 [INFO]   [Bot] Volatilidade calculada: 0.85%. 
+23:34:51.441 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:34:51.463 [INFO]   [Bot] ADX calculado: 42.13. 
+23:34:51.483 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.47","expectedProfit":"0.02","rsi":"21.09","emaShort":"490761.76","emaLong":"490809.51","...
+23:34:51.499 [DEBUG]  [Bot] Convicção calculada: 47.6% | Tendência: DOWN | Força: VERY_WEAK 
+23:34:51.519 [WARN]   [Bot] Confiança baixa (47.6%). Operando em modo conservador com spread expandido. 
+23:34:51.808 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:34:51.812 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.52). Ignorando compra. 
+23:34:51.838 [ERROR]  [Bot] Erro no ciclo 45: DEBUG is not defined. 
+23:35:21.017 [INFO]   [Bot] Iniciando ciclo 46. 
+23:35:21.276 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490552.00, Best Ask=490832.00. 
+23:35:21.294 [INFO]   [Bot] Volatilidade calculada: 0.83%. 
+23:35:21.331 [DEBUG]  [Bot] Volatilidade no ciclo 46: 0.83% 
+23:35:21.358 [INFO]   [Bot] RSI calculado: 24.89. 
+23:35:21.389 [INFO]   [Bot] EMA(8) calculada: 490713.58. 
+23:35:21.416 [INFO]   [Bot] EMA(20) calculada: 490799.13. 
+23:35:21.464 [INFO]   [Bot] EMA(12) calculada: 490757.58. 
+23:35:21.501 [INFO]   [Bot] EMA(26) calculada: 490805.12. 
+23:35:21.524 [INFO]   [Bot] EMA(9) calculada: 490745.79. 
+23:35:21.553 [INFO]   [Bot] MACD calculado: MACD=-47.54, Signal=490745.79. 
+23:35:21.590 [INFO]   [Bot] Volatilidade calculada: 0.83%. 
+23:35:21.614 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:35:21.643 [INFO]   [Bot] ADX calculado: 38.50. 
+23:35:21.670 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.44","expectedProfit":"0.02","rsi":"24.89","emaShort":"490713.58","emaLong":"490799.13","...
+23:35:21.704 [DEBUG]  [Bot] Convicção calculada: 47.9% | Tendência: DOWN | Força: VERY_WEAK 
+23:35:21.729 [WARN]   [Bot] Confiança baixa (47.9%). Operando em modo conservador com spread expandido. 
+23:35:22.338 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:35:22.374 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.06). Ignorando compra. 
+23:35:22.405 [ERROR]  [Bot] Erro no ciclo 46: DEBUG is not defined. 
+23:35:51.025 [INFO]   [Bot] Iniciando ciclo 47. 
+23:35:51.320 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490402.00, Best Ask=490709.00. 
+23:35:51.334 [INFO]   [Bot] Volatilidade calculada: 0.85%. 
+23:35:51.358 [DEBUG]  [Bot] Volatilidade no ciclo 47: 0.85% 
+23:35:51.384 [INFO]   [Bot] RSI calculado: 22.40. 
+23:35:51.413 [INFO]   [Bot] EMA(8) calculada: 490626.96. 
+23:35:51.443 [INFO]   [Bot] EMA(20) calculada: 490758.52. 
+23:35:51.466 [INFO]   [Bot] EMA(12) calculada: 490714.26. 
+23:35:51.491 [INFO]   [Bot] EMA(26) calculada: 490769.37. 
+23:35:51.527 [INFO]   [Bot] EMA(9) calculada: 490660.75. 
+23:35:51.558 [INFO]   [Bot] MACD calculado: MACD=-55.11, Signal=490660.75. 
+23:35:51.585 [INFO]   [Bot] Volatilidade calculada: 0.85%. 
+23:35:51.614 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:35:51.649 [INFO]   [Bot] ADX calculado: 38.03. 
+23:35:51.679 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.46","expectedProfit":"0.02","rsi":"22.40","emaShort":"490626.96","emaLong":"490758.52","...
+23:35:51.708 [DEBUG]  [Bot] Convicção calculada: 47.9% | Tendência: DOWN | Força: VERY_WEAK 
+23:35:51.737 [WARN]   [Bot] Confiança baixa (47.9%). Operando em modo conservador com spread expandido. 
+23:35:52.044 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:35:52.049 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.06). Ignorando compra. 
+23:35:52.072 [ERROR]  [Bot] Erro no ciclo 47: DEBUG is not defined. 
+23:36:21.033 [INFO]   [Bot] Iniciando ciclo 48. 
+23:36:21.305 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490539.00, Best Ask=490708.00. 
+23:36:21.311 [INFO]   [Bot] Volatilidade calculada: 0.83%. 
+23:36:21.338 [DEBUG]  [Bot] Volatilidade no ciclo 48: 0.83% 
+23:36:21.369 [INFO]   [Bot] RSI calculado: 17.48. 
+23:36:21.399 [INFO]   [Bot] EMA(8) calculada: 490625.12. 
+23:36:21.424 [INFO]   [Bot] EMA(20) calculada: 490744.23. 
+23:36:21.455 [INFO]   [Bot] EMA(12) calculada: 490667.74. 
+23:36:21.502 [INFO]   [Bot] EMA(26) calculada: 490742.82. 
+23:36:21.529 [INFO]   [Bot] EMA(9) calculada: 490627.96. 
+23:36:21.556 [INFO]   [Bot] MACD calculado: MACD=-75.08, Signal=490627.96. 
+23:36:21.577 [INFO]   [Bot] Volatilidade calculada: 0.83%. 
+23:36:21.610 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:36:21.634 [INFO]   [Bot] ADX calculado: 35.45. 
+23:36:21.659 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.49","expectedProfit":"0.02","rsi":"17.48","emaShort":"490625.12","emaLong":"490744.23","...
+23:36:21.685 [DEBUG]  [Bot] Convicção calculada: 48.0% | Tendência: DOWN | Força: VERY_WEAK 
+23:36:21.709 [WARN]   [Bot] Confiança baixa (48.0%). Operando em modo conservador com spread expandido. 
+23:36:21.989 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:36:21.996 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.06). Ignorando compra. 
+23:36:22.024 [ERROR]  [Bot] Erro no ciclo 48: DEBUG is not defined. 
+23:36:51.042 [INFO]   [Bot] Iniciando ciclo 49. 
+23:36:51.303 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490539.00, Best Ask=490818.00. 
+23:36:51.309 [INFO]   [Bot] Volatilidade calculada: 0.82%. 
+23:36:51.336 [DEBUG]  [Bot] Volatilidade no ciclo 49: 0.82% 
+23:36:51.358 [INFO]   [Bot] RSI calculado: 32.67. 
+23:36:51.381 [INFO]   [Bot] EMA(8) calculada: 490650.56. 
+23:36:51.403 [INFO]   [Bot] EMA(20) calculada: 490733.11. 
+23:36:51.430 [INFO]   [Bot] EMA(12) calculada: 490646.48. 
+23:36:51.476 [INFO]   [Bot] EMA(26) calculada: 490744.59. 
+23:36:51.520 [INFO]   [Bot] EMA(9) calculada: 490645.78. 
+23:36:51.542 [INFO]   [Bot] MACD calculado: MACD=-98.11, Signal=490645.78. 
+23:36:51.564 [INFO]   [Bot] Volatilidade calculada: 0.82%. 
+23:36:51.605 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:36:51.631 [INFO]   [Bot] ADX calculado: 31.59. 
+23:36:51.653 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.40","expectedProfit":"0.02","rsi":"32.67","emaShort":"490650.56","emaLong":"490733.11","...
+23:36:51.680 [DEBUG]  [Bot] Convicção calculada: 42.9% | Tendência: DOWN | Força: VERY_WEAK 
+23:36:51.716 [WARN]   [Bot] Confiança baixa (42.9%). Operando em modo conservador com spread expandido. 
+23:36:51.961 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:36:51.969 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 1.06). Ignorando compra. 
+23:36:51.997 [ERROR]  [Bot] Erro no ciclo 49: DEBUG is not defined. 
+23:37:21.044 [INFO]   [Bot] Iniciando ciclo 50. 
+23:37:21.290 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490538.00, Best Ask=490818.00. 
+23:37:21.320 [INFO]   [Bot] Volatilidade calculada: 0.81%. 
+23:37:21.347 [DEBUG]  [Bot] Volatilidade no ciclo 50: 0.81% 
+23:37:21.371 [INFO]   [Bot] RSI calculado: 52.53. 
+23:37:21.399 [INFO]   [Bot] EMA(8) calculada: 490643.12. 
+23:37:21.428 [INFO]   [Bot] EMA(20) calculada: 490712.91. 
+23:37:21.454 [INFO]   [Bot] EMA(12) calculada: 490654.96. 
+23:37:21.481 [INFO]   [Bot] EMA(26) calculada: 490738.68. 
+23:37:21.521 [INFO]   [Bot] EMA(9) calculada: 490660.87. 
+23:37:21.546 [INFO]   [Bot] MACD calculado: MACD=-83.71, Signal=490660.87. 
+23:37:21.572 [INFO]   [Bot] Volatilidade calculada: 0.81%. 
+23:37:21.599 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:37:21.625 [INFO]   [Bot] ADX calculado: 28.27. 
+23:37:21.651 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.31","expectedProfit":"0.02","rsi":"52.53","emaShort":"490643.12","emaLong":"490712.91","...
+23:37:21.683 [DEBUG]  [Bot] Convicção calculada: 50.5% | Tendência: NEUTRAL | Força: WEAK 
+23:37:21.940 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:37:21.944 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.07). Ignorando compra. 
+23:37:21.973 [ERROR]  [Bot] Erro no ciclo 50: DEBUG is not defined. 
+23:37:51.058 [INFO]   [Bot] Iniciando ciclo 51. 
+23:37:51.291 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490538.00, Best Ask=490818.00. 
+23:37:51.298 [INFO]   [Bot] Volatilidade calculada: 0.81%. 
+23:37:51.323 [DEBUG]  [Bot] Volatilidade no ciclo 51: 0.81% 
+23:37:51.353 [INFO]   [Bot] RSI calculado: 53.16. 
+23:37:51.378 [INFO]   [Bot] EMA(8) calculada: 490666.01. 
+23:37:51.406 [INFO]   [Bot] EMA(20) calculada: 490720.70. 
+23:37:51.439 [INFO]   [Bot] EMA(12) calculada: 490665.88. 
+23:37:51.468 [INFO]   [Bot] EMA(26) calculada: 490740.23. 
+23:37:51.500 [INFO]   [Bot] EMA(9) calculada: 490652.38. 
+23:37:51.539 [INFO]   [Bot] MACD calculado: MACD=-74.34, Signal=490652.38. 
+23:37:51.569 [INFO]   [Bot] Volatilidade calculada: 0.81%. 
+23:37:51.630 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:37:51.661 [INFO]   [Bot] ADX calculado: 25.42. 
+23:37:51.690 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.31","expectedProfit":"0.02","rsi":"53.16","emaShort":"490666.01","emaLong":"490720.70","...
+23:37:51.723 [DEBUG]  [Bot] Convicção calculada: 50.4% | Tendência: NEUTRAL | Força: WEAK 
+23:37:52.100 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:37:52.110 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.07). Ignorando compra. 
+23:37:52.158 [ERROR]  [Bot] Erro no ciclo 51: DEBUG is not defined. 
+23:38:21.066 [INFO]   [Bot] Iniciando ciclo 52. 
+23:38:21.311 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490610.00, Best Ask=490818.00. 
+23:38:21.328 [INFO]   [Bot] Volatilidade calculada: 0.80%. 
+23:38:21.418 [DEBUG]  [Bot] Volatilidade no ciclo 52: 0.80% 
+23:38:21.451 [INFO]   [Bot] RSI calculado: 53.72. 
+23:38:21.481 [INFO]   [Bot] EMA(8) calculada: 490692.33. 
+23:38:21.511 [INFO]   [Bot] EMA(20) calculada: 490698.68. 
+23:38:21.550 [INFO]   [Bot] EMA(12) calculada: 490661.16. 
+23:38:21.581 [INFO]   [Bot] EMA(26) calculada: 490737.30. 
+23:38:21.603 [INFO]   [Bot] EMA(9) calculada: 490681.86. 
+23:38:21.634 [INFO]   [Bot] MACD calculado: MACD=-76.13, Signal=490681.86. 
+23:38:21.658 [INFO]   [Bot] Volatilidade calculada: 0.80%. 
+23:38:21.681 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:38:21.704 [INFO]   [Bot] ADX calculado: 22.24. 
+23:38:21.728 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.31","expectedProfit":"0.02","rsi":"53.72","emaShort":"490692.33","emaLong":"490698.68","...
+23:38:21.753 [DEBUG]  [Bot] Convicção calculada: 50.4% | Tendência: NEUTRAL | Força: WEAK 
+23:38:21.999 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:38:22.004 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.07). Ignorando compra. 
+23:38:22.029 [ERROR]  [Bot] Erro no ciclo 52: DEBUG is not defined. 
+23:38:51.081 [INFO]   [Bot] Iniciando ciclo 53. 
+23:38:51.343 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490640.00, Best Ask=490983.00. 
+23:38:51.374 [INFO]   [Bot] Volatilidade calculada: 0.79%. 
+23:38:51.402 [DEBUG]  [Bot] Volatilidade no ciclo 53: 0.79% 
+23:38:51.432 [INFO]   [Bot] RSI calculado: 99.81. 
+23:38:51.456 [INFO]   [Bot] EMA(8) calculada: 490739.34. 
+23:38:51.480 [INFO]   [Bot] EMA(20) calculada: 490694.76. 
+23:38:51.510 [INFO]   [Bot] EMA(12) calculada: 490713.02. 
+23:38:51.538 [INFO]   [Bot] EMA(26) calculada: 490737.67. 
+23:38:51.562 [INFO]   [Bot] EMA(9) calculada: 490734.44. 
+23:38:51.585 [INFO]   [Bot] MACD calculado: MACD=-24.65, Signal=490734.44. 
+23:38:51.611 [INFO]   [Bot] Volatilidade calculada: 0.79%. 
+23:38:51.638 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:38:51.660 [INFO]   [Bot] ADX calculado: 22.51. 
+23:38:51.686 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.59","expectedProfit":"0.03","rsi":"99.81","emaShort":"490739.34","emaLong":"490694.76...
+23:38:51.711 [DEBUG]  [Bot] Convicção calculada: 57.3% | Tendência: UP | Força: WEAK 
+23:38:52.187 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:38:52.193 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.25). Ignorando compra. 
+23:38:52.224 [ERROR]  [Bot] Erro no ciclo 53: DEBUG is not defined. 
+23:39:21.092 [INFO]   [Bot] Iniciando ciclo 54. 
+23:39:21.349 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490615.00, Best Ask=490982.00. 
+23:39:21.355 [INFO]   [Bot] Volatilidade calculada: 0.78%. 
+23:39:21.429 [DEBUG]  [Bot] Volatilidade no ciclo 54: 0.78% 
+23:39:21.461 [INFO]   [Bot] RSI calculado: 93.32. 
+23:39:21.495 [INFO]   [Bot] EMA(8) calculada: 490762.71. 
+23:39:21.528 [INFO]   [Bot] EMA(20) calculada: 490713.10. 
+23:39:21.573 [INFO]   [Bot] EMA(12) calculada: 490744.71. 
+23:39:21.603 [INFO]   [Bot] EMA(26) calculada: 490760.48. 
+23:39:21.641 [INFO]   [Bot] EMA(9) calculada: 490757.45. 
+23:39:21.679 [INFO]   [Bot] MACD calculado: MACD=-15.77, Signal=490757.45. 
+23:39:21.715 [INFO]   [Bot] Volatilidade calculada: 0.78%. 
+23:39:21.768 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:39:21.805 [INFO]   [Bot] ADX calculado: 22.17. 
+23:39:21.848 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.55","expectedProfit":"0.03","rsi":"93.32","emaShort":"490762.71","emaLong":"490713.10","vo...
+23:39:21.984 [DEBUG]  [Bot] Convicção calculada: 57.3% | Tendência: UP | Força: WEAK 
+23:39:22.385 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:39:22.388 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.26). Ignorando compra. 
+23:39:22.434 [ERROR]  [Bot] Erro no ciclo 54: DEBUG is not defined. 
+23:39:51.093 [INFO]   [Bot] Iniciando ciclo 55. 
+23:39:51.370 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490614.00, Best Ask=491010.00. 
+23:39:51.373 [INFO]   [Bot] Volatilidade calculada: 0.77%. 
+23:39:51.395 [DEBUG]  [Bot] Volatilidade no ciclo 55: 0.77% 
+23:39:51.417 [INFO]   [Bot] RSI calculado: 91.59. 
+23:39:51.451 [INFO]   [Bot] EMA(8) calculada: 490787.01. 
+23:39:51.464 [INFO]   [Bot] EMA(20) calculada: 490735.44. 
+23:39:51.494 [INFO]   [Bot] EMA(12) calculada: 490763.75. 
+23:39:51.519 [INFO]   [Bot] EMA(26) calculada: 490747.01. 
+23:39:51.543 [INFO]   [Bot] EMA(9) calculada: 490777.09. 
+23:39:51.571 [INFO]   [Bot] MACD calculado: MACD=16.74, Signal=490777.09. 
+23:39:51.598 [INFO]   [Bot] Volatilidade calculada: 0.77%. 
+23:39:51.623 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:39:51.640 [INFO]   [Bot] ADX calculado: 22.31. 
+23:39:51.657 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.54","expectedProfit":"0.03","rsi":"91.59","emaShort":"490787.01","emaLong":"490735.44...
+23:39:51.678 [DEBUG]  [Bot] Convicção calculada: 57.3% | Tendência: UP | Força: WEAK 
+23:39:51.916 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:39:51.920 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.25). Ignorando compra. 
+23:39:51.955 [ERROR]  [Bot] Erro no ciclo 55: DEBUG is not defined. 
+23:40:21.111 [INFO]   [Bot] Iniciando ciclo 56. 
+23:40:21.366 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490559.00, Best Ask=490983.00. 
+23:40:21.372 [INFO]   [Bot] Volatilidade calculada: 0.76%. 
+23:40:21.400 [DEBUG]  [Bot] Volatilidade no ciclo 56: 0.76% 
+23:40:21.422 [INFO]   [Bot] RSI calculado: 73.13. 
+23:40:21.448 [INFO]   [Bot] EMA(8) calculada: 490793.74. 
+23:40:21.473 [INFO]   [Bot] EMA(20) calculada: 490723.44. 
+23:40:21.491 [INFO]   [Bot] EMA(12) calculada: 490765.81. 
+23:40:21.517 [INFO]   [Bot] EMA(26) calculada: 490726.03. 
+23:40:21.539 [INFO]   [Bot] EMA(9) calculada: 490778.76. 
+23:40:21.564 [INFO]   [Bot] MACD calculado: MACD=39.78, Signal=490778.76. 
+23:40:21.589 [INFO]   [Bot] Volatilidade calculada: 0.76%. 
+23:40:21.615 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:40:21.639 [INFO]   [Bot] ADX calculado: 20.39. 
+23:40:21.658 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.43","expectedProfit":"0.03","rsi":"73.13","emaShort":"490793.74","emaLong":"490723.44...
+23:40:21.680 [DEBUG]  [Bot] Convicção calculada: 53.2% | Tendência: NEUTRAL | Força: WEAK 
+23:40:22.302 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:40:22.305 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.25). Ignorando compra. 
+23:40:22.339 [ERROR]  [Bot] Erro no ciclo 56: DEBUG is not defined. 
+23:40:51.125 [INFO]   [Bot] Iniciando ciclo 57. 
+23:40:51.404 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490564.00, Best Ask=490970.00. 
+23:40:51.428 [INFO]   [Bot] Volatilidade calculada: 0.75%. 
+23:40:51.465 [DEBUG]  [Bot] Volatilidade no ciclo 57: 0.75% 
+23:40:51.491 [INFO]   [Bot] RSI calculado: 71.71. 
+23:40:51.517 [INFO]   [Bot] EMA(8) calculada: 490781.44. 
+23:40:51.553 [INFO]   [Bot] EMA(20) calculada: 490740.53. 
+23:40:51.586 [INFO]   [Bot] EMA(12) calculada: 490771.00. 
+23:40:51.605 [INFO]   [Bot] EMA(26) calculada: 490731.40. 
+23:40:51.625 [INFO]   [Bot] EMA(9) calculada: 490785.00. 
+23:40:51.648 [INFO]   [Bot] MACD calculado: MACD=39.60, Signal=490785.00. 
+23:40:51.676 [INFO]   [Bot] Volatilidade calculada: 0.75%. 
+23:40:51.698 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:40:51.724 [INFO]   [Bot] ADX calculado: 18.53. 
+23:40:51.765 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.42","expectedProfit":"0.03","rsi":"71.71","emaShort":"490781.44","emaLong":"490740.53","vo...
+23:40:51.796 [DEBUG]  [Bot] Convicção calculada: 53.3% | Tendência: NEUTRAL | Força: WEAK 
+23:40:52.088 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:40:52.091 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.25). Ignorando compra. 
+23:40:52.121 [ERROR]  [Bot] Erro no ciclo 57: DEBUG is not defined. 
+23:41:21.140 [INFO]   [Bot] Iniciando ciclo 58. 
+23:41:21.387 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490484.00, Best Ask=490904.00. 
+23:41:21.397 [INFO]   [Bot] Volatilidade calculada: 0.75%. 
+23:41:21.432 [DEBUG]  [Bot] Volatilidade no ciclo 58: 0.75% 
+23:41:21.465 [INFO]   [Bot] RSI calculado: 45.87. 
+23:41:21.499 [INFO]   [Bot] EMA(8) calculada: 490748.70. 
+23:41:21.532 [INFO]   [Bot] EMA(20) calculada: 490739.52. 
+23:41:21.558 [INFO]   [Bot] EMA(12) calculada: 490762.26. 
+23:41:21.585 [INFO]   [Bot] EMA(26) calculada: 490730.46. 
+23:41:21.612 [INFO]   [Bot] EMA(9) calculada: 490750.84. 
+23:41:21.639 [INFO]   [Bot] MACD calculado: MACD=31.80, Signal=490750.84. 
+23:41:21.672 [INFO]   [Bot] Volatilidade calculada: 0.75%. 
+23:41:21.708 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:41:21.759 [INFO]   [Bot] ADX calculado: 18.28. 
+23:41:21.788 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.31","expectedProfit":"0.03","rsi":"45.87","emaShort":"490748.70","emaLong":"490739.52","...
+23:41:21.820 [DEBUG]  [Bot] Convicção calculada: 53.1% | Tendência: NEUTRAL | Força: WEAK 
+23:41:22.090 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.81). Considere depositar mais fundos. 
+23:41:22.095 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.15). Ignorando compra. 
+23:41:22.126 [ERROR]  [Bot] Erro no ciclo 58: DEBUG is not defined. 
+23:41:51.154 [INFO]   [Bot] Iniciando ciclo 59. 
+23:41:51.404 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490562.00, Best Ask=490983.00. 
+23:41:51.418 [INFO]   [Bot] Volatilidade calculada: 0.75%. 
+23:41:51.451 [DEBUG]  [Bot] Volatilidade no ciclo 59: 0.75% 
+23:41:51.482 [INFO]   [Bot] RSI calculado: 41.26. 
+23:41:51.514 [INFO]   [Bot] EMA(8) calculada: 490752.61. 
+23:41:51.542 [INFO]   [Bot] EMA(20) calculada: 490745.44. 
+23:41:51.565 [INFO]   [Bot] EMA(12) calculada: 490763.42. 
+23:41:51.583 [INFO]   [Bot] EMA(26) calculada: 490718.00. 
+23:41:51.608 [INFO]   [Bot] EMA(9) calculada: 490760.09. 
+23:41:51.631 [INFO]   [Bot] MACD calculado: MACD=45.42, Signal=490760.09. 
+23:41:51.648 [INFO]   [Bot] Volatilidade calculada: 0.75%. 
+23:41:51.673 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:41:51.701 [INFO]   [Bot] ADX calculado: 16.93. 
+23:41:51.759 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.34","expectedProfit":"0.03","rsi":"41.26","emaShort":"490752.61","emaLong":"490745.44","...
+23:41:51.783 [DEBUG]  [Bot] Convicção calculada: 57.1% | Tendência: UP | Força: WEAK 
+23:41:52.391 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:41:52.399 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.15). Ignorando compra. 
+23:41:52.435 [ERROR]  [Bot] Erro no ciclo 59: DEBUG is not defined. 
+23:42:21.169 [INFO]   [Bot] Iniciando ciclo 60. 
+23:42:21.415 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490601.00, Best Ask=490983.00. 
+23:42:21.422 [INFO]   [Bot] Volatilidade calculada: 0.74%. 
+23:42:21.447 [DEBUG]  [Bot] Volatilidade no ciclo 60: 0.74% 
+23:42:21.475 [INFO]   [Bot] RSI calculado: 48.58. 
+23:42:21.498 [INFO]   [Bot] EMA(8) calculada: 490767.64. 
+23:42:21.523 [INFO]   [Bot] EMA(20) calculada: 490753.88. 
+23:42:21.542 [INFO]   [Bot] EMA(12) calculada: 490773.36. 
+23:42:21.565 [INFO]   [Bot] EMA(26) calculada: 490737.75. 
+23:42:21.616 [INFO]   [Bot] EMA(9) calculada: 490767.17. 
+23:42:21.649 [INFO]   [Bot] MACD calculado: MACD=35.60, Signal=490767.17. 
+23:42:21.682 [INFO]   [Bot] Volatilidade calculada: 0.74%. 
+23:42:21.732 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+23:42:21.755 [INFO]   [Bot] ADX calculado: 16.51. 
+23:42:21.775 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.30","expectedProfit":"0.03","rsi":"48.58","emaShort":"490767.64","emaLong":"490753.88","...
+23:42:21.799 [DEBUG]  [Bot] Convicção calculada: 57.1% | Tendência: UP | Força: WEAK 
+23:42:22.088 [ALERT]  [Bot] Saldo BRL muito baixo (0.07 < 9.82). Considere depositar mais fundos. 
+23:42:22.091 [WARN]   [Bot] Saldo BRL insuficiente (0.07 < 5.15). Ignorando compra. 
+23:42:22.120 [ERROR]  [Bot] Erro no ciclo 60: DEBUG is not defined. 

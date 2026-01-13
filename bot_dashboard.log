@@ -1,0 +1,78 @@
+
+> mb-bot@1.0.0 dev
+> concurrently --kill-others "npm:simulate" "npm:dashboard"
+
+[simulate] 
+[simulate] > mb-bot@1.0.0 simulate
+[simulate] > SIMULATE=true node bot.js
+[simulate] 
+[dashboard] 
+[dashboard] > mb-bot@1.0.0 dashboard
+[dashboard] > node dashboard.js
+[dashboard] 
+[simulate] 23:30:57.432 [INFO]   [Bot] Inicializando bot... 
+[simulate] 23:30:57.438 [INFO]   [Bot] Inicializando banco de dados... 
+[simulate] 23:30:57.506 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+[simulate] 23:30:57.511 [SUCCESS] [Bot] Banco de dados inicializado. 
+[simulate] 23:30:57.537 [INFO]   [Bot] Autenticando Mercado Bitcoin... 
+[simulate] 2026-01-12T23:30:57.599Z [INFO]   Authentication (SIMULATE): Bearer token generated
+[simulate] 23:30:57.599 [SUCCESS] [Bot] Autenticado com sucesso. 
+[simulate] 23:30:57.625 [INFO]   [Bot] Iniciando warmup com velas históricas para evitar decisões ruins iniciais. 
+[simulate] 23:30:57.649 [INFO]   [Bot] Simulando 100 velas históricas. 
+[simulate] 23:30:57.676 [SUCCESS] [Bot] Warmup completo com 100 velas históricas. 
+[simulate] 23:30:57.698 [INFO]   [Bot] Carregando fills históricos... 
+[simulate] 23:30:57.729 [INFO]   [DB] Carregados 0 fills históricos. 
+[simulate] 23:30:57.748 [SUCCESS] [Bot] Carregados 0 fills históricos. 
+[simulate] 23:30:57.771 [INFO]   [Bot] Iniciando loop principal. 
+[simulate] 23:30:57.791 [INFO]   [Bot] Iniciando ciclo 1. 
+[simulate] 23:30:57.813 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+[simulate] 23:30:57 [TREND INFO] Iniciando análise de tendência externa... 
+[simulate] 23:30:58 [TREND INFO] CoinGecko Score: 52
+[simulate] 23:30:58 [TREND INFO] Binance Score: 60
+[simulate] 23:30:58 [TREND INFO] Fear & Greed Score: 27
+[simulate] 23:30:58 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+[simulate] 23:30:58.496 [SUCCESS] [Bot] Tendência Externa: NEUTRAL (Score: 50/100, Confiança: 100%) 
+[simulate] 23:30:58.735 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=490639.00, Best Ask=491063.00. 
+[simulate] 23:30:58.739 [INFO]   [Bot] Volatilidade calculada: 3.00%. 
+[simulate] 23:30:58.763 [DEBUG]  [Bot] Volatilidade no ciclo 1: 3.00% 
+[simulate] 23:30:58.782 [INFO]   [Bot] RSI calculado: 99.01. 
+[simulate] 23:30:58.810 [INFO]   [Bot] EMA(8) calculada: 433772.17. 
+[simulate] 23:30:58.845 [INFO]   [Bot] EMA(20) calculada: 409304.32. 
+[simulate] 23:30:58.872 [INFO]   [Bot] EMA(12) calculada: 422025.59. 
+[simulate] 23:30:58.898 [INFO]   [Bot] EMA(26) calculada: 403212.06. 
+[simulate] 23:30:58.925 [INFO]   [Bot] EMA(9) calculada: 430177.45. 
+[simulate] 23:30:58.949 [INFO]   [Bot] MACD calculado: MACD=18813.53, Signal=430177.45. 
+[simulate] 23:30:58.970 [INFO]   [Bot] Volatilidade calculada: 3.00%. 
+[simulate] 23:30:59.002 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[simulate] 23:30:59.024 [INFO]   [Bot] ADX calculado: 100.00. 
+[simulate] 23:30:59.048 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.68","expectedProfit":"0.05","rsi":"99.01","emaShort":"433772.17","emaLong":"409304.32...
+[simulate] 23:30:59.071 [DEBUG]  [Bot] Convicção calculada: 57.8% | Tendência: UP | Força: WEAK 
+[simulate] 23:30:59.092 [ERROR]  [Bot] Erro no ciclo 1: DEBUG is not defined. 
+[simulate] 23:30:59.115 [SUCCESS] [Bot] Bot operacional - SIMULATE=true 
+[dashboard] 23:31:00.790 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+[dashboard] [23:31:00] [DASHBOARD INFO] Loaded PNL history with 20 points from /mnt/c/PROJETOS_PESSOAIS/mb-bot/pnl_history.json 
+[dashboard] 23:31:00.801 [INFO]   [DB] Carregados 0 fills históricos. 
+[dashboard] [23:31:00] [DASHBOARD INFO] Carregados 0 fills históricos do banco de dados. 
+[dashboard] node:events:502
+[dashboard]       throw er; // Unhandled 'error' event
+[dashboard]       ^
+[dashboard] 
+[dashboard] Error: listen EADDRINUSE: address already in use 0.0.0.0:3001
+[dashboard]     at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+[dashboard]     at listenInCluster (node:net:1965:12)
+[dashboard]     at doListen (node:net:2139:7)
+[dashboard]     at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
+[dashboard] Emitted 'error' event on Server instance at:
+[dashboard]     at emitErrorNT (node:net:1944:8)
+[dashboard]     at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+[dashboard]   code: 'EADDRINUSE',
+[dashboard]   errno: -98,
+[dashboard]   syscall: 'listen',
+[dashboard]   address: '0.0.0.0',
+[dashboard]   port: 3001
+[dashboard] }
+[dashboard] 
+[dashboard] Node.js v20.19.5
+[dashboard] npm run dashboard exited with code 1
+--> Sending SIGTERM to other processes..
+[simulate] npm run simulate exited with code SIGTERM

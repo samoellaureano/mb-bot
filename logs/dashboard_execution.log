@@ -1,0 +1,1471 @@
+
+> mb-bot@1.0.0 dashboard
+> node dashboard.js
+
+23:13:06.634 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+23:13:06.644 [INFO]   [DB] Carregados 0 fills históricos. 
+[23:13:06] [DASHBOARD INFO] Carregados 0 fills históricos do banco de dados. 
+[23:13:06] [DASHBOARD INFO] Loaded PNL history with 4 points from /mnt/c/PROJETOS_PESSOAIS/mb-bot/pnl_history.json 
+[23:13:06] [DASHBOARD INFO] Dashboard ready at http://localhost:3001 - Mode: LIVE 
+2026-01-12T23:13:22.958Z [WARN]   Token expired/near expiry, reauthenticating...
+2026-01-12T23:13:22.959Z [INFO]   API_KEY: bdb29a91...
+2026-01-12T23:13:22.961Z [INFO]   API_SECRET: e14075f1...
+2026-01-12T23:13:23.732Z [INFO]   Account ID: f02d1506...
+2026-01-12T23:13:23.735Z [INFO]   Access Token: eyJhbGci...
+2026-01-12T23:13:23.736Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+23:13:25.099 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:13:25] [DASHBOARD WARN] Histórico insuficiente para RSI (1/13). Retornando neutro (50). 
+[23:13:25] [DASHBOARD WARN] Histórico insuficiente para EMA (1/8). Usando último preço. 
+[23:13:25] [DASHBOARD WARN] Histórico insuficiente para EMA (1/20). Usando último preço. 
+[23:13:25] [DASHBOARD WARN] Histórico insuficiente para EMA (1/12). Usando último preço. 
+[23:13:25] [DASHBOARD WARN] Histórico insuficiente para EMA (1/26). Usando último preço. 
+[23:13:25] [DASHBOARD WARN] Histórico insuficiente para EMA (1/9). Usando último preço. 
+[23:13:25] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490079.00. 
+[23:13:25] [DASHBOARD WARN] Dados insuficientes para calcular volatilidade. Retornando 0.1%. 
+[23:13:25] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:13:25] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490079.00',
+  emaLong: '490079.00',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '490079.00'
+}
+23:13:25 [TREND INFO] Iniciando análise de tendência externa... 
+23:13:25 [TREND INFO] CoinGecko Score: 52
+23:13:25 [TREND INFO] Binance Score: 60
+23:13:25 [TREND INFO] Fear & Greed Score: 27
+23:13:25 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:13:26.472 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:13:26] [DASHBOARD WARN] Histórico insuficiente para RSI (2/13). Retornando neutro (50). 
+[23:13:26] [DASHBOARD WARN] Histórico insuficiente para EMA (2/8). Usando último preço. 
+[23:13:26] [DASHBOARD WARN] Histórico insuficiente para EMA (2/20). Usando último preço. 
+[23:13:26] [DASHBOARD WARN] Histórico insuficiente para EMA (2/12). Usando último preço. 
+[23:13:26] [DASHBOARD WARN] Histórico insuficiente para EMA (2/26). Usando último preço. 
+[23:13:26] [DASHBOARD WARN] Histórico insuficiente para EMA (2/9). Usando último preço. 
+[23:13:26] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490078.50. 
+[23:13:26] [DASHBOARD INFO] Volatilidade calculada: 0.00%. 
+[23:13:26] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:13:26] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490078.50',
+  emaLong: '490078.50',
+  volatility: '0.00',
+  macd: '0.00',
+  signal: '490078.50'
+}
+23:13:26 [TREND INFO] Iniciando análise de tendência externa... 
+23:13:26 [TREND INFO] CoinGecko Score: 52
+23:13:26 [TREND INFO] Binance Score: 60
+23:13:26 [TREND INFO] Fear & Greed Score: 27
+23:13:26 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:13:56.559 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:13:56] [DASHBOARD WARN] Histórico insuficiente para RSI (3/13). Retornando neutro (50). 
+[23:13:56] [DASHBOARD WARN] Histórico insuficiente para EMA (3/8). Usando último preço. 
+[23:13:56] [DASHBOARD WARN] Histórico insuficiente para EMA (3/20). Usando último preço. 
+[23:13:56] [DASHBOARD WARN] Histórico insuficiente para EMA (3/12). Usando último preço. 
+[23:13:56] [DASHBOARD WARN] Histórico insuficiente para EMA (3/26). Usando último preço. 
+[23:13:56] [DASHBOARD WARN] Histórico insuficiente para EMA (3/9). Usando último preço. 
+[23:13:56] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490057.50. 
+[23:13:56] [DASHBOARD INFO] Volatilidade calculada: 0.08%. 
+[23:13:56] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:13:56] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490057.50',
+  emaLong: '490057.50',
+  volatility: '0.08',
+  macd: '0.00',
+  signal: '490057.50'
+}
+23:13:56 [TREND INFO] Iniciando análise de tendência externa... 
+23:13:57 [TREND INFO] CoinGecko Score: 52
+23:13:57 [TREND INFO] Binance Score: 60
+23:13:57 [TREND INFO] Fear & Greed Score: 27
+23:13:57 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:14:26.658 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:14:26] [DASHBOARD WARN] Histórico insuficiente para RSI (4/13). Retornando neutro (50). 
+[23:14:26] [DASHBOARD WARN] Histórico insuficiente para EMA (4/8). Usando último preço. 
+[23:14:26] [DASHBOARD WARN] Histórico insuficiente para EMA (4/20). Usando último preço. 
+[23:14:26] [DASHBOARD WARN] Histórico insuficiente para EMA (4/12). Usando último preço. 
+[23:14:26] [DASHBOARD WARN] Histórico insuficiente para EMA (4/26). Usando último preço. 
+[23:14:26] [DASHBOARD WARN] Histórico insuficiente para EMA (4/9). Usando último preço. 
+[23:14:26] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490056.50. 
+[23:14:26] [DASHBOARD INFO] Volatilidade calculada: 0.07%. 
+[23:14:26] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:14:26] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490056.50',
+  emaLong: '490056.50',
+  volatility: '0.07',
+  macd: '0.00',
+  signal: '490056.50'
+}
+23:14:26 [TREND INFO] Iniciando análise de tendência externa... 
+23:14:27 [TREND INFO] CoinGecko Score: 52
+23:14:27 [TREND INFO] Binance Score: 60
+23:14:27 [TREND INFO] Fear & Greed Score: 27
+23:14:27 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:14:56.783 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:14:56] [DASHBOARD WARN] Histórico insuficiente para RSI (5/13). Retornando neutro (50). 
+[23:14:56] [DASHBOARD WARN] Histórico insuficiente para EMA (5/8). Usando último preço. 
+[23:14:56] [DASHBOARD WARN] Histórico insuficiente para EMA (5/20). Usando último preço. 
+[23:14:56] [DASHBOARD WARN] Histórico insuficiente para EMA (5/12). Usando último preço. 
+[23:14:56] [DASHBOARD WARN] Histórico insuficiente para EMA (5/26). Usando último preço. 
+[23:14:56] [DASHBOARD WARN] Histórico insuficiente para EMA (5/9). Usando último preço. 
+[23:14:56] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490134.00. 
+[23:14:56] [DASHBOARD INFO] Volatilidade calculada: 0.29%. 
+[23:14:56] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:14:56] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490134.00',
+  emaLong: '490134.00',
+  volatility: '0.29',
+  macd: '0.00',
+  signal: '490134.00'
+}
+23:14:56 [TREND INFO] Iniciando análise de tendência externa... 
+23:14:57 [TREND INFO] CoinGecko Score: 52
+23:14:57 [TREND INFO] Binance Score: 60
+23:14:57 [TREND INFO] Fear & Greed Score: 27
+23:14:57 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:15:26.879 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:15:26] [DASHBOARD WARN] Histórico insuficiente para RSI (6/13). Retornando neutro (50). 
+[23:15:26] [DASHBOARD WARN] Histórico insuficiente para EMA (6/8). Usando último preço. 
+[23:15:26] [DASHBOARD WARN] Histórico insuficiente para EMA (6/20). Usando último preço. 
+[23:15:26] [DASHBOARD WARN] Histórico insuficiente para EMA (6/12). Usando último preço. 
+[23:15:26] [DASHBOARD WARN] Histórico insuficiente para EMA (6/26). Usando último preço. 
+[23:15:26] [DASHBOARD WARN] Histórico insuficiente para EMA (6/9). Usando último preço. 
+[23:15:26] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490146.00. 
+[23:15:26] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[23:15:26] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:15:26] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490146.00',
+  emaLong: '490146.00',
+  volatility: '0.26',
+  macd: '0.00',
+  signal: '490146.00'
+}
+23:15:26 [TREND INFO] Iniciando análise de tendência externa... 
+23:15:27 [TREND INFO] CoinGecko Score: 52
+23:15:27 [TREND INFO] Binance Score: 60
+23:15:27 [TREND INFO] Fear & Greed Score: 27
+23:15:27 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:15:56.629 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:15:56] [DASHBOARD WARN] Histórico insuficiente para RSI (7/13). Retornando neutro (50). 
+[23:15:56] [DASHBOARD WARN] Histórico insuficiente para EMA (7/8). Usando último preço. 
+[23:15:56] [DASHBOARD WARN] Histórico insuficiente para EMA (7/20). Usando último preço. 
+[23:15:56] [DASHBOARD WARN] Histórico insuficiente para EMA (7/12). Usando último preço. 
+[23:15:56] [DASHBOARD WARN] Histórico insuficiente para EMA (7/26). Usando último preço. 
+[23:15:56] [DASHBOARD WARN] Histórico insuficiente para EMA (7/9). Usando último preço. 
+[23:15:56] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490146.00. 
+[23:15:56] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[23:15:56] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:15:56] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490146.00',
+  emaLong: '490146.00',
+  volatility: '0.26',
+  macd: '0.00',
+  signal: '490146.00'
+}
+23:15:56 [TREND INFO] Iniciando análise de tendência externa... 
+23:15:57 [TREND INFO] CoinGecko Score: 52
+23:15:57 [TREND INFO] Binance Score: 60
+23:15:57 [TREND INFO] Fear & Greed Score: 27
+23:15:57 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:16:26.890 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:16:26] [DASHBOARD WARN] Histórico insuficiente para RSI (8/13). Retornando neutro (50). 
+[23:16:26] [DASHBOARD INFO] EMA(8) calculada: 490117.01. 
+[23:16:26] [DASHBOARD WARN] Histórico insuficiente para EMA (8/20). Usando último preço. 
+[23:16:26] [DASHBOARD WARN] Histórico insuficiente para EMA (8/12). Usando último preço. 
+[23:16:26] [DASHBOARD WARN] Histórico insuficiente para EMA (8/26). Usando último preço. 
+[23:16:26] [DASHBOARD WARN] Histórico insuficiente para EMA (8/9). Usando último preço. 
+[23:16:26] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490146.00. 
+[23:16:26] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[23:16:26] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:16:26] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490117.01',
+  emaLong: '490146.00',
+  volatility: '0.26',
+  macd: '0.00',
+  signal: '490146.00'
+}
+23:16:26 [TREND INFO] Iniciando análise de tendência externa... 
+23:16:27 [TREND INFO] CoinGecko Score: 52
+23:16:27 [TREND INFO] Binance Score: 60
+23:16:27 [TREND INFO] Fear & Greed Score: 27
+23:16:27 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:17:01.644 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:17:01] [DASHBOARD WARN] Histórico insuficiente para RSI (9/13). Retornando neutro (50). 
+[23:17:01] [DASHBOARD INFO] EMA(8) calculada: 490133.72. 
+[23:17:01] [DASHBOARD WARN] Histórico insuficiente para EMA (9/20). Usando último preço. 
+[23:17:01] [DASHBOARD WARN] Histórico insuficiente para EMA (9/12). Usando último preço. 
+[23:17:01] [DASHBOARD WARN] Histórico insuficiente para EMA (9/26). Usando último preço. 
+[23:17:01] [DASHBOARD INFO] EMA(9) calculada: 490129.74. 
+[23:17:01] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490129.74. 
+[23:17:01] [DASHBOARD INFO] Volatilidade calculada: 0.26%. 
+[23:17:01] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:17:01] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '50.00',
+  emaShort: '490133.72',
+  emaLong: '490192.50',
+  volatility: '0.26',
+  macd: '0.00',
+  signal: '490129.74'
+}
+23:17:01 [TREND INFO] Iniciando análise de tendência externa... 
+23:17:02 [TREND INFO] CoinGecko Score: 52
+23:17:02 [TREND INFO] Binance Score: 60
+23:17:02 [TREND INFO] Fear & Greed Score: 27
+23:17:02 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:17:31.710 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:17:31] [DASHBOARD WARN] Histórico insuficiente para RSI (10/13). Retornando neutro (50). 
+[23:17:31] [DASHBOARD INFO] EMA(8) calculada: 490127.64. 
+[23:17:31] [DASHBOARD WARN] Histórico insuficiente para EMA (10/20). Usando último preço. 
+[23:17:31] [DASHBOARD WARN] Histórico insuficiente para EMA (10/12). Usando último preço. 
+[23:17:31] [DASHBOARD WARN] Histórico insuficiente para EMA (10/26). Usando último preço. 
+[23:17:31] [DASHBOARD INFO] EMA(9) calculada: 490127.52. 
+[23:17:31] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490127.52. 
+[23:17:31] [DASHBOARD INFO] Volatilidade calculada: 0.35%. 
+[23:17:31] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:17:31] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '490127.64',
+  emaLong: '490119.00',
+  volatility: '0.35',
+  macd: '0.00',
+  signal: '490127.52'
+}
+23:17:31 [TREND INFO] Iniciando análise de tendência externa... 
+23:17:32 [TREND INFO] CoinGecko Score: 52
+23:17:32 [TREND INFO] Binance Score: 60
+23:17:32 [TREND INFO] Fear & Greed Score: 27
+23:17:32 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:18:01.743 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:18:01] [DASHBOARD WARN] Histórico insuficiente para RSI (11/13). Retornando neutro (50). 
+[23:18:01] [DASHBOARD INFO] EMA(8) calculada: 490114.92. 
+[23:18:01] [DASHBOARD WARN] Histórico insuficiente para EMA (11/20). Usando último preço. 
+[23:18:01] [DASHBOARD WARN] Histórico insuficiente para EMA (11/12). Usando último preço. 
+[23:18:01] [DASHBOARD WARN] Histórico insuficiente para EMA (11/26). Usando último preço. 
+[23:18:01] [DASHBOARD INFO] EMA(9) calculada: 490113.40. 
+[23:18:01] [DASHBOARD INFO] MACD calculado: MACD=0.00, Signal=490113.40. 
+[23:18:01] [DASHBOARD INFO] Volatilidade calculada: 0.35%. 
+[23:18:01] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:18:01] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '490114.92',
+  emaLong: '490071.00',
+  volatility: '0.35',
+  macd: '0.00',
+  signal: '490113.40'
+}
+23:18:01 [TREND INFO] Iniciando análise de tendência externa... 
+23:18:03 [TREND INFO] CoinGecko Score: 52
+23:18:03 [TREND INFO] Binance Score: 60
+23:18:03 [TREND INFO] Fear & Greed Score: 27
+23:18:03 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:18:31.640 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:18:31] [DASHBOARD WARN] Histórico insuficiente para RSI (12/13). Retornando neutro (50). 
+[23:18:31] [DASHBOARD INFO] EMA(8) calculada: 490123.65. 
+[23:18:31] [DASHBOARD WARN] Histórico insuficiente para EMA (12/20). Usando último preço. 
+[23:18:31] [DASHBOARD INFO] EMA(12) calculada: 490111.83. 
+[23:18:31] [DASHBOARD WARN] Histórico insuficiente para EMA (12/26). Usando último preço. 
+[23:18:31] [DASHBOARD INFO] EMA(9) calculada: 490112.09. 
+[23:18:31] [DASHBOARD INFO] MACD calculado: MACD=4.33, Signal=490112.09. 
+[23:18:31] [DASHBOARD INFO] Volatilidade calculada: 0.34%. 
+[23:18:31] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:18:31] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '50.00',
+  emaShort: '490123.65',
+  emaLong: '490107.50',
+  volatility: '0.34',
+  macd: '4.33',
+  signal: '490112.09'
+}
+23:18:31 [TREND INFO] Iniciando análise de tendência externa... 
+23:18:32 [TREND INFO] CoinGecko Score: 52
+23:18:32 [TREND INFO] Binance Score: 60
+23:18:32 [TREND INFO] Fear & Greed Score: 27
+23:18:32 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:19:06.800 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:19:06] [DASHBOARD INFO] RSI calculado: 55.00. 
+[23:19:06] [DASHBOARD INFO] EMA(8) calculada: 490122.44. 
+[23:19:06] [DASHBOARD WARN] Histórico insuficiente para EMA (13/20). Usando último preço. 
+[23:19:06] [DASHBOARD INFO] EMA(12) calculada: 490111.64. 
+[23:19:06] [DASHBOARD WARN] Histórico insuficiente para EMA (13/26). Usando último preço. 
+[23:19:06] [DASHBOARD INFO] EMA(9) calculada: 490122.27. 
+[23:19:06] [DASHBOARD INFO] MACD calculado: MACD=0.64, Signal=490122.27. 
+[23:19:06] [DASHBOARD INFO] Volatilidade calculada: 0.33%. 
+[23:19:06] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:19:06] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '55.00',
+  emaShort: '490122.44',
+  emaLong: '490111.00',
+  volatility: '0.33',
+  macd: '0.64',
+  signal: '490122.27'
+}
+23:19:06 [TREND INFO] Iniciando análise de tendência externa... 
+23:19:07 [TREND INFO] CoinGecko Score: 52
+23:19:07 [TREND INFO] Binance Score: 60
+23:19:07 [TREND INFO] Fear & Greed Score: 27
+23:19:07 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:19:37.140 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:19:37] [DASHBOARD INFO] RSI calculado: 46.19. 
+[23:19:37] [DASHBOARD INFO] EMA(8) calculada: 490106.23. 
+[23:19:37] [DASHBOARD WARN] Histórico insuficiente para EMA (14/20). Usando último preço. 
+[23:19:37] [DASHBOARD INFO] EMA(12) calculada: 490099.25. 
+[23:19:37] [DASHBOARD WARN] Histórico insuficiente para EMA (14/26). Usando último preço. 
+[23:19:37] [DASHBOARD INFO] EMA(9) calculada: 490109.33. 
+[23:19:37] [DASHBOARD INFO] MACD calculado: MACD=49.75, Signal=490109.33. 
+[23:19:37] [DASHBOARD INFO] Volatilidade calculada: 0.34%. 
+[23:19:37] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:19:37] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '46.19',
+  emaShort: '490106.23',
+  emaLong: '490049.50',
+  volatility: '0.34',
+  macd: '49.75',
+  signal: '490109.33'
+}
+23:19:37 [TREND INFO] Iniciando análise de tendência externa... 
+23:19:37 [TREND INFO] CoinGecko Score: 52
+23:19:37 [TREND INFO] Binance Score: 60
+23:19:37 [TREND INFO] Fear & Greed Score: 27
+23:19:37 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:20:06.708 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:20:06] [DASHBOARD INFO] RSI calculado: 48.89. 
+[23:20:06] [DASHBOARD INFO] EMA(8) calculada: 490093.63. 
+[23:20:06] [DASHBOARD WARN] Histórico insuficiente para EMA (15/20). Usando último preço. 
+[23:20:06] [DASHBOARD INFO] EMA(12) calculada: 490091.46. 
+[23:20:06] [DASHBOARD WARN] Histórico insuficiente para EMA (15/26). Usando último preço. 
+[23:20:06] [DASHBOARD INFO] EMA(9) calculada: 490097.36. 
+[23:20:06] [DASHBOARD INFO] MACD calculado: MACD=41.96, Signal=490097.36. 
+[23:20:06] [DASHBOARD INFO] Volatilidade calculada: 0.34%. 
+[23:20:06] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:20:06] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '48.89',
+  emaShort: '490093.63',
+  emaLong: '490049.50',
+  volatility: '0.34',
+  macd: '41.96',
+  signal: '490097.36'
+}
+23:20:06 [TREND INFO] Iniciando análise de tendência externa... 
+23:20:07 [TREND INFO] CoinGecko Score: 52
+23:20:07 [TREND INFO] Binance Score: 60
+23:20:07 [TREND INFO] Fear & Greed Score: 27
+23:20:07 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:20:41.131 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:20:41] [DASHBOARD INFO] RSI calculado: 49.03. 
+[23:20:41] [DASHBOARD INFO] EMA(8) calculada: 490090.05. 
+[23:20:41] [DASHBOARD WARN] Histórico insuficiente para EMA (16/20). Usando último preço. 
+[23:20:41] [DASHBOARD INFO] EMA(12) calculada: 490095.45. 
+[23:20:41] [DASHBOARD WARN] Histórico insuficiente para EMA (16/26). Usando último preço. 
+[23:20:41] [DASHBOARD INFO] EMA(9) calculada: 490087.79. 
+[23:20:41] [DASHBOARD INFO] MACD calculado: MACD=45.95, Signal=490087.79. 
+[23:20:41] [DASHBOARD INFO] Volatilidade calculada: 0.34%. 
+[23:20:41] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:20:41] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '49.03',
+  emaShort: '490090.05',
+  emaLong: '490049.50',
+  volatility: '0.34',
+  macd: '45.95',
+  signal: '490087.79'
+}
+23:20:41 [TREND INFO] Iniciando análise de tendência externa... 
+23:20:41 [TREND INFO] CoinGecko Score: 52
+23:20:41 [TREND INFO] Binance Score: 60
+23:20:41 [TREND INFO] Fear & Greed Score: 27
+23:20:41 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:21:11.452 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:21:11] [DASHBOARD INFO] RSI calculado: 39.10. 
+[23:21:11] [DASHBOARD INFO] EMA(8) calculada: 490075.42. 
+[23:21:11] [DASHBOARD WARN] Histórico insuficiente para EMA (17/20). Usando último preço. 
+[23:21:11] [DASHBOARD INFO] EMA(12) calculada: 490092.92. 
+[23:21:11] [DASHBOARD WARN] Histórico insuficiente para EMA (17/26). Usando último preço. 
+[23:21:11] [DASHBOARD INFO] EMA(9) calculada: 490090.17. 
+[23:21:11] [DASHBOARD INFO] MACD calculado: MACD=24.42, Signal=490090.17. 
+[23:21:11] [DASHBOARD INFO] Volatilidade calculada: 0.33%. 
+[23:21:11] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:21:11] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '39.10',
+  emaShort: '490075.42',
+  emaLong: '490068.50',
+  volatility: '0.33',
+  macd: '24.42',
+  signal: '490090.17'
+}
+23:21:11 [TREND INFO] Iniciando análise de tendência externa... 
+23:21:12 [TREND INFO] CoinGecko Score: 52
+23:21:12 [TREND INFO] Binance Score: 60
+23:21:12 [TREND INFO] Fear & Greed Score: 27
+23:21:12 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:21:46.056 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:21:46] [DASHBOARD INFO] RSI calculado: 36.68. 
+[23:21:46] [DASHBOARD INFO] EMA(8) calculada: 490067.56. 
+[23:21:46] [DASHBOARD WARN] Histórico insuficiente para EMA (18/20). Usando último preço. 
+[23:21:46] [DASHBOARD INFO] EMA(12) calculada: 490089.24. 
+[23:21:46] [DASHBOARD WARN] Histórico insuficiente para EMA (18/26). Usando último preço. 
+[23:21:46] [DASHBOARD INFO] EMA(9) calculada: 490076.07. 
+[23:21:46] [DASHBOARD INFO] MACD calculado: MACD=20.24, Signal=490076.07. 
+[23:21:46] [DASHBOARD INFO] Volatilidade calculada: 0.32%. 
+[23:21:46] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:21:46] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '36.68',
+  emaShort: '490067.56',
+  emaLong: '490069.00',
+  volatility: '0.32',
+  macd: '20.24',
+  signal: '490076.07'
+}
+23:21:46 [TREND INFO] Iniciando análise de tendência externa... 
+23:21:46 [TREND INFO] CoinGecko Score: 52
+23:21:46 [TREND INFO] Binance Score: 60
+23:21:46 [TREND INFO] Fear & Greed Score: 27
+23:21:46 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:22:16.110 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:22:16] [DASHBOARD INFO] RSI calculado: 36.68. 
+[23:22:16] [DASHBOARD INFO] EMA(8) calculada: 490072.77. 
+[23:22:16] [DASHBOARD WARN] Histórico insuficiente para EMA (19/20). Usando último preço. 
+[23:22:16] [DASHBOARD INFO] EMA(12) calculada: 490086.12. 
+[23:22:16] [DASHBOARD WARN] Histórico insuficiente para EMA (19/26). Usando último preço. 
+[23:22:16] [DASHBOARD INFO] EMA(9) calculada: 490068.22. 
+[23:22:16] [DASHBOARD INFO] MACD calculado: MACD=17.12, Signal=490068.22. 
+[23:22:16] [DASHBOARD INFO] Volatilidade calculada: 0.32%. 
+[23:22:16] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:22:16] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '36.68',
+  emaShort: '490072.77',
+  emaLong: '490069.00',
+  volatility: '0.32',
+  macd: '17.12',
+  signal: '490068.22'
+}
+23:22:16 [TREND INFO] Iniciando análise de tendência externa... 
+23:22:16 [TREND INFO] CoinGecko Score: 52
+23:22:16 [TREND INFO] Binance Score: 60
+23:22:16 [TREND INFO] Fear & Greed Score: 27
+23:22:16 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:22:51.122 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:22:51] [DASHBOARD INFO] RSI calculado: 37.22. 
+[23:22:51] [DASHBOARD INFO] EMA(8) calculada: 490072.96. 
+[23:22:51] [DASHBOARD INFO] EMA(20) calculada: 490083.78. 
+[23:22:51] [DASHBOARD INFO] EMA(12) calculada: 490090.14. 
+[23:22:51] [DASHBOARD WARN] Histórico insuficiente para EMA (20/26). Usando último preço. 
+[23:22:51] [DASHBOARD INFO] EMA(9) calculada: 490073.77. 
+[23:22:51] [DASHBOARD INFO] MACD calculado: MACD=18.64, Signal=490073.77. 
+[23:22:51] [DASHBOARD INFO] Volatilidade calculada: 0.31%. 
+[23:22:51] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:22:51] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '37.22',
+  emaShort: '490072.96',
+  emaLong: '490083.78',
+  volatility: '0.31',
+  macd: '18.64',
+  signal: '490073.77'
+}
+23:22:51 [TREND INFO] Iniciando análise de tendência externa... 
+23:22:51 [TREND INFO] CoinGecko Score: 52
+23:22:51 [TREND INFO] Binance Score: 60
+23:22:51 [TREND INFO] Fear & Greed Score: 27
+23:22:51 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:23:26.540 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:23:26] [DASHBOARD INFO] RSI calculado: 26.21. 
+[23:23:26] [DASHBOARD INFO] EMA(8) calculada: 490065.06. 
+[23:23:26] [DASHBOARD INFO] EMA(20) calculada: 490082.83. 
+[23:23:26] [DASHBOARD INFO] EMA(12) calculada: 490077.83. 
+[23:23:26] [DASHBOARD WARN] Histórico insuficiente para EMA (21/26). Usando último preço. 
+[23:23:26] [DASHBOARD INFO] EMA(9) calculada: 490074.39. 
+[23:23:26] [DASHBOARD INFO] MACD calculado: MACD=3.33, Signal=490074.39. 
+[23:23:26] [DASHBOARD INFO] Volatilidade calculada: 0.30%. 
+[23:23:26] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:23:26] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '26.21',
+  emaShort: '490065.06',
+  emaLong: '490082.83',
+  volatility: '0.30',
+  macd: '3.33',
+  signal: '490074.39'
+}
+23:23:26 [TREND INFO] Iniciando análise de tendência externa... 
+23:23:27 [TREND INFO] CoinGecko Score: 52
+23:23:27 [TREND INFO] Binance Score: 60
+23:23:27 [TREND INFO] Fear & Greed Score: 27
+23:23:27 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:23:56.052 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:23:56] [DASHBOARD INFO] RSI calculado: 72.49. 
+[23:23:56] [DASHBOARD INFO] EMA(8) calculada: 490116.83. 
+[23:23:56] [DASHBOARD INFO] EMA(20) calculada: 490100.48. 
+[23:23:56] [DASHBOARD INFO] EMA(12) calculada: 490105.24. 
+[23:23:56] [DASHBOARD WARN] Histórico insuficiente para EMA (22/26). Usando último preço. 
+[23:23:56] [DASHBOARD INFO] EMA(9) calculada: 490110.86. 
+[23:23:56] [DASHBOARD INFO] MACD calculado: MACD=-192.76, Signal=490110.86. 
+[23:23:56] [DASHBOARD INFO] Volatilidade calculada: 0.51%. 
+[23:23:56] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:23:56] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '72.49',
+  emaShort: '490116.83',
+  emaLong: '490100.48',
+  volatility: '0.51',
+  macd: '-192.76',
+  signal: '490110.86'
+}
+23:23:56 [TREND INFO] Iniciando análise de tendência externa... 
+23:23:56 [TREND INFO] CoinGecko Score: 52
+23:23:56 [TREND INFO] Binance Score: 60
+23:23:56 [TREND INFO] Fear & Greed Score: 27
+23:23:56 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:24:26.183 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:24:26] [DASHBOARD INFO] RSI calculado: 80.93. 
+[23:24:26] [DASHBOARD INFO] EMA(8) calculada: 490155.64. 
+[23:24:26] [DASHBOARD INFO] EMA(20) calculada: 490118.54. 
+[23:24:26] [DASHBOARD INFO] EMA(12) calculada: 490138.81. 
+[23:24:26] [DASHBOARD WARN] Histórico insuficiente para EMA (23/26). Usando último preço. 
+[23:24:26] [DASHBOARD INFO] EMA(9) calculada: 490146.98. 
+[23:24:26] [DASHBOARD INFO] MACD calculado: MACD=-152.69, Signal=490146.98. 
+[23:24:26] [DASHBOARD INFO] Volatilidade calculada: 0.49%. 
+[23:24:26] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:24:26] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '80.93',
+  emaShort: '490155.64',
+  emaLong: '490118.54',
+  volatility: '0.49',
+  macd: '-152.69',
+  signal: '490146.98'
+}
+23:24:26 [TREND INFO] Iniciando análise de tendência externa... 
+23:24:26 [TREND INFO] CoinGecko Score: 52
+23:24:26 [TREND INFO] Binance Score: 60
+23:24:26 [TREND INFO] Fear & Greed Score: 27
+23:24:26 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:24:59.909 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:24:59] [DASHBOARD INFO] RSI calculado: 83.56. 
+[23:24:59] [DASHBOARD INFO] EMA(8) calculada: 490209.16. 
+[23:24:59] [DASHBOARD INFO] EMA(20) calculada: 490154.39. 
+[23:24:59] [DASHBOARD INFO] EMA(12) calculada: 490177.16. 
+[23:24:59] [DASHBOARD WARN] Histórico insuficiente para EMA (24/26). Usando último preço. 
+[23:24:59] [DASHBOARD INFO] EMA(9) calculada: 490194.59. 
+[23:24:59] [DASHBOARD INFO] MACD calculado: MACD=-207.84, Signal=490194.59. 
+[23:24:59] [DASHBOARD INFO] Volatilidade calculada: 0.50%. 
+[23:24:59] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:24:59] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '83.56',
+  emaShort: '490209.16',
+  emaLong: '490154.39',
+  volatility: '0.50',
+  macd: '-207.84',
+  signal: '490194.59'
+}
+23:24:59 [TREND INFO] Iniciando análise de tendência externa... 
+23:25:00 [TREND INFO] CoinGecko Score: 52
+23:25:00 [TREND INFO] Binance Score: 60
+23:25:00 [TREND INFO] Fear & Greed Score: 27
+23:25:00 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:25:29.916 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:25:29] [DASHBOARD INFO] RSI calculado: 83.21. 
+[23:25:29] [DASHBOARD INFO] EMA(8) calculada: 490248.08. 
+[23:25:29] [DASHBOARD INFO] EMA(20) calculada: 490177.88. 
+[23:25:29] [DASHBOARD INFO] EMA(12) calculada: 490200.69. 
+[23:25:29] [DASHBOARD WARN] Histórico insuficiente para EMA (25/26). Usando último preço. 
+[23:25:29] [DASHBOARD INFO] EMA(9) calculada: 490235.02. 
+[23:25:29] [DASHBOARD INFO] MACD calculado: MACD=-183.31, Signal=490235.02. 
+[23:25:29] [DASHBOARD INFO] Volatilidade calculada: 0.49%. 
+[23:25:29] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:25:29] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '83.21',
+  emaShort: '490248.08',
+  emaLong: '490177.88',
+  volatility: '0.49',
+  macd: '-183.31',
+  signal: '490235.02'
+}
+23:25:29 [TREND INFO] Iniciando análise de tendência externa... 
+23:25:30 [TREND INFO] CoinGecko Score: 52
+23:25:30 [TREND INFO] Binance Score: 60
+23:25:30 [TREND INFO] Fear & Greed Score: 27
+23:25:30 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:25:59.935 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:25:59] [DASHBOARD INFO] RSI calculado: 97.85. 
+[23:25:59] [DASHBOARD INFO] EMA(8) calculada: 490278.28. 
+[23:25:59] [DASHBOARD INFO] EMA(20) calculada: 490197.51. 
+[23:25:59] [DASHBOARD INFO] EMA(12) calculada: 490228.90. 
+[23:25:59] [DASHBOARD INFO] EMA(26) calculada: 490169.97. 
+[23:25:59] [DASHBOARD INFO] EMA(9) calculada: 490264.88. 
+[23:25:59] [DASHBOARD INFO] MACD calculado: MACD=58.92, Signal=490264.88. 
+[23:25:59] [DASHBOARD INFO] Volatilidade calculada: 0.49%. 
+[23:25:59] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:25:59] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '97.85',
+  emaShort: '490278.28',
+  emaLong: '490197.51',
+  volatility: '0.49',
+  macd: '58.92',
+  signal: '490264.88'
+}
+23:25:59 [TREND INFO] Iniciando análise de tendência externa... 
+23:26:00 [TREND INFO] CoinGecko Score: 52
+23:26:00 [TREND INFO] Binance Score: 60
+23:26:00 [TREND INFO] Fear & Greed Score: 27
+23:26:00 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:26:34.906 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:26:34] [DASHBOARD INFO] RSI calculado: 98.24. 
+[23:26:34] [DASHBOARD INFO] EMA(8) calculada: 490319.11. 
+[23:26:34] [DASHBOARD INFO] EMA(20) calculada: 490222.55. 
+[23:26:34] [DASHBOARD INFO] EMA(12) calculada: 490264.53. 
+[23:26:34] [DASHBOARD INFO] EMA(26) calculada: 490191.42. 
+[23:26:34] [DASHBOARD INFO] EMA(9) calculada: 490304.01. 
+[23:26:34] [DASHBOARD INFO] MACD calculado: MACD=73.10, Signal=490304.01. 
+[23:26:34] [DASHBOARD INFO] Volatilidade calculada: 0.49%. 
+[23:26:34] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:26:34] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '98.24',
+  emaShort: '490319.11',
+  emaLong: '490222.55',
+  volatility: '0.49',
+  macd: '73.10',
+  signal: '490304.01'
+}
+23:26:34 [TREND INFO] Iniciando análise de tendência externa... 
+23:26:35 [TREND INFO] CoinGecko Score: 52
+23:26:35 [TREND INFO] Binance Score: 60
+23:26:35 [TREND INFO] Fear & Greed Score: 27
+23:26:35 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:27:09.237 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:27:09] [DASHBOARD INFO] RSI calculado: 98.97. 
+[23:27:09] [DASHBOARD INFO] EMA(8) calculada: 490417.38. 
+[23:27:09] [DASHBOARD INFO] EMA(20) calculada: 490279.97. 
+[23:27:09] [DASHBOARD INFO] EMA(12) calculada: 490343.24. 
+[23:27:09] [DASHBOARD INFO] EMA(26) calculada: 490230.66. 
+[23:27:09] [DASHBOARD INFO] EMA(9) calculada: 490395.44. 
+[23:27:09] [DASHBOARD INFO] MACD calculado: MACD=112.57, Signal=490395.44. 
+[23:27:09] [DASHBOARD INFO] Volatilidade calculada: 0.66%. 
+[23:27:09] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:27:09] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '98.97',
+  emaShort: '490417.38',
+  emaLong: '490279.97',
+  volatility: '0.66',
+  macd: '112.57',
+  signal: '490395.44'
+}
+23:27:09 [TREND INFO] Iniciando análise de tendência externa... 
+23:27:09 [TREND INFO] CoinGecko Score: 52
+23:27:09 [TREND INFO] Binance Score: 70
+23:27:09 [TREND INFO] Fear & Greed Score: 27
+23:27:09 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:27:39.209 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:27:39] [DASHBOARD INFO] RSI calculado: 98.97. 
+[23:27:39] [DASHBOARD INFO] EMA(8) calculada: 490529.00. 
+[23:27:39] [DASHBOARD INFO] EMA(20) calculada: 490318.14. 
+[23:27:39] [DASHBOARD INFO] EMA(12) calculada: 490411.27. 
+[23:27:39] [DASHBOARD INFO] EMA(26) calculada: 490271.59. 
+[23:27:39] [DASHBOARD INFO] EMA(9) calculada: 490473.76. 
+[23:27:39] [DASHBOARD INFO] MACD calculado: MACD=139.68, Signal=490473.76. 
+[23:27:39] [DASHBOARD INFO] Volatilidade calculada: 0.65%. 
+[23:27:39] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:27:39] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '98.97',
+  emaShort: '490529.00',
+  emaLong: '490318.14',
+  volatility: '0.65',
+  macd: '139.68',
+  signal: '490473.76'
+}
+23:27:39 [TREND INFO] Iniciando análise de tendência externa... 
+23:27:39 [TREND INFO] CoinGecko Score: 52
+23:27:39 [TREND INFO] Binance Score: 70
+23:27:39 [TREND INFO] Fear & Greed Score: 27
+23:27:39 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:28:09.311 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:28:09] [DASHBOARD INFO] RSI calculado: 98.97. 
+[23:28:09] [DASHBOARD INFO] EMA(8) calculada: 490585.02. 
+[23:28:09] [DASHBOARD INFO] EMA(20) calculada: 490356.12. 
+[23:28:09] [DASHBOARD INFO] EMA(12) calculada: 490468.76. 
+[23:28:09] [DASHBOARD INFO] EMA(26) calculada: 490320.10. 
+[23:28:09] [DASHBOARD INFO] EMA(9) calculada: 490566.00. 
+[23:28:09] [DASHBOARD INFO] MACD calculado: MACD=148.66, Signal=490566.00. 
+[23:28:09] [DASHBOARD INFO] Volatilidade calculada: 0.65%. 
+[23:28:09] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:28:09] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '98.97',
+  emaShort: '490585.02',
+  emaLong: '490356.12',
+  volatility: '0.65',
+  macd: '148.66',
+  signal: '490566.00'
+}
+23:28:09 [TREND INFO] Iniciando análise de tendência externa... 
+23:28:09 [TREND INFO] CoinGecko Score: 52
+23:28:09 [TREND INFO] Binance Score: 70
+23:28:09 [TREND INFO] Fear & Greed Score: 27
+23:28:09 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:28:39.545 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:28:39] [DASHBOARD INFO] RSI calculado: 99.14. 
+[23:28:39] [DASHBOARD INFO] EMA(8) calculada: 490672.76. 
+[23:28:39] [DASHBOARD INFO] EMA(20) calculada: 490415.09. 
+[23:28:39] [DASHBOARD INFO] EMA(12) calculada: 490539.06. 
+[23:28:39] [DASHBOARD INFO] EMA(26) calculada: 490366.42. 
+[23:28:39] [DASHBOARD INFO] EMA(9) calculada: 490636.63. 
+[23:28:39] [DASHBOARD INFO] MACD calculado: MACD=172.64, Signal=490636.63. 
+[23:28:39] [DASHBOARD INFO] Volatilidade calculada: 0.65%. 
+[23:28:39] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:28:39] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '99.14',
+  emaShort: '490672.76',
+  emaLong: '490415.09',
+  volatility: '0.65',
+  macd: '172.64',
+  signal: '490636.63'
+}
+23:28:39 [TREND INFO] Iniciando análise de tendência externa... 
+23:28:40 [TREND INFO] CoinGecko Score: 52
+23:28:40 [TREND INFO] Binance Score: 70
+23:28:40 [TREND INFO] Fear & Greed Score: 27
+23:28:40 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:29:14.440 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:29:14] [DASHBOARD INFO] RSI calculado: 88.75. 
+[23:29:14] [DASHBOARD INFO] EMA(8) calculada: 490705.79. 
+[23:29:14] [DASHBOARD INFO] EMA(20) calculada: 490454.31. 
+[23:29:14] [DASHBOARD INFO] EMA(12) calculada: 490582.99. 
+[23:29:14] [DASHBOARD INFO] EMA(26) calculada: 490400.17. 
+[23:29:14] [DASHBOARD INFO] EMA(9) calculada: 490686.25. 
+[23:29:14] [DASHBOARD INFO] MACD calculado: MACD=182.83, Signal=490686.25. 
+[23:29:14] [DASHBOARD INFO] Volatilidade calculada: 0.68%. 
+[23:29:14] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:29:14] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '88.75',
+  emaShort: '490705.79',
+  emaLong: '490454.31',
+  volatility: '0.68',
+  macd: '182.83',
+  signal: '490686.25'
+}
+23:29:14 [TREND INFO] Iniciando análise de tendência externa... 
+23:29:14 [TREND INFO] CoinGecko Score: 52
+23:29:14 [TREND INFO] Binance Score: 70
+23:29:14 [TREND INFO] Fear & Greed Score: 27
+23:29:14 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:29:44.286 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:29:44] [DASHBOARD INFO] RSI calculado: 88.71. 
+[23:29:44] [DASHBOARD INFO] EMA(8) calculada: 490731.61. 
+[23:29:44] [DASHBOARD INFO] EMA(20) calculada: 490481.02. 
+[23:29:44] [DASHBOARD INFO] EMA(12) calculada: 490649.87. 
+[23:29:44] [DASHBOARD INFO] EMA(26) calculada: 490431.41. 
+[23:29:44] [DASHBOARD INFO] EMA(9) calculada: 490713.27. 
+[23:29:44] [DASHBOARD INFO] MACD calculado: MACD=218.46, Signal=490713.27. 
+[23:29:44] [DASHBOARD INFO] Volatilidade calculada: 0.68%. 
+[23:29:44] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:29:44] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '88.71',
+  emaShort: '490731.61',
+  emaLong: '490481.02',
+  volatility: '0.68',
+  macd: '218.46',
+  signal: '490713.27'
+}
+23:29:44 [TREND INFO] Iniciando análise de tendência externa... 
+23:29:44 [TREND INFO] CoinGecko Score: 52
+23:29:44 [TREND INFO] Binance Score: 70
+23:29:44 [TREND INFO] Fear & Greed Score: 27
+23:29:44 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:30:19.382 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:30:19] [DASHBOARD INFO] RSI calculado: 85.08. 
+[23:30:19] [DASHBOARD INFO] EMA(8) calculada: 490761.50. 
+[23:30:19] [DASHBOARD INFO] EMA(20) calculada: 490513.31. 
+[23:30:19] [DASHBOARD INFO] EMA(12) calculada: 490675.17. 
+[23:30:19] [DASHBOARD INFO] EMA(26) calculada: 490466.48. 
+[23:30:19] [DASHBOARD INFO] EMA(9) calculada: 490734.61. 
+[23:30:19] [DASHBOARD INFO] MACD calculado: MACD=208.69, Signal=490734.61. 
+[23:30:19] [DASHBOARD INFO] Volatilidade calculada: 0.66%. 
+[23:30:19] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:30:19] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '85.08',
+  emaShort: '490761.50',
+  emaLong: '490513.31',
+  volatility: '0.66',
+  macd: '208.69',
+  signal: '490734.61'
+}
+23:30:19 [TREND INFO] Iniciando análise de tendência externa... 
+23:30:19 [TREND INFO] CoinGecko Score: 52
+23:30:19 [TREND INFO] Binance Score: 60
+23:30:19 [TREND INFO] Fear & Greed Score: 27
+23:30:19 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:30:54.274 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:30:54] [DASHBOARD INFO] RSI calculado: 86.56. 
+[23:30:54] [DASHBOARD INFO] EMA(8) calculada: 490823.43. 
+[23:30:54] [DASHBOARD INFO] EMA(20) calculada: 490546.32. 
+[23:30:54] [DASHBOARD INFO] EMA(12) calculada: 490716.20. 
+[23:30:54] [DASHBOARD INFO] EMA(26) calculada: 490485.70. 
+[23:30:54] [DASHBOARD INFO] EMA(9) calculada: 490769.96. 
+[23:30:54] [DASHBOARD INFO] MACD calculado: MACD=230.50, Signal=490769.96. 
+[23:30:54] [DASHBOARD INFO] Volatilidade calculada: 0.65%. 
+[23:30:54] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:30:54] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '86.56',
+  emaShort: '490823.43',
+  emaLong: '490546.32',
+  volatility: '0.65',
+  macd: '230.50',
+  signal: '490769.96'
+}
+23:30:54 [TREND INFO] Iniciando análise de tendência externa... 
+23:30:54 [TREND INFO] CoinGecko Score: 52
+23:30:54 [TREND INFO] Binance Score: 60
+23:30:54 [TREND INFO] Fear & Greed Score: 27
+23:30:54 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:31:24.491 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:31:24] [DASHBOARD INFO] RSI calculado: 85.32. 
+[23:31:24] [DASHBOARD INFO] EMA(8) calculada: 490841.19. 
+[23:31:24] [DASHBOARD INFO] EMA(20) calculada: 490581.43. 
+[23:31:24] [DASHBOARD INFO] EMA(12) calculada: 490742.50. 
+[23:31:24] [DASHBOARD INFO] EMA(26) calculada: 490509.01. 
+[23:31:24] [DASHBOARD INFO] EMA(9) calculada: 490833.70. 
+[23:31:24] [DASHBOARD INFO] MACD calculado: MACD=233.49, Signal=490833.70. 
+[23:31:24] [DASHBOARD INFO] Volatilidade calculada: 0.64%. 
+[23:31:24] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:31:24] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '85.32',
+  emaShort: '490841.19',
+  emaLong: '490581.43',
+  volatility: '0.64',
+  macd: '233.49',
+  signal: '490833.70'
+}
+23:31:24 [TREND INFO] Iniciando análise de tendência externa... 
+23:31:25 [TREND INFO] CoinGecko Score: 52
+23:31:25 [TREND INFO] Binance Score: 70
+23:31:25 [TREND INFO] Fear & Greed Score: 27
+23:31:25 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:31:59.318 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:31:59] [DASHBOARD INFO] RSI calculado: 86.87. 
+[23:31:59] [DASHBOARD INFO] EMA(8) calculada: 490868.71. 
+[23:31:59] [DASHBOARD INFO] EMA(20) calculada: 490618.03. 
+[23:31:59] [DASHBOARD INFO] EMA(12) calculada: 490776.73. 
+[23:31:59] [DASHBOARD INFO] EMA(26) calculada: 490547.72. 
+[23:31:59] [DASHBOARD INFO] EMA(9) calculada: 490863.38. 
+[23:31:59] [DASHBOARD INFO] MACD calculado: MACD=229.01, Signal=490863.38. 
+[23:31:59] [DASHBOARD INFO] Volatilidade calculada: 0.63%. 
+[23:31:59] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:31:59] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '86.87',
+  emaShort: '490868.71',
+  emaLong: '490618.03',
+  volatility: '0.63',
+  macd: '229.01',
+  signal: '490863.38'
+}
+23:31:59 [TREND INFO] Iniciando análise de tendência externa... 
+23:31:59 [TREND INFO] CoinGecko Score: 52
+23:31:59 [TREND INFO] Binance Score: 70
+23:31:59 [TREND INFO] Fear & Greed Score: 27
+23:31:59 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:32:29.415 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:32:29] [DASHBOARD INFO] RSI calculado: 88.39. 
+[23:32:29] [DASHBOARD INFO] EMA(8) calculada: 490931.65. 
+[23:32:29] [DASHBOARD INFO] EMA(20) calculada: 490660.93. 
+[23:32:29] [DASHBOARD INFO] EMA(12) calculada: 490831.92. 
+[23:32:29] [DASHBOARD INFO] EMA(26) calculada: 490586.77. 
+[23:32:29] [DASHBOARD INFO] EMA(9) calculada: 490904.41. 
+[23:32:29] [DASHBOARD INFO] MACD calculado: MACD=245.15, Signal=490904.41. 
+[23:32:29] [DASHBOARD INFO] Volatilidade calculada: 0.63%. 
+[23:32:29] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:32:29] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '88.39',
+  emaShort: '490931.65',
+  emaLong: '490660.93',
+  volatility: '0.63',
+  macd: '245.15',
+  signal: '490904.41'
+}
+23:32:29 [TREND INFO] Iniciando análise de tendência externa... 
+23:32:29 [TREND INFO] CoinGecko Score: 52
+23:32:29 [TREND INFO] Binance Score: 70
+23:32:29 [TREND INFO] Fear & Greed Score: 27
+23:32:29 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:33:04.519 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:33:04] [DASHBOARD INFO] RSI calculado: 71.83. 
+[23:33:04] [DASHBOARD INFO] EMA(8) calculada: 490909.47. 
+[23:33:04] [DASHBOARD INFO] EMA(20) calculada: 490683.37. 
+[23:33:04] [DASHBOARD INFO] EMA(12) calculada: 490881.59. 
+[23:33:04] [DASHBOARD INFO] EMA(26) calculada: 490601.14. 
+[23:33:04] [DASHBOARD INFO] EMA(9) calculada: 490920.71. 
+[23:33:04] [DASHBOARD INFO] MACD calculado: MACD=280.46, Signal=490920.71. 
+[23:33:04] [DASHBOARD INFO] Volatilidade calculada: 0.68%. 
+[23:33:04] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:33:04] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '71.83',
+  emaShort: '490909.47',
+  emaLong: '490683.37',
+  volatility: '0.68',
+  macd: '280.46',
+  signal: '490920.71'
+}
+23:33:04 [TREND INFO] Iniciando análise de tendência externa... 
+23:33:05 [TREND INFO] CoinGecko Score: 52
+23:33:05 [TREND INFO] Binance Score: 60
+23:33:05 [TREND INFO] Fear & Greed Score: 27
+23:33:05 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:33:34.313 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:33:34] [DASHBOARD INFO] RSI calculado: 64.16. 
+[23:33:34] [DASHBOARD INFO] EMA(8) calculada: 490925.14. 
+[23:33:34] [DASHBOARD INFO] EMA(20) calculada: 490712.03. 
+[23:33:34] [DASHBOARD INFO] EMA(12) calculada: 490900.17. 
+[23:33:34] [DASHBOARD INFO] EMA(26) calculada: 490629.20. 
+[23:33:34] [DASHBOARD INFO] EMA(9) calculada: 490918.95. 
+[23:33:34] [DASHBOARD INFO] MACD calculado: MACD=270.97, Signal=490918.95. 
+[23:33:34] [DASHBOARD INFO] Volatilidade calculada: 0.68%. 
+[23:33:34] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:33:34] [DASHBOARD INFO] Previsão de preço {
+  trend: 'neutral',
+  confidence: '1.00',
+  expectedProfit: '0.67',
+  rsi: '64.16',
+  emaShort: '490925.14',
+  emaLong: '490712.03',
+  volatility: '0.68',
+  macd: '270.97',
+  signal: '490918.95'
+}
+23:33:34 [TREND INFO] Iniciando análise de tendência externa... 
+23:33:34 [TREND INFO] CoinGecko Score: 52
+23:33:34 [TREND INFO] Binance Score: 70
+23:33:34 [TREND INFO] Fear & Greed Score: 27
+23:33:34 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:34:09.118 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:34:09] [DASHBOARD INFO] RSI calculado: 44.03. 
+[23:34:09] [DASHBOARD INFO] EMA(8) calculada: 490865.18. 
+[23:34:09] [DASHBOARD INFO] EMA(20) calculada: 490736.94. 
+[23:34:09] [DASHBOARD INFO] EMA(12) calculada: 490862.68. 
+[23:34:09] [DASHBOARD INFO] EMA(26) calculada: 490631.22. 
+[23:34:09] [DASHBOARD INFO] EMA(9) calculada: 490866.46. 
+[23:34:09] [DASHBOARD INFO] MACD calculado: MACD=231.46, Signal=490866.46. 
+[23:34:09] [DASHBOARD INFO] Volatilidade calculada: 0.82%. 
+[23:34:09] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:34:09] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '44.03',
+  emaShort: '490865.18',
+  emaLong: '490736.94',
+  volatility: '0.82',
+  macd: '231.46',
+  signal: '490866.46'
+}
+23:34:09 [TREND INFO] Iniciando análise de tendência externa... 
+23:34:09 [TREND INFO] CoinGecko Score: 52
+23:34:09 [TREND INFO] Binance Score: 60
+23:34:09 [TREND INFO] Fear & Greed Score: 27
+23:34:09 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:34:42.816 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:34:42] [DASHBOARD INFO] RSI calculado: 44.11. 
+[23:34:42] [DASHBOARD INFO] EMA(8) calculada: 490824.49. 
+[23:34:42] [DASHBOARD INFO] EMA(20) calculada: 490728.54. 
+[23:34:42] [DASHBOARD INFO] EMA(12) calculada: 490849.85. 
+[23:34:42] [DASHBOARD INFO] EMA(26) calculada: 490635.78. 
+[23:34:42] [DASHBOARD INFO] EMA(9) calculada: 490824.50. 
+[23:34:42] [DASHBOARD INFO] MACD calculado: MACD=214.07, Signal=490824.50. 
+[23:34:42] [DASHBOARD INFO] Volatilidade calculada: 0.81%. 
+[23:34:42] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:34:42] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '44.11',
+  emaShort: '490824.49',
+  emaLong: '490728.54',
+  volatility: '0.81',
+  macd: '214.07',
+  signal: '490824.50'
+}
+23:34:42 [TREND INFO] Iniciando análise de tendência externa... 
+23:34:43 [TREND INFO] CoinGecko Score: 52
+23:34:43 [TREND INFO] Binance Score: 60
+23:34:43 [TREND INFO] Fear & Greed Score: 27
+23:34:43 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:35:12.815 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:35:12] [DASHBOARD INFO] RSI calculado: 36.18. 
+[23:35:12] [DASHBOARD INFO] EMA(8) calculada: 490792.25. 
+[23:35:12] [DASHBOARD INFO] EMA(20) calculada: 490734.88. 
+[23:35:12] [DASHBOARD INFO] EMA(12) calculada: 490807.35. 
+[23:35:12] [DASHBOARD INFO] EMA(26) calculada: 490637.82. 
+[23:35:12] [DASHBOARD INFO] EMA(9) calculada: 490797.47. 
+[23:35:12] [DASHBOARD INFO] MACD calculado: MACD=169.53, Signal=490797.47. 
+[23:35:12] [DASHBOARD INFO] Volatilidade calculada: 0.79%. 
+[23:35:12] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:35:12] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '36.18',
+  emaShort: '490792.25',
+  emaLong: '490734.88',
+  volatility: '0.79',
+  macd: '169.53',
+  signal: '490797.47'
+}
+23:35:12 [TREND INFO] Iniciando análise de tendência externa... 
+23:35:13 [TREND INFO] CoinGecko Score: 52
+23:35:13 [TREND INFO] Binance Score: 60
+23:35:13 [TREND INFO] Fear & Greed Score: 27
+23:35:13 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:35:42.816 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:35:42] [DASHBOARD INFO] RSI calculado: 37.40. 
+[23:35:42] [DASHBOARD INFO] EMA(8) calculada: 490758.06. 
+[23:35:42] [DASHBOARD INFO] EMA(20) calculada: 490721.14. 
+[23:35:42] [DASHBOARD INFO] EMA(12) calculada: 490774.22. 
+[23:35:42] [DASHBOARD INFO] EMA(26) calculada: 490634.43. 
+[23:35:42] [DASHBOARD INFO] EMA(9) calculada: 490760.13. 
+[23:35:42] [DASHBOARD INFO] MACD calculado: MACD=139.79, Signal=490760.13. 
+[23:35:42] [DASHBOARD INFO] Volatilidade calculada: 0.79%. 
+[23:35:42] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:35:42] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '37.40',
+  emaShort: '490758.06',
+  emaLong: '490721.14',
+  volatility: '0.79',
+  macd: '139.79',
+  signal: '490760.13'
+}
+23:35:42 [TREND INFO] Iniciando análise de tendência externa... 
+23:35:43 [TREND INFO] CoinGecko Score: 52
+23:35:43 [TREND INFO] Binance Score: 60
+23:35:43 [TREND INFO] Fear & Greed Score: 27
+23:35:43 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:36:13.011 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:36:13] [DASHBOARD INFO] RSI calculado: 38.52. 
+[23:36:13] [DASHBOARD INFO] EMA(8) calculada: 490738.68. 
+[23:36:13] [DASHBOARD INFO] EMA(20) calculada: 490710.41. 
+[23:36:13] [DASHBOARD INFO] EMA(12) calculada: 490748.46. 
+[23:36:13] [DASHBOARD INFO] EMA(26) calculada: 490632.85. 
+[23:36:13] [DASHBOARD INFO] EMA(9) calculada: 490740.14. 
+[23:36:13] [DASHBOARD INFO] MACD calculado: MACD=115.61, Signal=490740.14. 
+[23:36:13] [DASHBOARD INFO] Volatilidade calculada: 0.78%. 
+[23:36:13] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:36:13] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '38.52',
+  emaShort: '490738.68',
+  emaLong: '490710.41',
+  volatility: '0.78',
+  macd: '115.61',
+  signal: '490740.14'
+}
+23:36:13 [TREND INFO] Iniciando análise de tendência externa... 
+23:36:13 [TREND INFO] CoinGecko Score: 52
+23:36:13 [TREND INFO] Binance Score: 60
+23:36:13 [TREND INFO] Fear & Greed Score: 27
+23:36:13 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:36:43.017 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:36:43] [DASHBOARD INFO] RSI calculado: 43.02. 
+[23:36:43] [DASHBOARD INFO] EMA(8) calculada: 490702.25. 
+[23:36:43] [DASHBOARD INFO] EMA(20) calculada: 490717.90. 
+[23:36:43] [DASHBOARD INFO] EMA(12) calculada: 490743.39. 
+[23:36:43] [DASHBOARD INFO] EMA(26) calculada: 490636.78. 
+[23:36:43] [DASHBOARD INFO] EMA(9) calculada: 490742.10. 
+[23:36:43] [DASHBOARD INFO] MACD calculado: MACD=106.61, Signal=490742.10. 
+[23:36:43] [DASHBOARD INFO] Volatilidade calculada: 0.77%. 
+[23:36:43] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:36:43] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '43.02',
+  emaShort: '490702.25',
+  emaLong: '490717.90',
+  volatility: '0.77',
+  macd: '106.61',
+  signal: '490742.10'
+}
+23:36:43 [TREND INFO] Iniciando análise de tendência externa... 
+23:36:43 [TREND INFO] CoinGecko Score: 52
+23:36:43 [TREND INFO] Binance Score: 60
+23:36:43 [TREND INFO] Fear & Greed Score: 27
+23:36:43 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:37:18.160 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:37:18] [DASHBOARD INFO] RSI calculado: 40.54. 
+[23:37:18] [DASHBOARD INFO] EMA(8) calculada: 490708.51. 
+[23:37:18] [DASHBOARD INFO] EMA(20) calculada: 490754.50. 
+[23:37:18] [DASHBOARD INFO] EMA(12) calculada: 490737.10. 
+[23:37:18] [DASHBOARD INFO] EMA(26) calculada: 490670.05. 
+[23:37:18] [DASHBOARD INFO] EMA(9) calculada: 490705.73. 
+[23:37:18] [DASHBOARD INFO] MACD calculado: MACD=67.05, Signal=490705.73. 
+[23:37:18] [DASHBOARD INFO] Volatilidade calculada: 0.76%. 
+[23:37:18] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:37:18] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '40.54',
+  emaShort: '490708.51',
+  emaLong: '490754.50',
+  volatility: '0.76',
+  macd: '67.05',
+  signal: '490705.73'
+}
+23:37:18 [TREND INFO] Iniciando análise de tendência externa... 
+23:37:18 [TREND INFO] CoinGecko Score: 52
+23:37:18 [TREND INFO] Binance Score: 60
+23:37:18 [TREND INFO] Fear & Greed Score: 27
+23:37:18 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:37:48.534 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:37:48] [DASHBOARD INFO] RSI calculado: 38.79. 
+[23:37:48] [DASHBOARD INFO] EMA(8) calculada: 490658.52. 
+[23:37:48] [DASHBOARD INFO] EMA(20) calculada: 490750.70. 
+[23:37:48] [DASHBOARD INFO] EMA(12) calculada: 490738.46. 
+[23:37:48] [DASHBOARD INFO] EMA(26) calculada: 490669.80. 
+[23:37:48] [DASHBOARD INFO] EMA(9) calculada: 490711.96. 
+[23:37:48] [DASHBOARD INFO] MACD calculado: MACD=68.66, Signal=490711.96. 
+[23:37:48] [DASHBOARD INFO] Volatilidade calculada: 0.75%. 
+[23:37:48] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:37:48] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '38.79',
+  emaShort: '490658.52',
+  emaLong: '490750.70',
+  volatility: '0.75',
+  macd: '68.66',
+  signal: '490711.96'
+}
+23:37:48 [TREND INFO] Iniciando análise de tendência externa... 
+23:37:49 [TREND INFO] CoinGecko Score: 52
+23:37:49 [TREND INFO] Binance Score: 60
+23:37:49 [TREND INFO] Fear & Greed Score: 27
+23:37:49 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:38:21.824 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:38:21] [DASHBOARD INFO] RSI calculado: 41.33. 
+[23:38:21] [DASHBOARD INFO] EMA(8) calculada: 490689.27. 
+[23:38:21] [DASHBOARD INFO] EMA(20) calculada: 490755.02. 
+[23:38:21] [DASHBOARD INFO] EMA(12) calculada: 490761.25. 
+[23:38:21] [DASHBOARD INFO] EMA(26) calculada: 490691.79. 
+[23:38:21] [DASHBOARD INFO] EMA(9) calculada: 490685.35. 
+[23:38:21] [DASHBOARD INFO] MACD calculado: MACD=69.46, Signal=490685.35. 
+[23:38:21] [DASHBOARD INFO] Volatilidade calculada: 0.75%. 
+[23:38:21] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:38:21] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '41.33',
+  emaShort: '490689.27',
+  emaLong: '490755.02',
+  volatility: '0.75',
+  macd: '69.46',
+  signal: '490685.35'
+}
+23:38:21 [TREND INFO] Iniciando análise de tendência externa... 
+23:38:22 [TREND INFO] CoinGecko Score: 52
+23:38:22 [TREND INFO] Binance Score: 60
+23:38:22 [TREND INFO] Fear & Greed Score: 27
+23:38:22 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:38:57.429 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:38:57] [DASHBOARD INFO] RSI calculado: 32.79. 
+[23:38:57] [DASHBOARD INFO] EMA(8) calculada: 490704.26. 
+[23:38:57] [DASHBOARD INFO] EMA(20) calculada: 490773.63. 
+[23:38:57] [DASHBOARD INFO] EMA(12) calculada: 490736.50. 
+[23:38:57] [DASHBOARD INFO] EMA(26) calculada: 490696.26. 
+[23:38:57] [DASHBOARD INFO] EMA(9) calculada: 490699.28. 
+[23:38:57] [DASHBOARD INFO] MACD calculado: MACD=40.23, Signal=490699.28. 
+[23:38:57] [DASHBOARD INFO] Volatilidade calculada: 0.75%. 
+[23:38:57] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:38:57] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '32.79',
+  emaShort: '490704.26',
+  emaLong: '490773.63',
+  volatility: '0.75',
+  macd: '40.23',
+  signal: '490699.28'
+}
+23:38:57 [TREND INFO] Iniciando análise de tendência externa... 
+23:38:58 [TREND INFO] CoinGecko Score: 52
+23:38:58 [TREND INFO] Binance Score: 60
+23:38:58 [TREND INFO] Fear & Greed Score: 27
+23:38:58 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:39:31.313 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:39:31] [DASHBOARD INFO] RSI calculado: 44.14. 
+[23:39:31] [DASHBOARD INFO] EMA(8) calculada: 490716.32. 
+[23:39:31] [DASHBOARD INFO] EMA(20) calculada: 490762.53. 
+[23:39:31] [DASHBOARD INFO] EMA(12) calculada: 490758.14. 
+[23:39:31] [DASHBOARD INFO] EMA(26) calculada: 490704.02. 
+[23:39:31] [DASHBOARD INFO] EMA(9) calculada: 490720.23. 
+[23:39:31] [DASHBOARD INFO] MACD calculado: MACD=54.12, Signal=490720.23. 
+[23:39:31] [DASHBOARD INFO] Volatilidade calculada: 0.74%. 
+[23:39:31] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:39:31] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '44.14',
+  emaShort: '490716.32',
+  emaLong: '490762.53',
+  volatility: '0.74',
+  macd: '54.12',
+  signal: '490720.23'
+}
+23:39:31 [TREND INFO] Iniciando análise de tendência externa... 
+23:39:32 [TREND INFO] CoinGecko Score: 52
+23:39:32 [TREND INFO] Binance Score: 70
+23:39:32 [TREND INFO] Fear & Greed Score: 27
+23:39:32 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:40:01.542 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:40:01] [DASHBOARD INFO] RSI calculado: 35.19. 
+[23:40:01] [DASHBOARD INFO] EMA(8) calculada: 490728.57. 
+[23:40:01] [DASHBOARD INFO] EMA(20) calculada: 490762.43. 
+[23:40:01] [DASHBOARD INFO] EMA(12) calculada: 490715.08. 
+[23:40:01] [DASHBOARD INFO] EMA(26) calculada: 490718.62. 
+[23:40:01] [DASHBOARD INFO] EMA(9) calculada: 490719.02. 
+[23:40:01] [DASHBOARD INFO] MACD calculado: MACD=-3.54, Signal=490719.02. 
+[23:40:01] [DASHBOARD INFO] Volatilidade calculada: 0.73%. 
+[23:40:01] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:40:01] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '35.19',
+  emaShort: '490728.57',
+  emaLong: '490762.43',
+  volatility: '0.73',
+  macd: '-3.54',
+  signal: '490719.02'
+}
+23:40:01 [TREND INFO] Iniciando análise de tendência externa... 
+23:40:02 [TREND INFO] CoinGecko Score: 52
+23:40:02 [TREND INFO] Binance Score: 60
+23:40:02 [TREND INFO] Fear & Greed Score: 27
+23:40:02 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:40:36.273 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:40:36] [DASHBOARD INFO] RSI calculado: 63.65. 
+[23:40:36] [DASHBOARD INFO] EMA(8) calculada: 490747.97. 
+[23:40:36] [DASHBOARD INFO] EMA(20) calculada: 490763.12. 
+[23:40:36] [DASHBOARD INFO] EMA(12) calculada: 490724.11. 
+[23:40:36] [DASHBOARD INFO] EMA(26) calculada: 490763.04. 
+[23:40:36] [DASHBOARD INFO] EMA(9) calculada: 490731.93. 
+[23:40:36] [DASHBOARD INFO] MACD calculado: MACD=-38.92, Signal=490731.93. 
+[23:40:36] [DASHBOARD INFO] Volatilidade calculada: 0.73%. 
+[23:40:36] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:40:36] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '63.65',
+  emaShort: '490747.97',
+  emaLong: '490763.12',
+  volatility: '0.73',
+  macd: '-38.92',
+  signal: '490731.93'
+}
+23:40:36 [TREND INFO] Iniciando análise de tendência externa... 
+23:40:36 [TREND INFO] CoinGecko Score: 52
+23:40:36 [TREND INFO] Binance Score: 70
+23:40:36 [TREND INFO] Fear & Greed Score: 27
+23:40:36 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:41:11.370 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:41:11] [DASHBOARD INFO] RSI calculado: 53.11. 
+[23:41:11] [DASHBOARD INFO] EMA(8) calculada: 490734.64. 
+[23:41:11] [DASHBOARD INFO] EMA(20) calculada: 490761.51. 
+[23:41:11] [DASHBOARD INFO] EMA(12) calculada: 490719.40. 
+[23:41:11] [DASHBOARD INFO] EMA(26) calculada: 490761.04. 
+[23:41:11] [DASHBOARD INFO] EMA(9) calculada: 490733.11. 
+[23:41:11] [DASHBOARD INFO] MACD calculado: MACD=-41.64, Signal=490733.11. 
+[23:41:11] [DASHBOARD INFO] Volatilidade calculada: 0.73%. 
+[23:41:11] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:41:11] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '53.11',
+  emaShort: '490734.64',
+  emaLong: '490761.51',
+  volatility: '0.73',
+  macd: '-41.64',
+  signal: '490733.11'
+}
+23:41:11 [TREND INFO] Iniciando análise de tendência externa... 
+23:41:11 [TREND INFO] CoinGecko Score: 52
+23:41:11 [TREND INFO] Binance Score: 60
+23:41:11 [TREND INFO] Fear & Greed Score: 27
+23:41:11 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":50,"confidence":100}
+23:41:42.044 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:41:42] [DASHBOARD INFO] RSI calculado: 58.15. 
+[23:41:42] [DASHBOARD INFO] EMA(8) calculada: 490739.23. 
+[23:41:42] [DASHBOARD INFO] EMA(20) calculada: 490764.67. 
+[23:41:42] [DASHBOARD INFO] EMA(12) calculada: 490715.38. 
+[23:41:42] [DASHBOARD INFO] EMA(26) calculada: 490760.59. 
+[23:41:42] [DASHBOARD INFO] EMA(9) calculada: 490737.15. 
+[23:41:42] [DASHBOARD INFO] MACD calculado: MACD=-45.21, Signal=490737.15. 
+[23:41:42] [DASHBOARD INFO] Volatilidade calculada: 0.72%. 
+[23:41:42] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:41:42] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '58.15',
+  emaShort: '490739.23',
+  emaLong: '490764.67',
+  volatility: '0.72',
+  macd: '-45.21',
+  signal: '490737.15'
+}
+23:41:42 [TREND INFO] Iniciando análise de tendência externa... 
+23:41:42 [TREND INFO] CoinGecko Score: 52
+23:41:42 [TREND INFO] Binance Score: 70
+23:41:42 [TREND INFO] Fear & Greed Score: 27
+23:41:42 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}
+23:42:12.569 [INFO]   [DB] Estatísticas consultadas (últimas 24h): | {"cycles":0,"total_orders":100,"filled_orders":0,"cancelled_orders":94,"total_pnl":0,"avg_fill_value":0,"avg_spread":1.5...
+[23:42:12] [DASHBOARD INFO] RSI calculado: 68.49. 
+[23:42:12] [DASHBOARD INFO] EMA(8) calculada: 490765.81. 
+[23:42:12] [DASHBOARD INFO] EMA(20) calculada: 490777.30. 
+[23:42:12] [DASHBOARD INFO] EMA(12) calculada: 490728.77. 
+[23:42:12] [DASHBOARD INFO] EMA(26) calculada: 490781.35. 
+[23:42:12] [DASHBOARD INFO] EMA(9) calculada: 490747.39. 
+[23:42:12] [DASHBOARD INFO] MACD calculado: MACD=-52.57, Signal=490747.39. 
+[23:42:12] [DASHBOARD INFO] Volatilidade calculada: 0.71%. 
+[23:42:12] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[23:42:12] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '68.49',
+  emaShort: '490765.81',
+  emaLong: '490777.30',
+  volatility: '0.71',
+  macd: '-52.57',
+  signal: '490747.39'
+}
+23:42:12 [TREND INFO] Iniciando análise de tendência externa... 
+23:42:13 [TREND INFO] CoinGecko Score: 52
+23:42:13 [TREND INFO] Binance Score: 70
+23:42:13 [TREND INFO] Fear & Greed Score: 27
+23:42:13 [TREND SUCCESS] Análise externa concluída: {"trend":"NEUTRAL","score":54,"confidence":100}

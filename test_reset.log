@@ -1,0 +1,11 @@
+nohup: ignoring input
+GET /api/recovery
+Active before: 12 baseline=-196.31
+Computed current pnl from last point: -196.27
+POST /api/recovery/reset
+Reset response: {
+  success: true,
+  message: 'Baseline resetado para o pior valor atingido. Sessão permanece ativa.'
+}
+Active after: 12 baseline=-196.31
+FAIL: Baseline -196.31 != current -196.27

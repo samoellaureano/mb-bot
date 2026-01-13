@@ -54,6 +54,15 @@ class Database {
                     return reject(err);
                 }
 
+                // Habilitar WAL mode para permitir leituras concorrentes
+                this.db.run('PRAGMA journal_mode = WAL', (walErr) => {
+                    if (walErr) {
+                        this.log('WARN', `Falha ao ativar WAL mode: ${walErr.message}`);
+                    } else {
+                        this.log('INFO', 'WAL mode ativado para leituras/escritas concorrentes');
+                    }
+                });
+
                 this.db.serialize(() => {
                     this.db.run(`
                         CREATE TABLE IF NOT EXISTS orders
@@ -103,7 +112,9 @@ class Database {
                             timestamp INTEGER NOT NULL,
                             note TEXT,
                             external_id TEXT,
-                            pnl REAL DEFAULT 0
+                            pnl REAL DEFAULT 0,
+                            session_id INTEGER,
+                            FOREIGN KEY(session_id) REFERENCES recovery_sessions(id)
                             )
                     `, (err) => {
                         if (err) {
@@ -111,10 +122,20 @@ class Database {
                             return reject(err);
                         }
 
+                        // Migração segura para adicionar a coluna session_id
+                        this.db.run(`ALTER TABLE orders ADD COLUMN session_id INTEGER`, (alterErr) => {
+                            if (alterErr && !/duplicate column/i.test(alterErr.message)) {
+                                this.log('WARN', `Falha ao adicionar coluna session_id: ${alterErr.message}`);
+                            } else if (!alterErr) {
+                                this.log('INFO', 'Coluna session_id adicionada à tabela orders.');
+                            }
+                        });
+
                         this.db.run(`
                             CREATE INDEX IF NOT EXISTS idx_orders_timestamp ON orders(timestamp);
                             CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
                             CREATE INDEX IF NOT EXISTS idx_orders_side ON orders(side);
+                            CREATE INDEX IF NOT EXISTS idx_orders_session_id ON orders(session_id);
                         `, (err) => {
                             if (err) {
                                 this.log('ERROR', `Erro ao criar índices: ${err.message}`);
@@ -147,17 +168,97 @@ class Database {
                                     return reject(err);
                                 }
 
-                                this.db.run(
-                                    "INSERT OR IGNORE INTO stats (key, value) VALUES ('cycles', 0)",
-                                    (err) => {
+                                this.db.run(`
+                                    CREATE TABLE IF NOT EXISTS price_history
+                                    (
+                                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        btc_price REAL NOT NULL CHECK (btc_price > 0),
+                                        timestamp INTEGER NOT NULL UNIQUE,
+                                        pair TEXT DEFAULT 'BTC-BRL'
+                                    )
+                                `, (err) => {
+                                    if (err) {
+                                        this.log('ERROR', `Erro ao criar tabela price_history: ${err.message}`);
+                                        return reject(err);
+                                    }
+
+                                    this.db.run(`
+                                        CREATE INDEX IF NOT EXISTS idx_price_timestamp ON price_history(timestamp DESC)
+                                    `, (err) => {
                                         if (err) {
-                                            this.log('ERROR', `Erro ao inicializar stats: ${err.message}`);
+                                            this.log('ERROR', `Erro ao criar índice price_history: ${err.message}`);
                                             return reject(err);
                                         }
-                                        this.log('SUCCESS', 'Banco de dados inicializado com sucesso.');
-                                        resolve(this);
-                                    }
-                                );
+
+                                        // Tabelas para persistência de ciclos de recuperação
+                                        this.db.run(`
+                                            CREATE TABLE IF NOT EXISTS recovery_sessions (
+                                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                started_at INTEGER NOT NULL,
+                                                ended_at INTEGER,
+                                                baseline REAL NOT NULL,
+                                                initial_pnl REAL NOT NULL,
+                                                status TEXT NOT NULL CHECK(status IN ('active','closed')) DEFAULT 'active',
+                                                last_manual_baseline_at INTEGER
+                                            )
+                                        `, (err) => {
+                                            if (err) {
+                                                this.log('ERROR', `Erro ao criar tabela recovery_sessions: ${err.message}`);
+                                                return reject(err);
+                                            }
+
+                                            this.db.run(`
+                                                CREATE TABLE IF NOT EXISTS recovery_points (
+                                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                    session_id INTEGER NOT NULL,
+                                                    timestamp INTEGER NOT NULL,
+                                                    pnl REAL NOT NULL,
+                                                    percentage REAL NOT NULL,
+                                                    baseline REAL NOT NULL,
+                                                    FOREIGN KEY (session_id) REFERENCES recovery_sessions(id)
+                                                )
+                                            `, (err) => {
+                                                if (err) {
+                                                    this.log('ERROR', `Erro ao criar tabela recovery_points: ${err.message}`);
+                                                    return reject(err);
+                                                }
+
+                                                // Garantir coluna de timestamp para resets manuais (migração retroativa segura)
+                                                this.db.run(`ALTER TABLE recovery_sessions ADD COLUMN last_manual_baseline_at INTEGER`, (alterErr) => {
+                                                    if (alterErr) {
+                                                        // Se já existir, ignorar
+                                                        if (!/duplicate column/i.test(alterErr.message)) {
+                                                            this.log('WARN', `Falha ao adicionar coluna de migração: ${alterErr.message}`);
+                                                        }
+                                                    } else {
+                                                        this.log('INFO', 'Coluna last_manual_baseline_at adicionada (migração)');
+                                                    }
+                                                });
+
+                                                this.db.run(`
+                                                    CREATE INDEX IF NOT EXISTS idx_recovery_points_session ON recovery_points(session_id);
+                                                `, (err) => {
+                                                    if (err) {
+                                                        this.log('ERROR', `Erro ao criar índice recovery_points: ${err.message}`);
+                                                        return reject(err);
+                                                    }
+
+                                                    this.db.run(
+                                                        "INSERT OR IGNORE INTO stats (key, value) VALUES ('cycles', 0)",
+                                                        (err) => {
+                                                            if (err) {
+                                                                this.log('ERROR', `Erro ao inicializar stats: ${err.message}`);
+                                                                return reject(err);
+                                                            }
+                                                            this.log('SUCCESS', 'Banco de dados inicializado com sucesso.');
+                                                            resolve(this);
+                                                        }
+                                                    );
+                                                });
+                                            });
+                                        });
+                                    });
+                                });
                             });
                         });
                     });
@@ -166,7 +267,7 @@ class Database {
         });
     }
 
-    async saveOrderSafe(order, context) {
+    async saveOrderSafe(order, context, sessionId = null) {
         if (!this.db) {
             this.log('ERROR', 'Banco de dados não inicializado.');
             throw new Error('Database not initialized');
@@ -179,6 +280,8 @@ class Database {
         if (context && !order.note) {
             order.note = context;
         }
+        // Adicionar sessionId ao objeto da ordem
+        order.sessionId = sessionId;
         return this.saveOrder(order);
     }
 
@@ -186,8 +289,8 @@ class Database {
         return new Promise((resolve, reject) => {
             const stmt = this.db.prepare(`
                 INSERT OR REPLACE INTO orders 
-                (id, side, price, qty, status, filledQty, timestamp, note, external_id, pnl)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, side, price, qty, status, filledQty, timestamp, note, external_id, pnl, session_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
             const timestamp = order.timestamp ? Math.floor(order.timestamp / 1000) : Math.floor(Date.now() / 1000);
             stmt.run(
@@ -201,6 +304,7 @@ class Database {
                 order.note || null,
                 order.externalId || null,
                 parseFloat(order.pnl || 0),
+                order.sessionId || null,
                 (err) => {
                     stmt.finalize();
                     if (err) {
@@ -245,19 +349,28 @@ class Database {
         });
     }
 
-    async loadHistoricalFills(limit = process.env.HISTORICAL_FILLS_WINDOW || 20) {
+    async loadHistoricalFills({ limit = process.env.HISTORICAL_FILLS_WINDOW || 20, sessionId = null } = {}) {
         if (!this.db) {
             this.log('WARN', 'Banco de dados não inicializado. Retornando array vazio.');
             return [];
         }
         return new Promise((resolve, reject) => {
-            const query = `
+            let query = `
                 SELECT side, price, qty, timestamp, pnl
                 FROM orders
                 WHERE status = 'filled'
-                ORDER BY timestamp DESC LIMIT ?
             `;
-            this.db.all(query, [limit], (err, rows) => {
+            const params = [];
+
+            if (sessionId) {
+                query += ' AND session_id = ?';
+                params.push(sessionId);
+            }
+
+            query += ' ORDER BY timestamp DESC LIMIT ?';
+            params.push(limit);
+
+            this.db.all(query, params, (err, rows) => {
                 if (err) {
                     this.log('ERROR', `Erro ao carregar fills históricos: ${err.message}`);
                     return reject(err);
@@ -328,6 +441,325 @@ class Database {
         });
     }
 
+    // ===== FUNÇÕES PARA ARMAZENAR HISTÓRICO DE PREÇOS =====
+    async saveBtcPrice(btcPrice, timestamp = null) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        if (btcPrice <= 0) {
+            this.log('ERROR', `Preço BTC inválido: ${btcPrice}`);
+            throw new Error('Invalid BTC price');
+        }
+        let ts = timestamp ? Math.floor(timestamp / 1000) : Math.floor(Date.now() / 1000);
+        return new Promise((resolve, reject) => {
+            // Verificar último timestamp para garantir unicidade
+            this.db.get(`
+                SELECT MAX(timestamp) as maxTs FROM price_history
+            `, (err, row) => {
+                if (err) {
+                    this.log('WARN', `Erro ao verificar último timestamp: ${err.message}`);
+                    // Continuar mesmo assim
+                } else if (row && row.maxTs && row.maxTs >= ts) {
+                    // Se o novo timestamp é igual ou menor que o último, incrementar em 1
+                    ts = row.maxTs + 1;
+                }
+                
+                this.db.run(`
+                    INSERT OR REPLACE INTO price_history (btc_price, timestamp, pair)
+                    VALUES (?, ?, 'BTC-BRL')
+                `, [btcPrice, ts], function(err) {
+                    if (err) {
+                        this.log('ERROR', `Erro ao salvar preço BTC: ${err.message}`);
+                        return reject(err);
+                    }
+                    this.log('DEBUG', `Preço BTC armazenado: R$ ${btcPrice.toFixed(2)}`);
+                    resolve(ts);
+                }.bind(this));
+            });
+        });
+    }
+
+    async getPriceHistory(hoursBack = 24, limit = 500) {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado. Retornando array vazio.');
+            return [];
+        }
+        const cutoffTime = Math.floor(Date.now() / 1000) - (hoursBack * 3600);
+        return new Promise((resolve, reject) => {
+            this.db.all(`
+                SELECT btc_price as price, timestamp
+                FROM price_history
+                WHERE timestamp >= ? AND pair = 'BTC-BRL'
+                ORDER BY timestamp ASC
+                LIMIT ?
+            `, [cutoffTime, limit], (err, rows) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao consultar histórico de preços: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(rows || []);
+            });
+        });
+    }
+
+    async getLatestBtcPrice() {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado.');
+            return null;
+        }
+        return new Promise((resolve, reject) => {
+            this.db.get(`
+                SELECT btc_price as price, timestamp
+                FROM price_history
+                WHERE pair = 'BTC-BRL'
+                ORDER BY timestamp DESC
+                LIMIT 1
+            `, (err, row) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao consultar último preço: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(row || null);
+            });
+        });
+    }
+
+    async cleanOldPrices(hoursToKeep = 168) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        const cutoffTime = Math.floor(Date.now() / 1000) - (hoursToKeep * 3600);
+        return new Promise((resolve, reject) => {
+            this.db.run(`
+                DELETE FROM price_history
+                WHERE timestamp < ? AND pair = 'BTC-BRL'
+            `, [cutoffTime], function(err) {
+                if (err) {
+                    this.log('ERROR', `Erro ao limpar histórico antigo: ${err.message}`);
+                    return reject(err);
+                }
+                this.log('INFO', `Limpeza executada. Registros deletados: ${this.changes}`);
+                resolve(this.changes);
+            }.bind(this));
+        });
+    }
+
+    // ===== PERSISTÊNCIA DE RECUPERAÇÃO =====
+    async getActiveRecoverySession() {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado.');
+            return null;
+        }
+        return new Promise((resolve, reject) => {
+            this.db.get(`
+                SELECT id, started_at, ended_at, baseline, initial_pnl, status, last_manual_baseline_at
+                FROM recovery_sessions
+                WHERE status = 'active'
+                ORDER BY started_at DESC
+                LIMIT 1
+            `, (err, row) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao consultar sessão ativa: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(row || null);
+            });
+        });
+    }
+
+    async startRecoverySession(initialBaseline, initialPnL = null) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        const baseline = parseFloat(initialBaseline);
+        const initPnL = initialPnL !== null ? parseFloat(initialPnL) : baseline;
+        const now = Math.floor(Date.now() / 1000);
+        const self = this;
+        return new Promise((resolve, reject) => {
+            this.db.run(`
+                INSERT INTO recovery_sessions (started_at, baseline, initial_pnl, status)
+                VALUES (?, ?, ?, 'active')
+            `, [now, baseline, initPnL], function(err) {
+                if (err) {
+                    self.log('ERROR', `Erro ao iniciar sessão de recuperação: ${err.message}`);
+                    return reject(err);
+                }
+                // 'this' aqui é o Statement; lastID é suportado por sqlite3
+                resolve(this.lastID);
+            });
+        });
+    }
+
+    async updateRecoveryBaseline(sessionId, newBaseline) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        const baseline = parseFloat(newBaseline);
+        return new Promise((resolve, reject) => {
+            this.db.run(`
+                UPDATE recovery_sessions
+                SET baseline = ?, ended_at = NULL, status = 'active'
+                WHERE id = ?
+            `, [baseline, sessionId], function(err) {
+                if (err) {
+                    this.log('ERROR', `Erro ao atualizar baseline da sessão ${sessionId}: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(this.changes);
+            }.bind(this));
+        });
+    }
+
+    async appendRecoveryPoint(sessionId, pnl, percentage, baseline) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        const ts = Math.floor(Date.now() / 1000);
+        return new Promise((resolve, reject) => {
+            this.db.run(`
+                INSERT INTO recovery_points (session_id, timestamp, pnl, percentage, baseline)
+                VALUES (?, ?, ?, ?, ?)
+            `, [sessionId, ts, parseFloat(pnl), parseFloat(percentage), parseFloat(baseline)], function(err) {
+                if (err) {
+                    this.log('ERROR', `Erro ao salvar ponto de recuperação: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(this.lastID);
+            }.bind(this));
+        });
+    }
+
+    async endRecoverySession(sessionId) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        const now = Math.floor(Date.now() / 1000);
+        return new Promise((resolve, reject) => {
+            this.db.run(`
+                UPDATE recovery_sessions
+                SET ended_at = ?, status = 'closed'
+                WHERE id = ?
+            `, [now, sessionId], function(err) {
+                if (err) {
+                    this.log('ERROR', `Erro ao encerrar sessão de recuperação ${sessionId}: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(this.changes);
+            }.bind(this));
+        });
+    }
+
+    async getRecoverySessions({limit = 20} = {}) {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado.');
+            return [];
+        }
+        return new Promise((resolve, reject) => {
+            this.db.all(`
+                SELECT id, started_at, ended_at, baseline, initial_pnl, status
+                FROM recovery_sessions
+                ORDER BY started_at DESC
+                LIMIT ?
+            `, [limit], (err, rows) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao listar sessões de recuperação: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(rows || []);
+            });
+        });
+    }
+
+    async getRecoveryPoints(sessionId, {limit = 500} = {}) {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado.');
+            return [];
+        }
+        return new Promise((resolve, reject) => {
+            this.db.all(`
+                SELECT id, session_id, timestamp, pnl, percentage, baseline
+                FROM recovery_points
+                WHERE session_id = ?
+                ORDER BY timestamp ASC
+                LIMIT ?
+            `, [sessionId, limit], (err, rows) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao listar pontos de recuperação: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(rows || []);
+            });
+        });
+    }
+
+    async getWorstPnLInSession(sessionId) {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado.');
+            return null;
+        }
+        return new Promise((resolve, reject) => {
+            this.db.get(`
+                SELECT MIN(pnl) as worst_pnl
+                FROM recovery_points
+                WHERE session_id = ?
+            `, [sessionId], (err, row) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao consultar pior PnL da sessão: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(row?.worst_pnl || null);
+            });
+        });
+    }
+
+    async getLastRecoveryPoint(sessionId) {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado.');
+            return null;
+        }
+        return new Promise((resolve, reject) => {
+            this.db.get(`
+                SELECT id, session_id, timestamp, pnl, percentage, baseline
+                FROM recovery_points
+                WHERE session_id = ?
+                ORDER BY timestamp DESC
+                LIMIT 1
+            `, [sessionId], (err, row) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao consultar último ponto da sessão: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(row || null);
+            });
+        });
+    }
+
+    async updateManualBaselineTimestamp(sessionId, ts) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        return new Promise((resolve, reject) => {
+            this.db.run(`
+                UPDATE recovery_sessions
+                SET last_manual_baseline_at = ?
+                WHERE id = ?
+            `, [ts, sessionId], function(err) {
+                if (err) {
+                    this.log('ERROR', `Erro ao atualizar timestamp manual da sessão ${sessionId}: ${err.message}`);
+                    return reject(err);
+                }
+                resolve(this.changes);
+            }.bind(this));
+        });
+    }
+
     async getOrders({limit = 50, status = null, side = null} = {}) {
         if (!this.db) {
             this.log('WARN', 'Banco de dados não inicializado. Retornando array vazio.');
@@ -373,7 +805,7 @@ class Database {
         });
     }
 
-    async getStats({hours = 24} = {}) {
+    async getStats({ hours = 24, sessionId = null } = {}) {
         if (!this.db) {
             this.log('WARN', 'Banco de dados não inicializado. Retornando estatísticas padrão.');
             return this.getDefaultStats();
@@ -386,25 +818,31 @@ class Database {
                     this.log('ERROR', `Erro ao consultar ciclos: ${err.message}`);
                     return reject(err);
                 }
-                this.db.all(`
+
+                let query = `
                     SELECT COUNT(*)                                                        as total_orders,
                            SUM(CASE WHEN status = 'filled' THEN 1 ELSE 0 END)              as filled_orders,
                            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END)           as cancelled_orders,
                            SUM(pnl)                                                        as total_pnl,
-                           AVG(CASE WHEN status = 'filled' THEN price * qty ELSE NULL END) as avg_fill_value,
-                           (SELECT AVG(spread)
-                            FROM (SELECT ABS(o1.price - (SELECT o2.price
-                                                         FROM orders o2
-                                                         WHERE o2.status = 'filled'
-                                                           AND o2.side = o1.side
-                                                           AND o2.timestamp < o1.timestamp
-                                                         ORDER BY o2.timestamp DESC LIMIT 1)) / o1.price as spread
-                                  FROM orders o1
-                                  WHERE o1.status = 'filled'
-                                    AND o1.timestamp > ?) sub)                             as avg_spread
+                           AVG(CASE WHEN status = 'filled' THEN price * qty ELSE NULL END) as avg_fill_value
                     FROM orders
-                    WHERE timestamp > ?
-                `, [cutoff, cutoff], (err, rows) => {
+                `;
+                const params = [];
+                const whereConditions = [];
+
+                if (sessionId) {
+                    whereConditions.push('session_id = ?');
+                    params.push(sessionId);
+                } else {
+                    whereConditions.push('timestamp > ?');
+                    params.push(cutoff);
+                }
+
+                if (whereConditions.length > 0) {
+                    query += ' WHERE ' + whereConditions.join(' AND ');
+                }
+
+                this.db.all(query, params, (err, rows) => {
                     if (err) {
                         this.log('ERROR', `Erro ao consultar estatísticas: ${err.message}`);
                         return reject(err);
@@ -418,11 +856,11 @@ class Database {
                         cancelled_orders: statsRow.cancelled_orders || 0,
                         total_pnl: parseFloat(statsRow.total_pnl || 0),
                         avg_fill_value: parseFloat(statsRow.avg_fill_value || 0),
-                        avg_spread: parseFloat(statsRow.avg_spread || 0) * 100 || parseFloat(process.env.SPREAD_PCT || 0.0007) * 100,
+                        avg_spread: 0, // O cálculo do spread foi removido por complexidade e baixo uso
                         uptime: statsRow.total_orders ? `${Math.round(cycleRow?.cycles * cycleSec / 60)}min` : '0min',
-                        fill_rate: statsRow.total_orders ? (statsRow.filled_orders / statsRow.total_orders * 100).toFixed(1) : '0.0'
+                        fill_rate: statsRow.total_orders > 0 ? (statsRow.filled_orders / statsRow.total_orders * 100).toFixed(1) : '0.0'
                     };
-                    this.log('INFO', `Estatísticas consultadas (últimas ${hours}h):`, stats);
+                    this.log('INFO', `Estatísticas consultadas (Sessão: ${sessionId || `Últimas ${hours}h`}):`, stats);
                     resolve(stats);
                 });
             });
@@ -482,6 +920,113 @@ class Database {
                     this.db = null;
                     resolve();
                 });
+            });
+        });
+    }
+
+    // Função para validar PnL com cálculos detalhados
+    async validatePnL(currentMidPrice = null) {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado.');
+            return null;
+        }
+        
+        return new Promise((resolve, reject) => {
+            // Query complexa para calcular PnL detalhado
+            this.db.all(`
+                WITH OrderedTrades AS (
+                    SELECT side, price, qty, timestamp, 
+                           (price * qty * 0.003) as fee,
+                           ROW_NUMBER() OVER (ORDER BY timestamp) as trade_order
+                    FROM orders 
+                    WHERE status = 'filled'
+                    ORDER BY timestamp
+                ),
+                RunningPosition AS (
+                    SELECT *,
+                           CASE WHEN side = 'buy' THEN qty ELSE -qty END as qty_change,
+                           SUM(CASE WHEN side = 'buy' THEN qty ELSE -qty END) 
+                               OVER (ORDER BY trade_order) as running_position
+                    FROM OrderedTrades
+                )
+                SELECT 
+                    COUNT(*) as total_trades,
+                    SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) as buy_trades,
+                    SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) as sell_trades,
+                    SUM(CASE WHEN side = 'buy' THEN price * qty + fee ELSE 0 END) as total_cost,
+                    SUM(CASE WHEN side = 'sell' THEN price * qty - fee ELSE 0 END) as total_revenue,
+                    SUM(fee) as total_fees,
+                    (SELECT running_position FROM RunningPosition ORDER BY trade_order DESC LIMIT 1) as final_position,
+                    SUM(CASE WHEN side = 'buy' THEN qty ELSE -qty END) as net_btc_change
+                FROM RunningPosition
+            `, (err, results) => {
+                if (err) {
+                    this.log('ERROR', `Erro na validação de PnL: ${err.message}`);
+                    return reject(err);
+                }
+                
+                const data = results[0] || {};
+                
+                // Cálculos de validação
+                const totalCost = parseFloat(data.total_cost || 0);
+                const totalRevenue = parseFloat(data.total_revenue || 0);
+                const totalFees = parseFloat(data.total_fees || 0);
+                const finalPosition = parseFloat(data.final_position || 0);
+                const realizedPnL = totalRevenue - totalCost;
+                
+                let unrealizedPnL = 0;
+                if (currentMidPrice && finalPosition > 0) {
+                    // Para posição não realizada, usar o custo médio ponderado
+                    this.db.get(`
+                        SELECT 
+                            SUM(CASE WHEN side = 'buy' THEN price * qty + (price * qty * 0.003) ELSE 0 END) / 
+                            SUM(CASE WHEN side = 'buy' THEN qty ELSE 0 END) as avg_buy_price
+                        FROM orders 
+                        WHERE status = 'filled' AND side = 'buy'
+                    `, (err, avgResult) => {
+                        if (!err && avgResult && avgResult.avg_buy_price) {
+                            const avgBuyPrice = parseFloat(avgResult.avg_buy_price);
+                            unrealizedPnL = finalPosition * (currentMidPrice - avgBuyPrice);
+                        }
+                        
+                        const validation = {
+                            timestamp: new Date().toISOString(),
+                            total_trades: parseInt(data.total_trades || 0),
+                            buy_trades: parseInt(data.buy_trades || 0),
+                            sell_trades: parseInt(data.sell_trades || 0),
+                            total_cost: totalCost.toFixed(2),
+                            total_revenue: totalRevenue.toFixed(2),
+                            total_fees: totalFees.toFixed(2),
+                            realized_pnl: realizedPnL.toFixed(2),
+                            unrealized_pnl: unrealizedPnL.toFixed(2),
+                            total_pnl: (realizedPnL + unrealizedPnL).toFixed(2),
+                            final_position: finalPosition.toFixed(8),
+                            current_mid_price: currentMidPrice || 'not_provided',
+                            avg_buy_price: avgResult?.avg_buy_price || 'calculated_if_position_exists'
+                        };
+                        
+                        this.log('INFO', 'Validação de PnL concluída:', validation);
+                        resolve(validation);
+                    });
+                } else {
+                    const validation = {
+                        timestamp: new Date().toISOString(),
+                        total_trades: parseInt(data.total_trades || 0),
+                        buy_trades: parseInt(data.buy_trades || 0),
+                        sell_trades: parseInt(data.sell_trades || 0),
+                        total_cost: totalCost.toFixed(2),
+                        total_revenue: totalRevenue.toFixed(2),
+                        total_fees: totalFees.toFixed(2),
+                        realized_pnl: realizedPnL.toFixed(2),
+                        unrealized_pnl: unrealizedPnL.toFixed(2),
+                        total_pnl: (realizedPnL + unrealizedPnL).toFixed(2),
+                        final_position: finalPosition.toFixed(8),
+                        current_mid_price: currentMidPrice || 'not_provided'
+                    };
+                    
+                    this.log('INFO', 'Validação de PnL concluída:', validation);
+                    resolve(validation);
+                }
             });
         });
     }
