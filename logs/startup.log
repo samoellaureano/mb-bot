@@ -1,0 +1,5 @@
+
+> mb-bot@1.0.0 dev
+> concurrently --kill-others "npm:simulate" "npm:dashboard"
+
+Killed

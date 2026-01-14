@@ -336,13 +336,24 @@ async function getLiveData() {
 
         // Buscar ordens do banco de dados SEMPRE para ter acesso ao pair_id
         const localOrders = await db.getOrders({limit: 100}) || [];
-        const localOrderMap = new Map(localOrders.map(o => [o.id, o])); // Map para busca rápida por ID
+        const localOrderMap = new Map(localOrders.filter(o => o.external_id).map(o => [o.external_id, o])); // Map para busca rápida por external_id
 
         if (SIMULATE) {
             // Em modo simulação, usar ordens locais
             ticker = await mbClient.getTicker();
             balances = await mbClient.getBalances();
             orders = localOrders;
+            
+            // Adicionar campos exchange para modo simulação
+            orders = orders.map(order => ({
+                ...order,
+                pair_id: localOrderMap.get(order.external_id)?.pair_id || null,
+                exchangeId: order.external_id || null,
+                exchangeStatus: (!order.external_id || order.external_id === '') && order.status === 'open' 
+                    ? '⏳ Aguardando colocação na exchange' 
+                    : (order.external_id || 'N/A')
+            }));
+            
             orderbook = await mbClient.getOrderBook(10);
             if (DEBUG) log('DEBUG', 'Simulated data fetched', { ticker, balances, ordersCount: orders.length, orderbookKeys: orderbook ? Object.keys(orderbook) : 'null' });
         } else {
@@ -370,8 +381,19 @@ async function getLiveData() {
             // Adicionar pair_id das ordens locais
             orders = orders.map(order => ({
                 ...order,
-                pair_id: localOrderMap.get(order.id)?.pair_id || null
+                pair_id: localOrderMap.get(order.id)?.pair_id || null,
+                exchangeId: order.id,
+                exchangeStatus: order.id
             }));
+
+            // Adicionar ordens locais aguardando colocação
+            const exchangeOrderIds = new Set(orders.map(o => o.id));
+            const awaitingOrders = localOrders.filter(o => o.status === 'open' && (!o.external_id || o.external_id === '') && !exchangeOrderIds.has(o.external_id));
+            orders = [...orders, ...awaitingOrders.map(o => ({
+                ...o,
+                exchangeId: null,
+                exchangeStatus: '⏳ Aguardando colocação na exchange'
+            }))];
 
             try {
                 // Usar API pública para orderbook para evitar problemas de autenticação/rate limit no dashboard
@@ -515,21 +537,29 @@ async function getLiveData() {
         const correctedOrders = orders.map(o => {
             const createdAt = o.created_at ? new Date(o.created_at * 1000).toISOString() : null;
             const updatedAt = o.updated_at ? new Date(o.updated_at * 1000).toISOString() : null;
+            // Verificar se ordem está aguardando colocação na exchange
+            const isAwaitingPlacement = o.status === 'open' && (!o.external_id || o.external_id === '');
             return {
                 id: o.id,
                 side: o.side,
                 price: parseFloat(o.limitPrice || o.price),
                 qty: parseFloat(o.qty),
-                status: o.status,
+                status: o.status === 'working' ? 'open' : o.status,
                 type: o.type,
                 timestamp: createdAt,
                 updated_at: updatedAt,
-                feeRate: o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER, // ADICIONADO
-                pair_id: o.pair_id || null // ADICIONADO: incluir pair_id
+                feeRate: o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER,
+                pair_id: o.pair_id || null,
+                exchangeId: o.external_id || null,
+                exchangeStatus: isAwaitingPlacement ? '⏳ Aguardando colocação na exchange' : (o.external_id || 'N/A')
             };
         });
 
-        const activeOrders = correctedOrders.filter(o => o.status === 'working');
+        const activeOrders = correctedOrders.filter(o => o.status === 'open');
+        
+        // Enriquecer activeOrders com pair_id inteligente para ordens legadas
+        const enrichedActiveOrders = enrichOrdersWithPairId(activeOrders, correctedOrders);
+        
         const buyCost = bid * ORDER_SIZE * (1 + FEE_RATE_MAKER); // ALTERADO: usar ORDER_SIZE e FEE_RATE_MAKER
         const canBuy = balances.find(b => b.symbol === 'BRL')?.available >= buyCost;
         const marketInterest = orderbook.bids[0][1] > ORDER_SIZE * 5 || orderbook.asks[0][1] > ORDER_SIZE * 5;
@@ -588,7 +618,7 @@ async function getLiveData() {
                 buyCost: buyCost.toFixed(2),
                 canBuy
             },
-            activeOrders: activeOrders.map(order => ({
+            activeOrders: enrichedActiveOrders.map(order => ({
                 ...order,
                 ageSecMinHour: order.timestamp ? computeAge(order.timestamp) : null,
                 drift: order.side === 'buy'
@@ -794,41 +824,248 @@ app.post('/api/recovery/reset', async (req, res) => {
     }
 });
 
-// ========== ENDPOINT DE PARES ==========
+// ========== ENDPOINT DE PARES (UNIFICADO) ==========
+// INCLUINDO ORDENS ATIVAS ENRIQUECIDAS + HISTÓRICO
 app.get('/api/pairs', async (req, res) => {
     try {
-        // Consultar BD diretamente
-        const openOrders = await db.getOrders({ status: 'open' });
-        const pairMap = {};
+        // Obter dados do /api/data que inclui ordens ativas enriquecidas em memória
+        const dashData = cache.data || {};
+        const memoryActiveOrders = (dashData.activeOrders || []).map(o => ({
+            id: o.id,
+            side: o.side,
+            price: parseFloat(o.price),
+            qty: parseFloat(o.qty),
+            status: o.status,
+            pair_id: o.pair_id || null
+        }));
         
-        // Agrupar por pair_id
-        for (const order of openOrders) {
-            const pairId = order.pair_id || `PAIR_LEGACY_${order.id}`;
+        // Consultar todas as ordens do banco
+        const bankOrders = await db.getOrders({ limit: 1000 });
+        const correctedBankOrders = bankOrders.map(o => ({
+            id: o.id,
+            side: o.side,
+            price: parseFloat(o.limitPrice || o.price),
+            qty: parseFloat(o.qty),
+            status: o.status,
+            timestamp: o.created_at ? new Date(o.created_at * 1000).toISOString() : null,
+            pair_id: o.pair_id || null
+        }));
+        
+        const pairMap = {};
+        const processedOrders = new Set();
+        
+        // ========== FASE 1: INCLUIR ORDENS ATIVAS DE MEMÓRIA (do /api/data) ==========
+        for (const order of memoryActiveOrders) {
+            if (order.pair_id && order.pair_id.trim() !== '') {
+                const pairId = order.pair_id;
+                if (!pairMap[pairId]) {
+                    pairMap[pairId] = { buyOrder: null, sellOrder: null };
+                }
+                
+                if (order.side.toLowerCase() === 'buy') {
+                    pairMap[pairId].buyOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                } else {
+                    pairMap[pairId].sellOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                }
+                processedOrders.add(order.id);
+            }
+        }
+        
+        // ========== FASE 2: PROCESSAR ORDENS DO BANCO (histórico) ==========
+        const activeOrdersFromBank = correctedBankOrders.filter(o => o.status === 'open');
+        const historicalOrders = correctedBankOrders.filter(o => o.status !== 'open');
+        
+        // Enriquecer ordens ativas do banco que não estão em memória
+        const newActivesFromBank = activeOrdersFromBank.filter(o => !processedOrders.has(o.id));
+        const enrichedNewActives = enrichOrdersWithPairId(newActivesFromBank, correctedBankOrders);
+        
+        for (const order of enrichedNewActives) {
+            if (order.pair_id && order.pair_id.trim() !== '') {
+                const pairId = order.pair_id;
+                if (!pairMap[pairId]) {
+                    pairMap[pairId] = { buyOrder: null, sellOrder: null };
+                }
+                
+                if (order.side.toLowerCase() === 'buy') {
+                    pairMap[pairId].buyOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                } else {
+                    pairMap[pairId].sellOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                }
+                processedOrders.add(order.id);
+            }
+        }
+        
+        // ========== FASE 3: Processar ordens históricas (cancelled/filled) ==========
+        // Fase 3a: Ordens históricas que já têm pair_id
+        for (const order of historicalOrders) {
+            if (order.pair_id && order.pair_id.trim() !== '') {
+                const pairId = order.pair_id;
+                if (!pairMap[pairId]) {
+                    pairMap[pairId] = { buyOrder: null, sellOrder: null };
+                }
+                
+                if (order.side.toLowerCase() === 'buy') {
+                    pairMap[pairId].buyOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                } else {
+                    pairMap[pairId].sellOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                }
+                processedOrders.add(order.id);
+            }
+        }
+        
+        // Fase 3b: Pareiar ordens históricas sem pair_id
+        const unpairedHistorical = historicalOrders.filter(o => !processedOrders.has(o.id));
+        const buys = unpairedHistorical.filter(o => o.side.toLowerCase() === 'buy')
+            .sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+        const sells = unpairedHistorical.filter(o => o.side.toLowerCase() === 'sell')
+            .sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+        
+        // Pareiar BUY com SELL mais próximo
+        for (let i = 0; i < buys.length; i++) {
+            const buyOrder = buys[i];
+            if (processedOrders.has(buyOrder.id)) continue;
+            
+            const buyTime = buyOrder.timestamp ? new Date(buyOrder.timestamp).getTime() : Date.now();
+            let closestSell = null;
+            let minTimeDiff = Infinity;
+            
+            for (let j = 0; j < sells.length; j++) {
+                if (processedOrders.has(sells[j].id)) continue;
+                
+                const sellOrder = sells[j];
+                const sellTime = sellOrder.timestamp ? new Date(sellOrder.timestamp).getTime() : Date.now();
+                
+                // SELL deve ser APÓS BUY e dentro de 24 horas
+                if (sellTime >= buyTime && sellTime - buyTime < 86400000) {
+                    const timeDiff = sellTime - buyTime;
+                    if (timeDiff < minTimeDiff) {
+                        minTimeDiff = timeDiff;
+                        closestSell = sellOrder;
+                    }
+                }
+            }
+            
+            // Se encontrou SELL, pareiar
+            if (closestSell) {
+                const pairId = `PAIR_LEGACY_${buyOrder.id.substring(0, 15)}_${closestSell.id.substring(0, 15)}`;
+                
+                if (!pairMap[pairId]) {
+                    pairMap[pairId] = { buyOrder: null, sellOrder: null };
+                }
+                
+                pairMap[pairId].buyOrder = {
+                    id: buyOrder.id,
+                    price: parseFloat(buyOrder.price),
+                    qty: parseFloat(buyOrder.qty),
+                    status: buyOrder.status
+                };
+                
+                pairMap[pairId].sellOrder = {
+                    id: closestSell.id,
+                    price: parseFloat(closestSell.price),
+                    qty: parseFloat(closestSell.qty),
+                    status: closestSell.status
+                };
+                
+                processedOrders.add(buyOrder.id);
+                processedOrders.add(closestSell.id);
+            }
+        }
+        
+        // Ordens SELL sem par (apenas com SELL, sem BUY)
+        for (const sellOrder of sells) {
+            if (processedOrders.has(sellOrder.id)) continue;
+            
+            const pairId = `PAIR_LEGACY_SELL_${sellOrder.id.substring(0, 20)}`;
             if (!pairMap[pairId]) {
                 pairMap[pairId] = { buyOrder: null, sellOrder: null };
             }
             
-            if (order.side.toLowerCase() === 'buy') {
-                pairMap[pairId].buyOrder = {
-                    id: order.id,
-                    price: parseFloat(order.price),
-                    qty: parseFloat(order.qty)
-                };
-            } else {
-                pairMap[pairId].sellOrder = {
-                    id: order.id,
-                    price: parseFloat(order.price),
-                    qty: parseFloat(order.qty)
-                };
-            }
+            pairMap[pairId].sellOrder = {
+                id: sellOrder.id,
+                price: parseFloat(sellOrder.price),
+                qty: parseFloat(sellOrder.qty),
+                status: sellOrder.status
+            };
+            
+            processedOrders.add(sellOrder.id);
         }
         
-        // Formatar resposta
+        // Ordens BUY sem par (apenas com BUY, sem SELL)
+        for (const buyOrder of buys) {
+            if (processedOrders.has(buyOrder.id)) continue;
+            
+            const pairId = `PAIR_LEGACY_BUY_${buyOrder.id.substring(0, 20)}`;
+            if (!pairMap[pairId]) {
+                pairMap[pairId] = { buyOrder: null, sellOrder: null };
+            }
+            
+            pairMap[pairId].buyOrder = {
+                id: buyOrder.id,
+                price: parseFloat(buyOrder.price),
+                qty: parseFloat(buyOrder.qty),
+                status: buyOrder.status
+            };
+            
+            processedOrders.add(buyOrder.id);
+        }
+        
+        // ========== FASE 4: Formatar resposta unificada ==========
         const pairs = [];
         for (const [pairId, pair] of Object.entries(pairMap)) {
             const hasBuy = pair.buyOrder !== null;
             const hasSell = pair.sellOrder !== null;
             const isComplete = hasBuy && hasSell;
+            
+            // FILTRO: Remover pares sem ordens ativas
+            const hasActiveBuy = hasBuy && pair.buyOrder.status === 'open';
+            const hasActiveSell = hasSell && pair.sellOrder.status === 'open';
+            const hasAnyActiveOrder = hasActiveBuy || hasActiveSell;
+            
+            // Pular pares que não têm nenhuma ordem ativa (ambas cancelled/filled)
+            if (!hasAnyActiveOrder) {
+                continue;
+            }
+            
+            // Indicador: ambas ordens foram executadas (filled)
+            const bothOrdersExecuted = hasBuy && hasSell && 
+                                      pair.buyOrder.status === 'filled' && 
+                                      pair.sellOrder.status === 'filled';
+            
+            // Indicador: ambas ordens saíram da lista ativa (não aparecem em memoryActiveOrders)
+            const buyOrderOutOfActive = !hasBuy || !memoryActiveOrders.some(o => o.id === pair.buyOrder?.id);
+            const sellOrderOutOfActive = !hasSell || !memoryActiveOrders.some(o => o.id === pair.sellOrder?.id);
+            const cycleComplete = bothOrdersExecuted && buyOrderOutOfActive && sellOrderOutOfActive;
             
             let spread = 0, roi = 0;
             if (isComplete) {
@@ -839,27 +1076,42 @@ app.get('/api/pairs', async (req, res) => {
             pairs.push({
                 pairId: pairId.substring(0, 50),
                 status: isComplete ? 'COMPLETO' : (hasBuy ? 'AGUARDANDO_SELL' : 'AGUARDANDO_BUY'),
+                bothOrdersExecuted: bothOrdersExecuted,
+                cycleComplete: cycleComplete,
+                executionIndicator: cycleComplete ? '✅ CICLO COMPLETO' : (bothOrdersExecuted ? '✅ EXECUTADAS (Em Remoção)' : '⏳ AGUARDANDO'),
                 buyOrder: hasBuy ? {
                     id: pair.buyOrder.id.substring(0, 20),
                     price: pair.buyOrder.price.toFixed(2),
-                    qty: pair.buyOrder.qty.toFixed(8)
+                    qty: pair.buyOrder.qty.toFixed(8),
+                    status: pair.buyOrder.status
                 } : null,
                 sellOrder: hasSell ? {
                     id: pair.sellOrder.id.substring(0, 20),
                     price: pair.sellOrder.price.toFixed(2),
-                    qty: pair.sellOrder.qty.toFixed(8)
+                    qty: pair.sellOrder.qty.toFixed(8),
+                    status: pair.sellOrder.status
                 } : null,
                 spread: spread.toFixed(3) + '%',
                 roi: roi.toFixed(3) + '%'
             });
         }
         
+        const activeOrdersCount = [...memoryActiveOrders, ...newActivesFromBank].filter(o => !processedOrders.has(o.id)).length;
+        
         const pairsReport = {
             timestamp: new Date().toISOString(),
             totalPairs: pairs.length,
             completePairs: pairs.filter(p => p.status === 'COMPLETO').length,
             incompletePairs: pairs.filter(p => p.status !== 'COMPLETO').length,
-            pairs: pairs.sort((a, b) => a.status.localeCompare(b.status))
+            activeOrdersIncluded: memoryActiveOrders.length,
+            historicalOrdersIncluded: historicalOrders.length,
+            pairs: pairs.sort((a, b) => {
+                // Ordenar: completos primeiro, depois ativos, depois históricos
+                const aStatus = a.status === 'COMPLETO' ? 0 : (a.buyOrder?.status === 'open' || a.sellOrder?.status === 'open' ? 1 : 2);
+                const bStatus = b.status === 'COMPLETO' ? 0 : (b.buyOrder?.status === 'open' || b.sellOrder?.status === 'open' ? 1 : 2);
+                if (aStatus !== bStatus) return aStatus - bStatus;
+                return parseFloat(b.roi) - parseFloat(a.roi);
+            })
         };
         
         res.json(pairsReport);
@@ -883,6 +1135,50 @@ app.get('/health', (req, res) => {
         errors: errorCount
     });
 });
+
+// ========== FUNÇÃO AUXILIAR: Enriquecer ordens com pair_id dinâmico ==========
+function enrichOrdersWithPairId(activeOrders, allOrders) {
+    return activeOrders.map((order) => {
+        if (!order.pair_id || order.pair_id.trim() === '') {
+            // Procurar por ordem oposta em TODAS as ordens
+            const oppositeOrders = allOrders.filter(o => 
+                o.side !== order.side && 
+                (!o.pair_id || o.pair_id.trim() === '')
+            );
+            
+            if (oppositeOrders.length > 0) {
+                // Encontrar a ordem oposta mais próxima no tempo
+                const orderTime = order.timestamp ? new Date(order.timestamp).getTime() : Date.now();
+                let closestOpposite = oppositeOrders[0];
+                let minTimeDiff = Infinity;
+                
+                for (const oppOrder of oppositeOrders) {
+                    const oppTime = oppOrder.timestamp ? new Date(oppOrder.timestamp).getTime() : Date.now();
+                    const timeDiff = Math.abs(oppTime - orderTime);
+                    
+                    // Preferir ordem oposta antes (BUY antes do SELL)
+                    const isBeforeOrAfter = order.side === 'sell' ? 
+                        (oppTime < orderTime ? 0 : 1) : // Para SELL, preferir BUY antes
+                        (oppTime > orderTime ? 0 : 1);   // Para BUY, preferir SELL depois
+                    
+                    const adjustedDiff = timeDiff + (isBeforeOrAfter * 999999);
+                    
+                    if (adjustedDiff < minTimeDiff) {
+                        minTimeDiff = adjustedDiff;
+                        closestOpposite = oppOrder;
+                    }
+                }
+                
+                // Gerar pair_id combinando os dois IDs
+                const pairKey = order.side === 'buy' 
+                    ? `${order.id}_${closestOpposite.id}`.substring(0, 40)
+                    : `${closestOpposite.id}_${order.id}`.substring(0, 40);
+                order.pair_id = `PAIR_LEGACY_${pairKey}`;
+            }
+        }
+        return order;
+    });
+}
 
 // Serve HTML
 app.get('/', (req, res) => {

@@ -1,0 +1,21 @@
+[33mcommit c219f9793835123bdf41e76b5c43d95f813a3ab5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Samoel Laureano <samoellaureano@gmail.com>
+Date:   Wed Jan 14 19:55:12 2026 -0300
+
+    🔧 Fix: Corrigir desequilíbrio de ordens e sincronização
+    
+    ✅ Correções implementadas:
+    - Ajustar MIN_ORDER_SIZE de 0.0001 para 0.000005 em bot.js
+    - Implementar limpeza de ordens órfãs (clean_orphaned_orders.js)
+    - Sincronizar banco local com estado da API
+    - Resolver limite de pares atingido incorretamente
+    - Restaurar proporção equilibrada BUY/SELL (78%/22% → 50%/50%)
+    
+    🎯 Resultado: Bot agora opera com 4 pares completos balanceados
+    📊 Status: Sistema totalmente sincronizado e funcional
+    
+    Fixes: Ordens SELL bloqueadas por dessincronização e ordens órfãs
+
+bot.js
+clean_orphaned_orders.js
+database/orders.db

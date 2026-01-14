@@ -89,6 +89,7 @@
                         <th class="text-left p-1 sm:p-2">Preço</th>
                         <th class="text-left p-1 sm:p-2">Qtd</th>
                         <th class="text-left p-1 sm:p-2">Status</th>
+                        <th class="text-left p-1 sm:p-2">Exchange</th>
                         <th class="text-left p-1 sm:p-2">Drift</th>
                         <th class="text-left p-1 sm:p-2">Age</th>
                     </tr>
@@ -587,13 +588,27 @@
                 });
                 const tr = document.createElement('tr');
                 const pairId = order.pair_id ? order.pair_id : '❌ Sem par';
+                
+                // Status do Exchange: mostrar ID ou "Aguardando colocação"
+                let exchangeStatusDisplay = '❓';
+                if (order.exchangeStatus && order.exchangeStatus.includes('Aguardando')) {
+                    exchangeStatusDisplay = `<span class="text-yellow-400 animate-pulse">${order.exchangeStatus}</span>`;
+                } else if (order.exchangeId) {
+                    exchangeStatusDisplay = `<span class="text-green-400 font-mono text-xs">${order.exchangeId.substring(0, 12)}...</span>`;
+                } else if (order.exchangeStatus && order.exchangeStatus !== 'N/A') {
+                    exchangeStatusDisplay = `<span class="text-green-400 font-mono text-xs">${order.exchangeStatus.substring(0, 12)}...</span>`;
+                } else {
+                    exchangeStatusDisplay = '✅ Ativa';
+                }
+                
                 tr.innerHTML = `
                     <td class="${order.side === 'buy' ? 'text-green-400' : 'text-red-400'} p-1 sm:p-2">${order.side || '--'}</td>
-                    <td class="p-1 sm:p-2">${order.id || '--'}</td>
-                    <td class="p-1 sm:p-2 text-yellow-300 font-mono text-xs">${pairId}</td>
+                    <td class="p-1 sm:p-2 font-mono text-xs truncate">${order.id || '--'}</td>
+                    <td class="p-1 sm:p-2 text-yellow-300 font-mono text-xs truncate">${pairId}</td>
                     <td class="p-1 sm:p-2">R$ ${priceFormatted}</td>
-                    <td class="p-1 sm:p-2">${parseFloat(order.qty || '0').toFixed(6)}</td>
+                    <td class="p-1 sm:p-2">${parseFloat(order.qty || '0').toFixed(8)}</td>
                     <td class="p-1 sm:p-2">${order.status || '--'}</td>
+                    <td class="p-1 sm:p-2">${exchangeStatusDisplay}</td>
                     <td class="p-1 sm:p-2">${order.drift || '--'}</td>
                     <td class="p-1 sm:p-2">${ageStr}</td>
                 `;
