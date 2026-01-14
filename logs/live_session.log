@@ -1,0 +1,98 @@
+
+> mb-bot@1.0.0 live
+> SIMULATE=false node bot.js
+
+02:05:37.558 [INFO]   [Bot] Inicializando bot... 
+02:05:37.564 [INFO]   [Bot] Inicializando banco de dados... 
+02:05:37.619 [INFO]   [DB] WAL mode ativado para leituras/escritas concorrentes 
+02:05:37.644 [SUCCESS] [DB] Banco de dados inicializado com sucesso. 
+02:05:37.649 [SUCCESS] [Bot] Banco de dados inicializado. 
+02:05:37.671 [INFO]   [Bot] Autenticando Mercado Bitcoin... 
+2026-01-14T02:05:37.692Z [INFO]   API_KEY: bdb29a91...
+2026-01-14T02:05:37.692Z [INFO]   API_SECRET: e14075f1...
+2026-01-14T02:05:38.685Z [INFO]   Account ID: f02d1506...
+2026-01-14T02:05:38.689Z [INFO]   Access Token: eyJhbGci...
+2026-01-14T02:05:38.691Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+02:05:38.692 [SUCCESS] [Bot] Autenticado com sucesso. 
+02:05:38.697 [INFO]   [Bot] Iniciando warmup com velas históricas para evitar decisões ruins iniciais. 
+02:05:38.928 [INFO]   [Bot] Buscadas 91 velas históricas válidas. 
+02:05:38.949 [SUCCESS] [Bot] Warmup completo com 60 velas históricas. 
+02:05:38.988 [INFO]   [Bot] Carregando fills históricos... 
+02:05:39.069 [INFO]   [DB] Carregados 30 fills históricos. 
+02:05:39.099 [SUCCESS] [Bot] Carregados 30 fills históricos. 
+02:05:39.136 [INFO]   [Bot] Iniciando loop principal. 
+02:05:39.182 [INFO]   [Bot] Iniciando ciclo 1. 
+02:05:39.227 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+02:05:39 [TREND INFO] Iniciando análise de tendência externa... 
+02:05:39 [TREND INFO] CoinGecko Score: 63
+02:05:39 [TREND INFO] Binance Score: 80
+02:05:39 [TREND INFO] Fear & Greed Score: 48
+02:05:39 [TREND SUCCESS] Análise externa concluída: {"trend":"BULLISH","score":67,"confidence":100}
+02:05:39.951 [SUCCESS] [Bot] Tendência Externa: BULLISH (Score: 67/100, Confiança: 100%) 
+02:05:40.201 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=511260.00, Best Ask=511677.00. 
+02:05:40.444 [DEBUG]  [DB] Preço BTC armazenado: R$ 511468.50 
+02:05:40.469 [INFO]   [Bot] Volatilidade calculada: 2.43%. 
+02:05:40.499 [DEBUG]  [Bot] Volatilidade no ciclo 1: 2.43% 
+02:05:40.533 [INFO]   [Bot] RSI calculado: 54.53. 
+02:05:40.561 [INFO]   [Bot] EMA(8) calculada: 511339.92. 
+02:05:40.594 [INFO]   [Bot] EMA(20) calculada: 511372.65. 
+02:05:40.634 [INFO]   [Bot] EMA(12) calculada: 511334.87. 
+02:05:40.662 [INFO]   [Bot] EMA(26) calculada: 511554.09. 
+02:05:40.687 [INFO]   [Bot] EMA(9) calculada: 511404.69. 
+02:05:40.714 [INFO]   [Bot] MACD calculado: MACD=-219.21, Signal=511404.69. 
+02:05:40.739 [INFO]   [Bot] Volatilidade calculada: 2.43%. 
+02:05:40.765 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=63.33%, PnL médio=0.46. 
+02:05:40.795 [INFO]   [Bot] ADX calculado: 14.59. 
+02:05:40.826 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.41","expectedProfit":"0.03","rsi":"54.53","emaShort":"511339.92","emaLong":"511372.65","...
+02:05:40.860 [DEBUG]  [Bot] Convicção calculada: 48.8% | Tendência: DOWN | Força: VERY_WEAK 
+02:05:40.890 [WARN]   [Bot] Preço de venda 517777.98 muito acima do mercado (511468.50). Ajustando para 514025.84. 
+02:05:40.927 [WARN]   [Bot] Spread inválido ou muito estreito. Ajustando para spread natural. 
+02:05:41.202 [INFO]   [Bot] [DECISION] 🚫 BLOQUEADO | Ação: HOLD | Confiança: 4.6% | Score combinado insuficiente para operar 
+02:05:41.212 [WARN]   [Bot] Ordem SELL cancelada por validação externa: Score combinado insuficiente para operar 
+02:05:41.253 [INFO]   [DB] Carregados 30 fills históricos. 
+02:05:41.269 [DEBUG]  [Bot] PnL Calculation: Realized=0.00 | Unrealized=0.16 | Total=0.16 | Position=0.00006846 BTC | Cost Basis=34.86 BRL 
+02:05:41.301 [INFO]   [Bot] Viés de inventário: -0.000100. 
+02:05:41.329 [INFO]   [Bot] Viés de tendência: -0.000062 (Tendência: down). 
+02:05:41.360 [INFO]   [Bot] [DECISION] ✅ PERMITIDO | Ação: BUY_SIGNAL | Confiança: 100.0% | Alinhamento forte entre análises 
+2026-01-14T02:05:41.389Z [INFO]   Placing BUY order: 0.00000267 BTC-BRL at 507632.48608821916
+2026-01-14T02:05:41.615Z [INFO]   Final order parameters: {
+  async: true,
+  externalId: 'ORD_1768356341389',
+  limitPrice: 507632,
+  qty: '0.00000267',
+  side: 'buy',
+  stopPrice: 0,
+  type: 'limit'
+}
+02:05:42.002 [INFO]   [DB] Ordem salva: 01KEX40T578F8QAYZKK8AHBEXH (BUY @ 507632.49, Qty: 0.00000267) 
+02:05:42.007 [SUCCESS] [Bot] Ordem BUY 01KEX40T578F8QAYZKK8AHBEXH colocada @ R$507632.49, Qty: 0.00000267, Taxa Estimada: 0.30% 
+02:05:42.035 [INFO]   [Bot] [DECISION] 🚫 BLOQUEADO | Ação: HOLD | Confiança: 6.0% | Score combinado insuficiente para operar 
+02:05:42.077 [INFO]   [DB] Carregados 30 fills históricos. 
+02:05:42.092 [DEBUG]  [Bot] PnL Calculation: Realized=0.00 | Unrealized=0.16 | Total=0.16 | Position=0.00006846 BTC | Cost Basis=34.86 BRL 
+02:05:42.138 [SUCCESS] [Bot] [RECOVERY] Sessão de recuperação iniciada | Baseline: R$ -0.41 
+02:05:42.158 [DEBUG]  [Bot] [RECOVERY] Ponto registrado: PnL=R$ -0.41, Progresso=0.0%, Baseline=R$ -0.41 
+02:05:42.185 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+02:05:42.211 [INFO]   [Bot] Ciclo: 1 | Mid Price: 511468.50 | Tendência: down | Regime: BEARISH 
+02:05:42.241 [INFO]   [Bot] 🔴 Convicção: 48.8% | Tendência Convicção: DOWN | Força: VERY_WEAK 
+02:05:42.274 [INFO]   [Bot]    Indicadores concordam: 3/6 | Nível volatilidade: VERY_LOW 
+02:05:42.305 [INFO]   [Bot] 🌐 Tendência Externa: BULLISH (Score: 67/100, Confiança: 100%) 
+02:05:42.336 [INFO]   [Bot] ⚠️ Alinhamento: Bot=DOWN vs Externo=BULLISH 
+02:05:42.367 [INFO]   [Bot] RSI: 54.53 | EMA Curta: 511339.92 | EMA Longa: 511372.65 
+02:05:42.395 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 2.43% 
+02:05:42.422 [INFO]   [Bot] Score Lucro Esperado: 0.03 | Confiança: 0.41 
+02:05:42.451 [INFO]   [Bot] Spread: 1.500% | Buy Price: 507632.48 | Sell Price: 515304.52 
+02:05:42.480 [INFO]   [Bot] Tamanho Ordens: 0.00000267 BTC | Depth Factor: 0.23 
+02:05:42.514 [INFO]   [Bot] Viés Inventário (Skew): 0.005000 | Viés Tendência: -0.000200 | Total Bias: 0.004800 
+02:05:42.545 [INFO]   [Bot] PnL Total: 0.16 BRL | ROI: 0.46% | PnL Não Realizado: 0.16 BRL 
+02:05:42.580 [INFO]   [Bot] Posição BTC: 0.00006846 | Saldo BRL: 205.59 | Saldo BTC: 0.00002737 
+02:05:42.611 [INFO]   [Bot] Ordens Ativas: 1 | Fills: 0 | Cancelamentos: 0 
+02:05:42.643 [INFO]   [Bot] Taxa de Fill: 0.0% | Preço Médio Fill: 509113.27 BRL | Uptime: 0min 
+02:05:42.674 [INFO]   [Bot] ──────────────────────────────────────────── 
+02:05:42.705 [SUCCESS] [Bot] Bot operacional - SIMULATE=false 
+02:05:43.504 [WARN]   [Bot] SIGINT recebido. Encerrando com segurança... 
+02:05:43.509 [INFO]   [Bot] Cancelando ordem BUY 01KEX40T578F8QAYZKK8AHBEXH @ R$507632.49, Qty: 0.00000267. 
+02:05:43.755 [INFO]   [DB] Ordem salva: 01KEX40T578F8QAYZKK8AHBEXH (BUY @ 507632.49, Qty: 0.00000267) 
+02:05:43.762 [SUCCESS] [Bot] Ordem BUY 01KEX40T578F8QAYZKK8AHBEXH cancelada com sucesso. 
+02:05:44.166 [SUCCESS] [DB] Salvos 30 fills históricos. 
+02:05:44.185 [SUCCESS] [DB] Banco de dados fechado com sucesso. 
+02:05:44.210 [SUCCESS] [Bot] Encerramento concluído. 

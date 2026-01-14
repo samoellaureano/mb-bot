@@ -190,9 +190,32 @@ class Database {
                                             return reject(err);
                                         }
 
-                                        // Tabelas para persistência de ciclos de recuperação
+                                        // Tabela para histórico de PnL
                                         this.db.run(`
-                                            CREATE TABLE IF NOT EXISTS recovery_sessions (
+                                            CREATE TABLE IF NOT EXISTS pnl_history
+                                            (
+                                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                pnl_value REAL NOT NULL,
+                                                timestamp INTEGER NOT NULL UNIQUE,
+                                                session_id INTEGER
+                                            )
+                                        `, (err) => {
+                                            if (err) {
+                                                this.log('ERROR', `Erro ao criar tabela pnl_history: ${err.message}`);
+                                                return reject(err);
+                                            }
+
+                                            this.db.run(`
+                                                CREATE INDEX IF NOT EXISTS idx_pnl_timestamp ON pnl_history(timestamp DESC)
+                                            `, (err) => {
+                                                if (err) {
+                                                    this.log('ERROR', `Erro ao criar índice pnl_history: ${err.message}`);
+                                                    return reject(err);
+                                                }
+
+                                                // Tabelas para persistência de ciclos de recuperação
+                                                this.db.run(`
+                                                    CREATE TABLE IF NOT EXISTS recovery_sessions (
                                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                                                 started_at INTEGER NOT NULL,
                                                 ended_at INTEGER,
@@ -289,8 +312,8 @@ class Database {
         return new Promise((resolve, reject) => {
             const stmt = this.db.prepare(`
                 INSERT OR REPLACE INTO orders 
-                (id, side, price, qty, status, filledQty, timestamp, note, external_id, pnl, session_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, side, price, qty, status, filledQty, timestamp, note, external_id, pnl, session_id, pair_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `);
             const timestamp = order.timestamp ? Math.floor(order.timestamp / 1000) : Math.floor(Date.now() / 1000);
             stmt.run(
@@ -305,6 +328,7 @@ class Database {
                 order.externalId || null,
                 parseFloat(order.pnl || 0),
                 order.sessionId || null,
+                order.pairId || null,  // NOVO: salvar pair_id
                 (err) => {
                     stmt.finalize();
                     if (err) {
@@ -797,7 +821,8 @@ class Database {
                     timestamp: row.timestamp * 1000,
                     note: row.note,
                     externalId: row.external_id,
-                    pnl: parseFloat(row.pnl || 0)
+                    pnl: parseFloat(row.pnl || 0),
+                    pair_id: row.pair_id
                 }));
                 this.log('INFO', `Consultadas ${orders.length} ordens.`);
                 resolve(orders);
@@ -1028,6 +1053,59 @@ class Database {
                     resolve(validation);
                 }
             });
+        });
+    }
+}
+
+    async savePnL(pnlValue, timestamp = null, sessionId = null) {
+        if (!this.db) {
+            this.log('ERROR', 'Banco de dados não inicializado.');
+            throw new Error('Database not initialized');
+        }
+        const ts = timestamp ? Math.floor(timestamp / 1000) : Math.floor(Date.now() / 1000);
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                `INSERT OR REPLACE INTO pnl_history (pnl_value, timestamp, session_id) VALUES (?, ?, ?)`,
+                [parseFloat(pnlValue), ts, sessionId || null],
+                function(err) {
+                    if (err) {
+                        this.log('ERROR', `Erro ao salvar PnL: ${err.message}`);
+                        return reject(err);
+                    }
+                    this.log('DEBUG', `PnL salvo: ${parseFloat(pnlValue).toFixed(2)} BRL @ ${new Date(ts * 1000).toISOString()}`);
+                    resolve({ id: this.lastID, pnl: pnlValue, timestamp: ts });
+                }.bind(this)
+            );
+        });
+    }
+
+    async getPnLHistory(hoursBack = 24, limit = 500) {
+        if (!this.db) {
+            this.log('WARN', 'Banco de dados não inicializado. Retornando array vazio.');
+            return [];
+        }
+        return new Promise((resolve, reject) => {
+            const cutoffTs = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+            this.db.all(
+                `SELECT pnl_value as value, timestamp FROM pnl_history 
+                 WHERE timestamp >= ? 
+                 ORDER BY timestamp ASC 
+                 LIMIT ?`,
+                [cutoffTs, limit],
+                (err, rows) => {
+                    if (err) {
+                        this.log('ERROR', `Erro ao carregar histórico PnL: ${err.message}`);
+                        return reject(err);
+                    }
+                    const results = (rows || []).map(row => ({
+                        value: parseFloat(row.value),
+                        timestamp: row.timestamp,
+                        iso: new Date(row.timestamp * 1000).toISOString()
+                    }));
+                    this.log('DEBUG', `Carregados ${results.length} pontos de PnL dos últimos ${hoursBack}h`);
+                    resolve(results);
+                }
+            );
         });
     }
 }

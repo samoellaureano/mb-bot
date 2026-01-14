@@ -68,8 +68,16 @@
             <p id="monthlyPnl" class="text-xs sm:text-sm text-gray-400">Mensal: R$ 0,00</p>
         </div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+            <h2 class="text-base sm:text-lg font-bold mb-2">Saldos</h2>
+            <ul class="space-y-1 text-xs sm:text-sm">
+                <li>BRL: <span id="brl">Carregando...</span></li>
+                <li>BTC: <span id="btc">Carregando...</span></li>
+                <li>Total: <span id="totalBalanceList">Carregando...</span></li>
+            </ul>
+        </div>
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow md:col-span-3">
             <h2 class="text-base sm:text-lg font-bold mb-2">Ordens Ativas</h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-xs sm:text-sm">
@@ -77,6 +85,7 @@
                     <tr class="text-gray-400">
                         <th class="text-left p-1 sm:p-2">Side</th>
                         <th class="text-left p-1 sm:p-2">ID</th>
+                        <th class="text-left p-1 sm:p-2">Pair ID</th>
                         <th class="text-left p-1 sm:p-2">Preço</th>
                         <th class="text-left p-1 sm:p-2">Qtd</th>
                         <th class="text-left p-1 sm:p-2">Status</th>
@@ -98,15 +107,57 @@
                 </table>
             </div>
         </div>
-        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
-            <h2 class="text-base sm:text-lg font-bold mb-2">Saldos</h2>
-            <ul class="space-y-1 text-xs sm:text-sm">
-                <li>BRL: <span id="brl">Carregando...</span></li>
-                <li>BTC: <span id="btc">Carregando...</span></li>
-                <li>Total: <span id="totalBalanceList">Carregando...</span></li>
-            </ul>
+    </div>
+
+    <!-- SEÇÃO DE PARES BUY/SELL -->
+    <div class="mt-4 bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base sm:text-lg font-bold">🔗 Rastreamento de Pares BUY/SELL</h2>
+            <span id="pairsRefreshBadge" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Atualizando...</span>
+        </div>
+        
+        <!-- Resumo de Pares -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-4">
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-blue-400" id="totalPairsCount">0</div>
+                <div class="text-xs text-gray-400 mt-1">Total de Pares</div>
+            </div>
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-green-400" id="completePairsCount">0</div>
+                <div class="text-xs text-gray-400 mt-1">Pares Completos</div>
+            </div>
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-yellow-400" id="incompletePairsCount">0</div>
+                <div class="text-xs text-gray-400 mt-1">Incompletos</div>
+            </div>
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-orange-400" id="avgPairRoi">0.00%</div>
+                <div class="text-xs text-gray-400 mt-1">ROI Médio</div>
+            </div>
+        </div>
+
+        <!-- Tabela de Pares -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                <tr class="text-gray-400 border-b border-gray-700">
+                    <th class="text-left p-2">Pair ID</th>
+                    <th class="text-left p-2">Status</th>
+                    <th class="text-center p-2">BUY</th>
+                    <th class="text-center p-2">SELL</th>
+                    <th class="text-right p-2">Spread</th>
+                    <th class="text-right p-2">ROI Líquido</th>
+                </tr>
+                </thead>
+                <tbody id="pairsTableBody">
+                <tr>
+                    <td class="p-2 text-gray-400 text-center" colspan="6">Carregando pares...</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <!-- Gráfico de PnL -->
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
@@ -535,9 +586,11 @@
                     maximumFractionDigits: 2
                 });
                 const tr = document.createElement('tr');
+                const pairId = order.pair_id ? order.pair_id : '❌ Sem par';
                 tr.innerHTML = `
                     <td class="${order.side === 'buy' ? 'text-green-400' : 'text-red-400'} p-1 sm:p-2">${order.side || '--'}</td>
                     <td class="p-1 sm:p-2">${order.id || '--'}</td>
+                    <td class="p-1 sm:p-2 text-yellow-300 font-mono text-xs">${pairId}</td>
                     <td class="p-1 sm:p-2">R$ ${priceFormatted}</td>
                     <td class="p-1 sm:p-2">${parseFloat(order.qty || '0').toFixed(6)}</td>
                     <td class="p-1 sm:p-2">${order.status || '--'}</td>
@@ -1019,6 +1072,94 @@
                 })}`;
                 trendEl.className = "text-gray-400 font-bold";
                 trendEl.parentElement.className = 'p-1 rounded';
+            }
+
+            // ===== CARREGAR PARES BUY/SELL =====
+            try {
+                const pairsRes = await fetch(`/api/pairs?t=${Date.now()}`);
+                const pairsData = await pairsRes.json();
+                
+                if (pairsData && pairsData.pairs && Array.isArray(pairsData.pairs)) {
+                    // Atualizar contadores
+                    document.getElementById('totalPairsCount').textContent = pairsData.totalPairs || 0;
+                    document.getElementById('completePairsCount').textContent = pairsData.completePairs || 0;
+                    document.getElementById('incompletePairsCount').textContent = pairsData.incompletePairs || 0;
+                    
+                    // Calcular ROI médio apenas para pares completos
+                    const completePairs = pairsData.pairs.filter(p => p.status === 'COMPLETO');
+                    let avgRoi = 0;
+                    if (completePairs.length > 0) {
+                        const totalRoi = completePairs.reduce((sum, p) => {
+                            const roiStr = p.roi || '0.000%';
+                            const roiVal = parseFloat(roiStr.replace('%', ''));
+                            return sum + roiVal;
+                        }, 0);
+                        avgRoi = totalRoi / completePairs.length;
+                    }
+                    document.getElementById('avgPairRoi').textContent = avgRoi.toFixed(3) + '%';
+                    
+                    // Atualizar tabela de pares
+                    const tbody = document.getElementById('pairsTableBody');
+                    tbody.innerHTML = '';
+                    
+                    if (pairsData.pairs.length === 0) {
+                        tbody.innerHTML = '<tr><td class="p-2 text-gray-400 text-center" colspan="6">Nenhum par registrado</td></tr>';
+                    } else {
+                        pairsData.pairs.forEach(pair => {
+                            const tr = document.createElement('tr');
+                            tr.className = 'border-b border-gray-700 hover:bg-gray-700 transition';
+                            
+                            // Determinar cores baseado em status
+                            let statusColor = 'text-yellow-400';
+                            let statusIcon = '⏳';
+                            if (pair.status === 'COMPLETO') {
+                                statusColor = 'text-green-400';
+                                statusIcon = '✅';
+                            } else if (pair.status === 'AGUARDANDO_BUY') {
+                                statusColor = 'text-orange-400';
+                                statusIcon = '🔴';
+                            } else if (pair.status === 'AGUARDANDO_SELL') {
+                                statusColor = 'text-blue-400';
+                                statusIcon = '🟢';
+                            }
+                            
+                            const spreadVal = pair.spread || '0.000%';
+                            const roiVal = pair.roi || '0.000%';
+                            const spreadNum = parseFloat(spreadVal.replace('%', ''));
+                            const roiNum = parseFloat(roiVal.replace('%', ''));
+                            
+                            tr.innerHTML = `
+                                <td class="p-2 text-gray-300 font-mono text-xs truncate" title="${pair.pairId}">
+                                    ${pair.pairId}
+                                </td>
+                                <td class="p-2">
+                                    <span class="${statusColor} font-semibold">${statusIcon} ${pair.status}</span>
+                                </td>
+                                <td class="p-2 text-center">
+                                    ${pair.buyOrder ? `🟢 R$ ${pair.buyOrder.price}` : '❌'}
+                                </td>
+                                <td class="p-2 text-center">
+                                    ${pair.sellOrder ? `🔴 R$ ${pair.sellOrder.price}` : '❌'}
+                                </td>
+                                <td class="p-2 text-right ${spreadNum >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
+                                    ${spreadVal}
+                                </td>
+                                <td class="p-2 text-right ${roiNum >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
+                                    ${roiVal}
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                    
+                    // Atualizar badge de refresh
+                    document.getElementById('pairsRefreshBadge').textContent = `Atualizado ${new Date().toLocaleTimeString('pt-BR')}`;
+                    document.getElementById('pairsRefreshBadge').className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-200';
+                }
+            } catch (pairsError) {
+                console.error('❌ Erro ao carregar pares:', pairsError);
+                document.getElementById('pairsRefreshBadge').textContent = 'Erro ao carregar pares';
+                document.getElementById('pairsRefreshBadge').className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
             }
 
         } catch (error) {

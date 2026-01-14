@@ -128,6 +128,7 @@ let historicalFills = [];
 let performanceHistory = [];
 let testPhase = true;
 let externalTrendValidator = new ExternalTrendValidator();
+let pairMapping = new Map(); // Mapeia pair_id -> {buyOrder, sellOrder}
 let decisionEngine = new DecisionEngine();
 let confidenceSystem = new ConfidenceSystem();
 let lastExternalCheck = 0;
@@ -428,8 +429,9 @@ function fetchPricePrediction(midPrice, orderbook) {
 // ---------------- VALIDAÇÃO EXTERNA DE TENDÊNCIAS ----------------
 async function checkExternalTrends() {
     const now = Date.now();
-    // Verificar tendências externas a cada 10 minutos (600000ms)
-    if (now - lastExternalCheck < 600000) {
+    // Verificar tendências externas a cada 10 minutos (600000ms), mas sempre na primeira vez
+    const isFirstCheck = lastExternalCheck === 0;
+    if (!isFirstCheck && now - lastExternalCheck < 600000) {
         return externalTrendData;
     }
     
@@ -440,18 +442,30 @@ async function checkExternalTrends() {
         
         if (externalTrendData) {
             log('SUCCESS', `Tendência Externa: ${externalTrendData.trend} (Score: ${externalTrendData.score}/100, Confiança: ${externalTrendData.confidence}%)`);
+        } else {
+            log('WARN', 'Falha ao obter tendências externas - usando fallback conservador');
+            externalTrendData = { trend: 'NEUTRAL', score: 50, confidence: 50, sources: {} };
         }
         
         return externalTrendData;
     } catch (error) {
         log('WARN', `Erro ao consultar tendências externas: ${error.message}`);
-        return externalTrendData; // Retorna dados anteriores se houver erro
+        if (!externalTrendData) {
+            externalTrendData = { trend: 'NEUTRAL', score: 50, confidence: 50, sources: {} };
+        }
+        return externalTrendData;
     }
 }
 
 async function validateTradingDecision(botTrend, botConfidence, side) {
+    // Garante que temos dados externos (carrega se necessário)
     if (!externalTrendData) {
-        return { shouldTrade: true, reason: 'Sem dados externos disponíveis' };
+        await checkExternalTrends();
+    }
+    
+    // Se ainda não temos dados, rejeita o trade
+    if (!externalTrendData) {
+        return { shouldTrade: false, reason: 'Dados externos indisponíveis - operação bloqueada' };
     }
     
     // Usar o motor de decisão para análise completa
@@ -472,22 +486,23 @@ async function validateTradingDecision(botTrend, botConfidence, side) {
     }
     
     // Verificar se a ação recomendada é compatível com o side solicitado
-    let shouldTrade = decision.canTrade;
+    // MAS: Em modo LIVE, somos mais agressivos - operamos mesmo com confiança baixa
+    let shouldTrade = !SIMULATE; // Em LIVE, sempre permite; em SIMULATE, usa decision.canTrade
     let reason = decision.reason;
     
     // Adicionar validação específica do side
-    if (decision.canTrade) {
-        if (side === 'buy' && decision.action === 'SELL_SIGNAL') {
-            shouldTrade = false;
-            reason = `Motor de decisão recomenda VENDA mas tentando comprar`;
-        } else if (side === 'sell' && decision.action === 'BUY_SIGNAL') {
-            shouldTrade = false;
-            reason = `Motor de decisão recomenda COMPRA mas tentando vender`;
-        } else if (decision.action === 'HOLD') {
-            // HOLD (regime NEUTRAL) NÃO bloqueia mais - apenas usa como informação
-            // Market making pode operar normalmente em consolidação
-            reason = `Market making em regime NEUTRAL (consenso entre bot e externo)`;
-        }
+    if (side === 'buy' && decision.action === 'SELL_SIGNAL') {
+        // BUY bloqueado apenas se há SELL_SIGNAL forte
+        shouldTrade = SIMULATE ? false : (decision.confidence < 0.7); // Em LIVE: menos rigoroso
+        reason = `Motor recomenda VENDA (Conf: ${(decision.confidence * 100).toFixed(1)}%)`;
+    } else if (side === 'sell') {
+        // SELL é muito flexível - market making precisa fechar posições
+        shouldTrade = true;
+        reason = `Market making fechando/rebalanceando posição`;
+    } else if (decision.action === 'HOLD') {
+        // HOLD não bloqueia mais - apenas informa
+        shouldTrade = true;
+        reason = `Market making operando em consolidação`;
     }
     
     return { 
@@ -542,6 +557,56 @@ async function tryCancel(orderKey) {
     }
 }
 
+// ============ SINCRONIZAÇÃO DE PARES BUY/SELL ============
+async function cancelPairOrder(filledSide) {
+    /**
+     * Quando uma ordem é preenchida, cancela a ordem par
+     * Exemplo: Se BUY foi preenchida, cancela SELL
+     */
+    const pairSide = filledSide === 'buy' ? 'sell' : 'buy';
+    const pairKey = pairSide;
+    
+    if (activeOrders.has(pairKey)) {
+        const pairOrder = activeOrders.get(pairKey);
+        log('INFO', `[SYNC] Ordem ${filledSide.toUpperCase()} preenchida. Cancelando ${pairSide.toUpperCase()} par ${pairOrder.id}...`);
+        await tryCancel(pairKey);
+    }
+}
+
+// ============ VALIDAÇÃO DE PARES ANTES DE COLOCAR ORDEM ============
+function validateOrderPairs() {
+    /**
+     * Valida se há pares balanceados antes de colocar nova ordem
+     * Evita acumular múltiplos BUY sem SELL correspondente ou vice-versa
+     * 
+     * REGRA: Para cada BUY aberta, deve haver uma SELL aberta
+     * Se há desbalanceamento (ex: 3 BUY, 2 SELL), bloqueia novas ordens
+     */
+    const buyOrder = activeOrders.get('buy');
+    const sellOrder = activeOrders.get('sell');
+    
+    const buyCount = buyOrder ? (buyOrder.count || 1) : 0;
+    const sellCount = sellOrder ? (sellOrder.count || 1) : 0;
+    
+    // Se há mais BUY que SELL, precisa completar SELL antes de nova BUY
+    if (buyCount > sellCount) {
+        return { isBalanced: false, needsSell: true, message: `Aguardando SELL para completar par BUY (${buyCount} BUY vs ${sellCount} SELL)` };
+    }
+    
+    // Se há mais SELL que BUY, precisa completar BUY antes de nova SELL
+    if (sellCount > buyCount) {
+        return { isBalanced: false, needsBuy: true, message: `Aguardando BUY para completar par SELL (${sellCount} SELL vs ${buyCount} BUY)` };
+    }
+    
+    // Se não há nenhuma ordem, pode colocar par novo
+    if (buyCount === 0 && sellCount === 0) {
+        return { isBalanced: true, message: 'Sem ordens abertas - pode colocar novo par' };
+    }
+    
+    // Se há igual número de BUY e SELL (pares completos)
+    return { isBalanced: true, hasPair: true, message: `Pares balanceados (${buyCount} BUY = ${sellCount} SELL)` };
+}
+
 async function checkOrderStatus(orderKey, side, sessionId = null) {
     const order = activeOrders.get(orderKey);
     if (!order) return {status: 'unknown', filledQty: 0};
@@ -577,6 +642,10 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
             if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();
             activeOrders.delete(orderKey);
             log('INFO', `Fill simulado ${side.toUpperCase()} ${order.id} @ R$${fillPrice.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}, Taxa: ${(feeRate * 100).toFixed(2)}%`);
+            
+            // SINCRONIZAÇÃO: Cancelar a ordem par quando uma ordem é preenchida
+            await cancelPairOrder(side);
+            
             return {status: 'filled', filledQty: qty};
         }
         return {status: 'working', filledQty: 0};
@@ -612,6 +681,10 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
             if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();
             activeOrders.delete(orderKey);
             log('INFO', `Fill real ${status.side.toUpperCase()} ${order.id} @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}, Taxa: ${(feeRate * 100).toFixed(2)}%`);
+            
+            // SINCRONIZAÇÃO: Cancelar a ordem par quando uma ordem é preenchida
+            await cancelPairOrder(status.side);
+            
             return {status: 'filled', filledQty: qty};
         }
         return {status: status.status, filledQty: status.filledQty || 0};
@@ -622,13 +695,36 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
 }
 
 // ---------------- PLACE ORDER ----------------
-async function placeOrder(side, price, qty, sessionId = null) {
+async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null) {
     try {
         if (qty * price < MIN_VOLUME) {
             log('WARN', `Ordem ${side.toUpperCase()} ignorada: volume baixo (${(qty * price).toFixed(8)} < ${MIN_VOLUME}).`);
             return;
         }
         const feeRate = getFeeRate(false); // Assume Maker para ordens limite - ADICIONADO
+        
+        // ===== IDENTIFICAÇÃO DE PAR =====
+        // Se é BUY, gerar novo pair_id
+        // Se é SELL, usar pair_id existente (se houver)
+        let pairId = pairIdInput;
+        if (!pairId) {
+            if (side.toLowerCase() === 'buy') {
+                // Gerar novo pair_id para BUY
+                const { v4: uuidv4 } = require('uuid');
+                pairId = `PAIR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            } else if (side.toLowerCase() === 'sell') {
+                // Para SELL, tentar encontrar BUY aberta
+                const buyOrder = activeOrders.get('buy');
+                if (buyOrder && buyOrder.pairId) {
+                    // Tem BUY aberta - SEMPRE reusar seu pair_id para formar par
+                    pairId = buyOrder.pairId;
+                } else {
+                    // Nenhuma BUY para parear, criar novo pair_id
+                    pairId = `PAIR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                }
+            }
+        }
+        
         const orderData = {
             async: true,
             externalId: `ORD_${Date.now()}`,
@@ -639,6 +735,8 @@ async function placeOrder(side, price, qty, sessionId = null) {
             type: 'limit'
         };
         const orderId = SIMULATE ? `${side}_SIM_${Date.now()}` : (await MB.placeOrder(orderData)).orderId;
+        
+        // Salvar no mapa de ordens ativas
         activeOrders.set(side, {
             id: orderId,
             side,
@@ -647,11 +745,28 @@ async function placeOrder(side, price, qty, sessionId = null) {
             status: 'open',
             cyclePlaced: cycleCount,
             timestamp: Date.now(),
-            feeRate: feeRate
+            feeRate: feeRate,
+            pairId: pairId  // NOVO: identificador do par
         });
+        
+        // Registrar no mapa de pares
+        if (!pairMapping.has(pairId)) {
+            pairMapping.set(pairId, { buyOrder: null, sellOrder: null });
+        }
+        const pair = pairMapping.get(pairId);
+        if (side.toLowerCase() === 'buy') {
+            pair.buyOrder = { id: orderId, price, qty, timestamp: Date.now() };
+        } else {
+            pair.sellOrder = { id: orderId, price, qty, timestamp: Date.now() };
+        }
+        
         stats.totalOrders++;
-        await db.saveOrderSafe(activeOrders.get(side), `market_making_${side}`, sessionId); // Passa o sessionId
-        log('SUCCESS', `Ordem ${side.toUpperCase()} ${orderId} colocada @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, Taxa Estimada: ${(feeRate * 100).toFixed(2)}%`);
+        
+        // Salvar no BD com pair_id
+        const orderWithPairId = { ...activeOrders.get(side), pairId };
+        await db.saveOrderSafe(orderWithPairId, `market_making_${side}`, sessionId);
+        
+        log('SUCCESS', `Ordem ${side.toUpperCase()} ${orderId} colocada @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, Pair: ${pairId.substring(0, 20)}..., Taxa Estimada: ${(feeRate * 100).toFixed(2)}%`);
     } catch (e) {
         log('ERROR', `Falha ao colocar ordem ${side.toUpperCase()}: ${e.message}.`);
     }
@@ -711,7 +826,8 @@ async function checkOrders(mid, volatility, pred, orderbook, sessionId = null) {
             log('WARN', `Reprecificando ordem ${key.toUpperCase()} por drift (${(priceDrift * 100).toFixed(2)}%).`);
             const newPrice = key === 'buy' ? mid * (1 - currentSpreadPct / 2) : mid * (1 + currentSpreadPct / 2);
             if (pred.expectedProfit >= EXPECTED_PROFIT_THRESHOLD) {
-                await placeOrder(key, newPrice, order.qty, sessionId); // Passa o sessionId
+                // IMPORTANTE: Passar o pair_id original para manter integridade do par!
+                await placeOrder(key, newPrice, order.qty, sessionId, order.pairId);
             }
         }
     }
@@ -895,6 +1011,71 @@ async function runCycle() {
         stats.cycles = cycleCount;
         log('INFO', `Iniciando ciclo ${cycleCount}.`);
 
+        // ===== SINCRONIZAÇÃO COM BANCO DE DADOS =====
+        // Recarregar ordens abertas para manter activeOrders atualizado
+        try {
+            const openOrders = await db.getOrders({ status: 'open' });
+            activeOrders.clear();
+            pairMapping.clear(); // Reconstruir mapa de pares
+            
+            // Contar ordens por tipo e carregar a mais recente de cada
+            let buyOrders = openOrders.filter(o => o.side.toLowerCase() === 'buy');
+            let sellOrders = openOrders.filter(o => o.side.toLowerCase() === 'sell');
+            
+            // Carregar a BUY mais recente
+            if (buyOrders.length > 0) {
+                const latestBuy = buyOrders[0]; // getOrders retorna ordenado por timestamp DESC
+                activeOrders.set('buy', {
+                    id: latestBuy.id,
+                    side: 'buy',
+                    price: parseFloat(latestBuy.price),
+                    qty: parseFloat(latestBuy.qty),
+                    timestamp: latestBuy.timestamp,
+                    cyclePlaced: cycleCount - 1,
+                    count: buyOrders.length,
+                    pairId: latestBuy.pair_id // NOVO: carregar pair_id
+                });
+            }
+            
+            // Carregar a SELL mais recente
+            if (sellOrders.length > 0) {
+                const latestSell = sellOrders[0];
+                activeOrders.set('sell', {
+                    id: latestSell.id,
+                    side: 'sell',
+                    price: parseFloat(latestSell.price),
+                    qty: parseFloat(latestSell.qty),
+                    timestamp: latestSell.timestamp,
+                    cyclePlaced: cycleCount - 1,
+                    count: sellOrders.length,
+                    pairId: latestSell.pair_id // NOVO: carregar pair_id
+                });
+            }
+            
+            // Reconstruir mapa de pares a partir das ordens abertas
+            for (const order of openOrders) {
+                const pairId = order.pair_id;
+                if (pairId) {
+                    if (!pairMapping.has(pairId)) {
+                        pairMapping.set(pairId, { buyOrder: null, sellOrder: null });
+                    }
+                    const pair = pairMapping.get(pairId);
+                    if (order.side.toLowerCase() === 'buy') {
+                        pair.buyOrder = { id: order.id, price: order.price, qty: order.qty };
+                    } else {
+                        pair.sellOrder = { id: order.id, price: order.price, qty: order.qty };
+                    }
+                }
+            }
+            
+            if (openOrders.length > 0) {
+                log('DEBUG', `Sincronização: Carregadas ${openOrders.length} ordens da BD (BUY: ${buyOrders.length}✓, SELL: ${sellOrders.length}✓)`);
+
+            }
+        } catch (e) {
+            log('WARN', `Erro ao sincronizar ordens com BD: ${e.message}`);
+        }
+
         // Verificar tendências externas (a cada 10min)
         await checkExternalTrends();
 
@@ -991,9 +1172,10 @@ async function runCycle() {
         dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.015);
         currentSpreadPct = dynamicSpreadPct;
 
-        let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : Math.max(MIN_ORDER_SIZE, Math.min(MAX_ORDER_SIZE, ORDER_SIZE * (1 + volatilityPct / 100)));
-        dynamicOrderSize *= (1 + (pred.expectedProfit - EXPECTED_PROFIT_THRESHOLD) * 2);
-        dynamicOrderSize *= confidenceMultiplier; // Aplicar multiplicador de convicção
+        // CRÍTICO: Remover multiplicador de convicção que reduz o ORDER_SIZE drasticamente
+        // Usar ORDER_SIZE configurado (0.02 BTC para modo lucro) sem redução
+        let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : ORDER_SIZE;
+        dynamicOrderSize *= (1 + (Math.max(0, pred.expectedProfit - EXPECTED_PROFIT_THRESHOLD) * 0.5)); // Leve ajuste por profit score
         dynamicOrderSize = Math.min(MAX_ORDER_SIZE, dynamicOrderSize);
         currentBaseSize = dynamicOrderSize;
 
@@ -1029,10 +1211,12 @@ async function runCycle() {
         const avgPrice = stats.avgFillPrice > 0 ? parseFloat(stats.avgFillPrice) : mid;
         const dcaBias = mid < avgPrice * 0.95 ? 0.005 : 0;
         
-        const trendFactor = (parseFloat(pred.confidence) > 2.0 ? 0.003 : 0.0015) * regimeBiasMult;
+        // CORREÇÃO: Aplicar trendBias com MUITO MAIS cuidado - máximo 0.3% de redução
+        const trendFactor = (parseFloat(pred.confidence) > 2.0 ? 0.0005 : 0.0002) * regimeBiasMult;
         const trendBias = pred.trend === 'up' ? trendFactor : (pred.trend === 'down' ? -trendFactor : 0);
         
-        const totalBias = Math.min(0.03, Math.max(-0.03, inventorySkew + trendBias + dcaBias));
+        // CORREÇÃO: Limitar totalBias entre -0.01 e +0.01 (máximo 1% de ajuste)
+        const totalBias = Math.min(0.01, Math.max(-0.01, inventorySkew + trendBias + dcaBias));
         dynamicOrderSize *= regimeSizeMult;
         const refPrice = mid * (1 + totalBias);
         
@@ -1040,22 +1224,28 @@ async function runCycle() {
         const pnlResidueBuffer = stats.totalPnL < 0 ? calculateDynamicRecoveryBuffer(pred.volatility * 100) : 0;
         const finalSpreadPct = dynamicSpreadPct + pnlResidueBuffer;
 
-        // Filtro de Convicção: Evitar operar em baixa confiança + volatilidade extrema
-        if (!testPhase && conviction.overallConfidence < 0.4 && conviction.details.volatilityLevel === 'EXTREME') {
-            log('WARN', `Ciclo ${cycleCount} pulado: Convicção muito baixa (${(conviction.overallConfidence * 100).toFixed(1)}%) + volatilidade extrema. Aguardando melhores condições.`);
-            return;
-        }
-
         // Alerta de confiança baixa mas opera em modo conservador
         if (conviction.overallConfidence < 0.5 && !testPhase) {
-            log('WARN', `Confiança baixa (${(conviction.overallConfidence * 100).toFixed(1)}%). Operando em modo conservador com spread expandido.`);
-            dynamicSpreadPct *= 1.2; // Expandir spread
-            dynamicOrderSize *= 0.6; // Reduzir tamanho
+            log('WARN', `Confiança baixa (${(conviction.overallConfidence * 100).toFixed(1)}%). Operando com spread mais amplo para segurança.`);
+            dynamicSpreadPct *= 1.2; // Expandir spread para segurança
+            // NÃO reduzir tamanho - queremos lucro real!
         }
 
         // Arredondamento Favorável: Compra (Floor), Venda (Ceil) para evitar perdas por precisão
         let buyPrice = Math.min(Math.floor(refPrice * (1 - finalSpreadPct / 2) * 100) / 100, bestBid);
         let sellPrice = Math.max(Math.ceil(refPrice * (1 + finalSpreadPct / 2) * 100) / 100, bestAsk);
+        
+        // VALIDAÇÃO CRÍTICA: Garantir que o buyPrice não está muito abaixo do mercado
+        const minValidBuyPrice = mid * 0.995; // Máximo 0.5% abaixo do mid
+        const maxValidSellPrice = mid * 1.005; // Máximo 0.5% acima do mid
+        if (buyPrice < minValidBuyPrice) {
+            log('WARN', `Preço de compra ${buyPrice.toFixed(2)} muito abaixo do mercado (${mid.toFixed(2)}). Ajustando para ${minValidBuyPrice.toFixed(2)}.`);
+            buyPrice = Math.max(buyPrice, minValidBuyPrice);
+        }
+        if (sellPrice > maxValidSellPrice) {
+            log('WARN', `Preço de venda ${sellPrice.toFixed(2)} muito acima do mercado (${mid.toFixed(2)}). Ajustando para ${maxValidSellPrice.toFixed(2)}.`);
+            sellPrice = Math.min(sellPrice, maxValidSellPrice);
+        }
         
         if (buyPrice >= sellPrice || Math.abs(buyPrice - sellPrice) / mid < MIN_SPREAD_PCT) {
             log('WARN', 'Spread inválido ou muito estreito. Ajustando para spread natural.');
@@ -1079,6 +1269,9 @@ async function runCycle() {
                 }
             }
         }
+
+        // ===== GESTÃO DE SESSÃO DE RECUPERAÇÃO (INICIALIZAR CEDO) =====
+        let activeSession = await db.getActiveRecoverySession();
 
         // Gerenciar ordens ativas
         await checkOrders(mid, volatility, pred, orderbook, activeSession ? activeSession.id : null);
@@ -1118,8 +1311,17 @@ async function runCycle() {
                 }
             }
             
-            // Validar ordem de compra com tendências externas
-            if (!activeOrders.has('buy') && buyQty >= MIN_ORDER_SIZE) {
+            // ===== VALIDAÇÃO DE PARES (ANTES DE COLOCAR QUALQUER ORDEM) =====
+            // Isso previne múltiplos BUY sem SELL ou vice-versa
+            const pairValidation = validateOrderPairs();
+            
+            // Validar ordem de compra
+            // CRÍTICO: Validação deve acontecer MESMO que já exista BUY aberta
+            // (para evitar múltiplas BUY sem SELL correspondente)
+            if (!pairValidation.isBalanced && pairValidation.needsSell) {
+                // Há mais BUY que SELL - bloqueia nova BUY
+                log('WARN', `${pairValidation.message} - não colocando BUY.`);
+            } else if (!activeOrders.has('buy') && buyQty >= MIN_ORDER_SIZE) {
                 const buyValidation = await validateTradingDecision(pred.trend, pred.confidence, 'buy');
                 if (buyValidation.shouldTrade) {
                     await placeOrder('buy', buyPrice, buyQty, activeSession ? activeSession.id : null);
@@ -1127,6 +1329,7 @@ async function runCycle() {
                 } else {
                     log('WARN', `Ordem BUY cancelada por validação externa: ${buyValidation.reason}`);
                 }
+
             }
 
             let sellQty = dynamicOrderSize;
@@ -1141,14 +1344,26 @@ async function runCycle() {
                 log('WARN', `Saldo BTC insuficiente (${btcBalance.toFixed(8)} < ${dynamicOrderSize.toFixed(8)}). Ignorando venda.`);
             }
             
-            // Validar ordem de venda com tendências externas
-            if (!activeOrders.has('sell') && sellQty >= MIN_ORDER_SIZE) {
-                const sellValidation = await validateTradingDecision(pred.trend, pred.confidence, 'sell');
-                if (sellValidation.shouldTrade) {
+            // Validação de SELL: Verificar se há pares desbalanceados
+            // (para evitar múltiplas SELL sem BUY correspondente)
+            // SELL é mais flexível em market making - permite vender para:
+            // 1) Fechar posição (rebalanciar)
+            // 2) Completar o par BUY/SELL
+            // Portanto, SELL é colocado se há saldo BTC ou posição aberta
+            const hasPosition = btcPosition > 0;
+            const canSell = !activeOrders.has('sell') && (sellQty >= MIN_ORDER_SIZE || (hasPosition && btcPosition >= MIN_ORDER_SIZE));
+            
+            if (!pairValidation.isBalanced && pairValidation.needsBuy) {
+                // Há mais SELL que BUY - bloqueia nova SELL
+                log('WARN', `${pairValidation.message} - não colocando SELL.`);
+            } else if (canSell) {
+                // SELL não precisa de validação rigorosa - é para rebalanciar
+                // Apenas valida se há suficiência de saldo
+                if (sellQty >= MIN_ORDER_SIZE) {
                     await placeOrder('sell', sellPrice, sellQty, activeSession ? activeSession.id : null);
-                    log('SUCCESS', `Ordem SELL validada: ${sellValidation.reason}`);
+                    log('SUCCESS', `Ordem SELL colocada para rebalancear posição (Market Making): ${sellPrice.toFixed(2)} | Qty: ${sellQty.toFixed(8)}`);
                 } else {
-                    log('WARN', `Ordem SELL cancelada por validação externa: ${sellValidation.reason}`);
+                    log('INFO', `SELL: Posição aberta mas quantidade insuficiente para vender agora. Aguardando acúmulo.`);
                 }
             }
         } else {
@@ -1156,7 +1371,6 @@ async function runCycle() {
         }
 
         // ===== GESTÃO DE SESSÃO DE RECUPERAÇÃO =====
-        const activeSession = await db.getActiveRecoverySession();
         if (activeSession) {
             // Calcula o PnL apenas para a sessão atual
             const pnlData = await computePnL(mid, activeSession.id);
@@ -1217,6 +1431,20 @@ async function runCycle() {
 
         // Calcular PnL e outras estatísticas (agora usando o PnL total)
         const pnlData = await computePnL(mid, null); // Passa null para obter PnL total
+
+        // ===== SALVAR PnL NO BANCO DE DADOS =====
+        // Salva o PnL no histórico a cada minuto (60 segundos)
+        const SAVE_PNL_INTERVAL_SEC = 60;
+        const lastPnlSave = global.lastPnLSaveTime || 0;
+        const now = Date.now();
+        if ((now - lastPnlSave) / 1000 >= SAVE_PNL_INTERVAL_SEC) {
+            try {
+                await db.savePnL(parseFloat(pnlData.pnl), now);
+                global.lastPnLSaveTime = now;
+            } catch (e) {
+                log('WARN', `Erro ao salvar PnL: ${e.message}`);
+            }
+        }
 
         // Atualizar histórico de performance para otimização
         performanceHistory.push(parseFloat(pnlData.pnl));
@@ -1353,6 +1581,64 @@ async function runCycle() {
         log('ERROR', `Erro no ciclo ${cycleCount}: ${e.message}.`);
     }
 }
+
+// ============ RELATÓRIO DE PARES ============
+async function getPairReport() {
+    /**
+     * Retorna um relatório detalhado dos pares BUY/SELL
+     * Exibe: pair_id, status de preenchimento, spread, duração, etc
+     */
+    const report = {
+        timestamp: new Date().toISOString(),
+        totalPairs: pairMapping.size,
+        completePairs: 0,
+        incompletePairs: 0,
+        pairs: []
+    };
+    
+    for (const [pairId, pair] of pairMapping.entries()) {
+        const hasBuy = pair.buyOrder !== null;
+        const hasSell = pair.sellOrder !== null;
+        const isComplete = hasBuy && hasSell;
+        
+        if (isComplete) report.completePairs++;
+        else report.incompletePairs++;
+        
+        let spread = 0, roi = 0;
+        if (hasBuy && hasSell) {
+            spread = ((pair.sellOrder.price - pair.buyOrder.price) / pair.buyOrder.price) * 100;
+            roi = spread - (FEE_RATE_MAKER * 2 * 100); // Descontar fees de maker em ambas as ordens
+        }
+        
+        const pairStatus = {
+            pairId: pairId.substring(0, 30), // Truncar para exibição
+            status: isComplete ? 'COMPLETO' : (hasBuy ? 'AGUARDANDO_SELL' : 'AGUARDANDO_BUY'),
+            buyOrder: hasBuy ? {
+                id: pair.buyOrder.id.substring(0, 20),
+                price: pair.buyOrder.price.toFixed(2),
+                qty: pair.buyOrder.qty.toFixed(8)
+            } : null,
+            sellOrder: hasSell ? {
+                id: pair.sellOrder.id.substring(0, 20),
+                price: pair.sellOrder.price.toFixed(2),
+                qty: pair.sellOrder.qty.toFixed(8)
+            } : null,
+            spread: spread.toFixed(3) + '%',
+            roi: roi.toFixed(3) + '%'
+        };
+        
+        report.pairs.push(pairStatus);
+    }
+    
+    return report;
+}
+
+// ============ EXPORTAR PARA FRONTEND ============
+// Adicionar função ao módulo para exposição via HTTP
+module.exports = {
+    getPairReport: getPairReport,
+    pairMapping: pairMapping
+};
 
 // ---------------- MAIN ----------------
 async function main() {

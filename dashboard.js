@@ -267,58 +267,31 @@ let pnlTimestamps = [];
 
 async function loadPnlHistory() {
     try {
-        await fs.access(PNL_HISTORY_FILE);
-        const data = await fs.readFile(PNL_HISTORY_FILE, 'utf8');
-        const loadedData = JSON.parse(data);
-
-        if (Array.isArray(loadedData) && loadedData.length > 0) {
-            if (loadedData[0].hasOwnProperty('value') && loadedData[0].hasOwnProperty('timestamp')) {
-                const validData = loadedData
-                    .filter(item => typeof item.value === 'number' && typeof item.timestamp === 'string')
-                    .map(item => ({
-                        value: parseFloat(item.value),
-                        timestamp: item.timestamp
-                    }));
-                const uniqueData = Array.from(new Map(validData.map(item => [item.timestamp, item])).values())
-                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                pnlHistory = uniqueData.map(item => item.value);
-                pnlTimestamps = uniqueData.map(item => item.timestamp);
-            } else {
-                pnlHistory = Array.isArray(loadedData) ? loadedData.map(val => (typeof val === 'number' ? parseFloat(val) : 0)) : [];
-                pnlTimestamps = Array(pnlHistory.length).fill(new Date().toISOString());
-                log('WARN', `Converted old PNL history format to include timestamps at ${PNL_HISTORY_FILE}`);
-            }
+        // NOVO: Carregar do banco de dados em vez do arquivo JSON
+        log('INFO', 'Carregando histórico de PnL do banco de dados...');
+        const dbPnlHistory = await db.getPnLHistory(24, MAX_PNL_HISTORY_POINTS);
+        
+        if (dbPnlHistory && dbPnlHistory.length > 0) {
+            pnlHistory = dbPnlHistory.map(item => parseFloat(item.value));
+            pnlTimestamps = dbPnlHistory.map(item => item.iso);
+            log('INFO', `Carregados ${pnlHistory.length} pontos de PnL do banco de dados`);
         } else {
-            throw new Error('Invalid PNL history data structure');
+            log('INFO', 'Nenhum histórico de PnL encontrado no banco de dados. Inicializando vazio.');
+            pnlHistory = [];
+            pnlTimestamps = [];
         }
-
-        pnlHistory = pnlHistory.slice(-MAX_PNL_HISTORY_POINTS);
-        pnlTimestamps = pnlTimestamps.slice(-MAX_PNL_HISTORY_POINTS);
-
-        log('INFO', `Loaded PNL history with ${pnlHistory.length} points from ${PNL_HISTORY_FILE}`);
     } catch (err) {
-        if (err.code === 'ENOENT') {
-            log('INFO', `No PNL history file found at ${PNL_HISTORY_FILE}, initializing empty history`);
-            pnlHistory = [];
-            pnlTimestamps = [];
-            await savePnlHistory();
-        } else {
-            log('ERROR', `Failed to load PNL history: ${err.message}`);
-            pnlHistory = [];
-            pnlTimestamps = [];
-            await savePnlHistory();
-        }
+        log('WARN', `Falha ao carregar histórico PnL do banco: ${err.message}. Inicializando vazio.`);
+        pnlHistory = [];
+        pnlTimestamps = [];
     }
 }
 
 async function savePnlHistory() {
     try {
-        const historyData = pnlHistory.map((value, index) => ({
-            value: parseFloat(value.toFixed(8)),
-            timestamp: pnlTimestamps[index] || new Date().toISOString()
-        }));
-        await fs.writeFile(PNL_HISTORY_FILE, JSON.stringify(historyData, null, 2));
-        log('DEBUG', `Saved PNL history with ${pnlHistory.length} points to ${PNL_HISTORY_FILE}`);
+        // O PnL agora é salvo diretamente pelo bot.js no banco de dados
+        // O dashboard apenas consome os dados
+        log('DEBUG', `Dashboard: ${pnlHistory.length} pontos de PnL em memória (salvos pelo bot no BD)`);
     } catch (err) {
         log('ERROR', `Failed to save PNL history: ${err.message}`);
     }
@@ -361,11 +334,15 @@ async function getLiveData() {
         
         let ticker, balances, orders, orderbook;
 
+        // Buscar ordens do banco de dados SEMPRE para ter acesso ao pair_id
+        const localOrders = await db.getOrders({limit: 100}) || [];
+        const localOrderMap = new Map(localOrders.map(o => [o.id, o])); // Map para busca rápida por ID
+
         if (SIMULATE) {
-            // Em modo simulação, usar funções do mbClient que já tratam simulação
+            // Em modo simulação, usar ordens locais
             ticker = await mbClient.getTicker();
             balances = await mbClient.getBalances();
-            orders = await db.getOrders({limit: 100}) || []; // Pegar ordens do banco local
+            orders = localOrders;
             orderbook = await mbClient.getOrderBook(10);
             if (DEBUG) log('DEBUG', 'Simulated data fetched', { ticker, balances, ordersCount: orders.length, orderbookKeys: orderbook ? Object.keys(orderbook) : 'null' });
         } else {
@@ -389,6 +366,12 @@ async function getLiveData() {
                 log('WARN', 'Unexpected orders response structure, initializing empty orders:', ordersResponse.data);
                 orders = [];
             }
+            
+            // Adicionar pair_id das ordens locais
+            orders = orders.map(order => ({
+                ...order,
+                pair_id: localOrderMap.get(order.id)?.pair_id || null
+            }));
 
             try {
                 // Usar API pública para orderbook para evitar problemas de autenticação/rate limit no dashboard
@@ -525,7 +508,7 @@ async function getLiveData() {
             .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         pnlHistory = uniqueData.map(item => item.value).slice(-MAX_PNL_HISTORY_POINTS);
         pnlTimestamps = uniqueData.map(item => item.timestamp).slice(-MAX_PNL_HISTORY_POINTS);
-        await savePnlHistory();
+        // NOTA: PnL agora é salvo pelo bot.js, não pelo dashboard
 
         // Usar o totalPnL já calculado (não recalcular novamente)
 
@@ -541,7 +524,8 @@ async function getLiveData() {
                 type: o.type,
                 timestamp: createdAt,
                 updated_at: updatedAt,
-                feeRate: o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER // ADICIONADO
+                feeRate: o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER, // ADICIONADO
+                pair_id: o.pair_id || null // ADICIONADO: incluir pair_id
             };
         });
 
@@ -806,6 +790,81 @@ app.post('/api/recovery/reset', async (req, res) => {
         res.json({success: false, message: 'Nenhuma sessão ativa encontrada.'});
     } catch (err) {
         log('ERROR', 'Erro ao resetar baseline:', err.message);
+        res.status(500).json({error: err.message});
+    }
+});
+
+// ========== ENDPOINT DE PARES ==========
+app.get('/api/pairs', async (req, res) => {
+    try {
+        // Consultar BD diretamente
+        const openOrders = await db.getOrders({ status: 'open' });
+        const pairMap = {};
+        
+        // Agrupar por pair_id
+        for (const order of openOrders) {
+            const pairId = order.pair_id || `PAIR_LEGACY_${order.id}`;
+            if (!pairMap[pairId]) {
+                pairMap[pairId] = { buyOrder: null, sellOrder: null };
+            }
+            
+            if (order.side.toLowerCase() === 'buy') {
+                pairMap[pairId].buyOrder = {
+                    id: order.id,
+                    price: parseFloat(order.price),
+                    qty: parseFloat(order.qty)
+                };
+            } else {
+                pairMap[pairId].sellOrder = {
+                    id: order.id,
+                    price: parseFloat(order.price),
+                    qty: parseFloat(order.qty)
+                };
+            }
+        }
+        
+        // Formatar resposta
+        const pairs = [];
+        for (const [pairId, pair] of Object.entries(pairMap)) {
+            const hasBuy = pair.buyOrder !== null;
+            const hasSell = pair.sellOrder !== null;
+            const isComplete = hasBuy && hasSell;
+            
+            let spread = 0, roi = 0;
+            if (isComplete) {
+                spread = ((pair.sellOrder.price - pair.buyOrder.price) / pair.buyOrder.price) * 100;
+                roi = spread - (0.006 * 100); // Descontar 0.6% de fees
+            }
+            
+            pairs.push({
+                pairId: pairId.substring(0, 50),
+                status: isComplete ? 'COMPLETO' : (hasBuy ? 'AGUARDANDO_SELL' : 'AGUARDANDO_BUY'),
+                buyOrder: hasBuy ? {
+                    id: pair.buyOrder.id.substring(0, 20),
+                    price: pair.buyOrder.price.toFixed(2),
+                    qty: pair.buyOrder.qty.toFixed(8)
+                } : null,
+                sellOrder: hasSell ? {
+                    id: pair.sellOrder.id.substring(0, 20),
+                    price: pair.sellOrder.price.toFixed(2),
+                    qty: pair.sellOrder.qty.toFixed(8)
+                } : null,
+                spread: spread.toFixed(3) + '%',
+                roi: roi.toFixed(3) + '%'
+            });
+        }
+        
+        const pairsReport = {
+            timestamp: new Date().toISOString(),
+            totalPairs: pairs.length,
+            completePairs: pairs.filter(p => p.status === 'COMPLETO').length,
+            incompletePairs: pairs.filter(p => p.status !== 'COMPLETO').length,
+            pairs: pairs.sort((a, b) => a.status.localeCompare(b.status))
+        };
+        
+        res.json(pairsReport);
+    } catch (err) {
+        log('ERROR', 'Erro ao consultar pares:', err.message);
         res.status(500).json({error: err.message});
     }
 });
