@@ -159,6 +159,181 @@
         </div>
     </div>
 
+    <!-- SEÇÃO DE TESTES AUTOMATIZADOS -->
+    <div class="mt-4 bg-gray-800 p-2 sm:p-4 rounded-xl shadow" id="testsSection">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base sm:text-lg font-bold" style="color: #f59e0b;">🧪 Testes Automatizados (Dados Reais)</h2>
+            <div class="flex gap-2 items-center">
+                <span id="testsStatus" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Carregando...</span>
+                <button id="runTestsBtn" onclick="runAutomatedTests()" 
+                    class="text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded text-white transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    🔄 Refazer Testes (24h)
+                </button>
+            </div>
+        </div>
+        
+        <!-- Resumo dos Testes -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4" id="testsSummary">
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-blue-400" id="testsTotal">-</div>
+                <div class="text-xs text-gray-400 mt-1">Total de Testes</div>
+            </div>
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-green-400" id="testsPassed">-</div>
+                <div class="text-xs text-gray-400 mt-1">Passaram ✅</div>
+            </div>
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-red-400" id="testsFailed">-</div>
+                <div class="text-xs text-gray-400 mt-1">Falharam ❌</div>
+            </div>
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-2xl font-bold text-yellow-400" id="testsPassRate">-%</div>
+                <div class="text-xs text-gray-400 mt-1">Taxa de Sucesso</div>
+            </div>
+            <div class="bg-gray-700 p-3 rounded-lg text-center">
+                <div class="text-lg font-bold text-purple-400" id="testsDataSource">-</div>
+                <div class="text-xs text-gray-400 mt-1">Fonte de Dados</div>
+            </div>
+        </div>
+
+        <!-- 💰 PROJEÇÃO DE GANHOS (NOVO) -->
+        <div class="bg-gradient-to-r from-gray-700 to-gray-800 p-4 rounded-lg mb-4 border border-gray-600" id="projectionSection">
+            <h3 class="text-sm font-bold text-yellow-400 mb-3">💰 PROJEÇÃO DE GANHOS - <span id="bestTestName">Melhor Teste</span></h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-gray-900 p-3 rounded text-center">
+                    <div class="text-xs text-gray-400 mb-1">PnL no Teste</div>
+                    <div class="text-xl font-bold" id="projPnlTest">-</div>
+                </div>
+                <div class="bg-gray-900 p-3 rounded text-center">
+                    <div class="text-xs text-gray-400 mb-1">vs HOLD</div>
+                    <div class="text-xl font-bold" id="projVsHold">-</div>
+                </div>
+                <div class="bg-gray-900 p-3 rounded text-center">
+                    <div class="text-xs text-gray-400 mb-1">📅 Projeção Mensal</div>
+                    <div class="text-xl font-bold" id="projMonthly">-</div>
+                    <div class="text-xs text-gray-500" id="projMonthlyRoi">-</div>
+                </div>
+                <div class="bg-gray-900 p-3 rounded text-center">
+                    <div class="text-xs text-gray-400 mb-1">📆 Projeção Anual</div>
+                    <div class="text-xl font-bold" id="projYearly">-</div>
+                    <div class="text-xs text-gray-500" id="projYearlyRoi">-</div>
+                </div>
+            </div>
+            <div class="mt-3 text-xs text-gray-500 text-center">
+                <span id="projDisclaimer">⚠️ Projeções baseadas em <span id="projHours">-</span>h de dados históricos. Resultados passados não garantem retornos futuros.</span>
+            </div>
+        </div>
+
+        <!-- Info do Período de Dados -->
+        <div class="bg-gray-700 p-3 rounded-lg mb-4" id="testsPriceInfo">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                <div>
+                    <span class="text-gray-400">Período:</span>
+                    <span id="testsHours" class="text-white font-bold">-</span>
+                </div>
+                <div>
+                    <span class="text-gray-400">Preço Inicial:</span>
+                    <span id="testsPriceStart" class="text-white">-</span>
+                </div>
+                <div>
+                    <span class="text-gray-400">Preço Final:</span>
+                    <span id="testsPriceEnd" class="text-white">-</span>
+                </div>
+                <div>
+                    <span class="text-gray-400">Variação:</span>
+                    <span id="testsPriceChange" class="text-white">-</span>
+                </div>
+                <div>
+                    <span class="text-gray-400">Data Points:</span>
+                    <span id="testsDataPoints" class="text-white">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Resultados dos Testes -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+                <thead>
+                <tr class="text-gray-400 border-b border-gray-700">
+                    <th class="text-left p-2">Teste</th>
+                    <th class="text-center p-2">Status</th>
+                    <th class="text-right p-2">PnL (R$)</th>
+                    <th class="text-right p-2">vs HOLD</th>
+                    <th class="text-right p-2">ROI</th>
+                    <th class="text-right p-2">BTC Ganho</th>
+                    <th class="text-right p-2">Proj. Mensal</th>
+                </tr>
+                </thead>
+                <tbody id="testsTableBody">
+                <tr>
+                    <td class="p-2 text-gray-400 text-center" colspan="7">Aguardando resultados dos testes...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Última Execução -->
+        <div class="mt-3 text-xs text-gray-500 flex justify-between">
+            <span>Última execução: <span id="testsLastRun">-</span></span>
+            <span>Cache: <span id="testsCacheAge">-</span></span>
+        </div>
+    </div>
+
+    <!-- SEÇÃO DE ORDENS MOMENTUM -->
+    <div class="grid grid-cols-1 gap-4 mt-4">
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+            <h2 class="text-lg font-bold mb-3" style="color: #8b5cf6;">🎯 Ordens em Validação por Momentum</h2>
+            
+            <!-- Status Geral -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+                <div class="bg-gray-700 p-2 rounded text-center">
+                    <div class="text-sm text-gray-400">Simuladas</div>
+                    <div id="momentumSimulatedCount" class="text-xl font-bold text-purple-400">0</div>
+                </div>
+                <div class="bg-gray-700 p-2 rounded text-center">
+                    <div class="text-sm text-gray-400">Pendentes</div>
+                    <div id="momentumPendingCount" class="text-xl font-bold text-yellow-400">0</div>
+                </div>
+                <div class="bg-gray-700 p-2 rounded text-center">
+                    <div class="text-sm text-gray-400">Confirmadas</div>
+                    <div id="momentumConfirmedCount" class="text-xl font-bold text-green-400">0</div>
+                </div>
+                <div class="bg-gray-700 p-2 rounded text-center">
+                    <div class="text-sm text-gray-400">Rejeitadas</div>
+                    <div id="momentumRejectedCount" class="text-xl font-bold text-red-400">0</div>
+                </div>
+                <div class="bg-gray-700 p-2 rounded text-center">
+                    <div class="text-sm text-gray-400">Expiradas</div>
+                    <div id="momentumExpiredCount" class="text-xl font-bold text-gray-400">0</div>
+                </div>
+            </div>
+            
+            <!-- Tabela de Ordens -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                    <tr class="text-gray-400 border-b border-gray-700">
+                        <th class="text-left p-2">ID</th>
+                        <th class="text-left p-2">Tipo</th>
+                        <th class="text-right p-2">Preço Criação</th>
+                        <th class="text-right p-2">Preço Atual</th>
+                        <th class="text-right p-2">Variação</th>
+                        <th class="text-center p-2">Status</th>
+                        <th class="text-center p-2">Reversões</th>
+                        <th class="text-left p-2">Picos/Vales</th>
+                        <th class="text-left p-2">Motivo Rejeição</th>
+                    </tr>
+                    </thead>
+                    <tbody id="momentumOrdersTable">
+                    <tr>
+                        <td class="p-2 text-gray-500 text-center" colspan="9">Nenhuma ordem em validação</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <!-- Gráfico de PnL -->
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
@@ -343,6 +518,7 @@
     let residualPnlChart;
 
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('[Dashboard] 🔧 Initializing charts...');
         // Gráfico de PnL (apenas linha verde do PnL)
         pnlChart = new Chart(document.getElementById('pnlChart'), {
             type: 'line',
@@ -486,106 +662,165 @@
                 }
             }
         });
+        console.log('[Dashboard] ✅ Charts initialized:', { pnlChart: !!pnlChart, btcChart: !!btcChart });
     });
 
     function formatSpread(spread) {
         if (!spread && spread !== 0) return "Sem dados";
-        const value = Number(spread).toFixed(2);
+        const num = Number(spread) || 0;
+        if (!isFinite(num)) return "Sem dados";
+        const value = num.toFixed(2);
         let level = "";
-        if (spread < 0.5) level = " (muito baixo) ✅";
-        else if (spread < 1.5) level = " (moderado) 😐";
+        if (num < 0.5) level = " (muito baixo) ✅";
+        else if (num < 1.5) level = " (moderado) 😐";
         else level = " (alto) ⚠️";
         return `${value}%${level}`;
     }
 
     function formatVolatility(vol) {
         if (!vol && vol !== 0) return "Sem dados";
-        const value = Number(vol).toFixed(2);
+        const num = Number(vol) || 0;
+        if (!isFinite(num)) return "Sem dados";
+        const value = num.toFixed(2);
         let desc = "";
-        if (vol < 0.5) desc = " (estável) ✅";
-        else if (vol < 1.5) desc = " (moderada) 😐";
+        if (num < 0.5) desc = " (estável) ✅";
+        else if (num < 1.5) desc = " (moderada) 😐";
         else desc = " (alta) ⚠️";
         return `${value}%${desc}`;
     }
 
+    // Função global de formatação segura
+    window.safeBRFormat = function(value, decimals = 2) {
+        const num = parseFloat(value) || 0;
+        if (!isFinite(num)) return '-';
+        if (decimals === 0) {
+            return num.toLocaleString('pt-BR', {maximumFractionDigits: 0});
+        }
+        return num.toLocaleString('pt-BR', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+    };
+
     async function loadData() {
         try {
             console.log('[Dashboard] Fetching data from API...');
-            const res = await fetch(`/api/data?t=${Date.now()}`);
+            const res = await fetch(`http://localhost:3001/api/data?t=${Date.now()}`);
+            
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+            
             const data = await res.json();
+            console.log('[Dashboard] ✅ Data loaded successfully');
+            
+            // Debug: mostrar dados recebidos
+            console.log('[Dashboard] Raw data:', data);
             console.log('[Dashboard] Data loaded:', {
                 roi: data.stats?.roi,
-                totalPnL: data.stats?.totalPnL,
+                totalPnL: data.stats?.totalPnL || data.stats?.pnl_total,
                 balanceTotal: data.balances?.total
             });
 
+            // Função auxiliar para safe formatting
+            const safeFormat = (value, decimals = 2) => {
+                try {
+                    const num = parseFloat(value) || 0;
+                    if (!isFinite(num)) return '-';
+                    if (decimals === 0) {
+                        return num.toLocaleString('pt-BR', {maximumFractionDigits: 0});
+                    }
+                    return num.toLocaleString('pt-BR', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+                } catch (e) {
+                    console.warn('[Dashboard] Format error:', e.message, 'Value:', value);
+                    return '-';
+                }
+            };
+
             const modeSpan = document.getElementById('mode');
-            modeSpan.textContent = `Modo: ${data.config?.simulate ? 'Simulação' : 'Live'}`;
-            modeSpan.className = data.config?.simulate
-                ? 'px-2 py-1 sm:px-3 sm:py-1 bg-yellow-600 rounded-full text-xs sm:text-sm'
-                : 'px-2 py-1 sm:px-3 sm:py-1 bg-green-600 rounded-full text-xs sm:text-sm';
+            if (modeSpan) {
+                modeSpan.textContent = `Modo: ${data.config?.simulate ? 'Simulação' : 'Live'}`;
+                modeSpan.className = data.config?.simulate
+                    ? 'px-2 py-1 sm:px-3 sm:py-1 bg-yellow-600 rounded-full text-xs sm:text-sm'
+                    : 'px-2 py-1 sm:px-3 sm:py-1 bg-green-600 rounded-full text-xs sm:text-sm';
+            }
 
-            const lastPrice = parseFloat(data.market?.last) || 654973.00;
-            document.getElementById('lastPrice').textContent = `R$ ${lastPrice.toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
+            const lastPrice = parseFloat(data.market?.last) || parseFloat(data.market?.mid) || 654973.00;
+            const lastPriceEl = document.getElementById('lastPrice');
+            if (lastPriceEl) {
+                lastPriceEl.textContent = `R$ ${safeFormat(lastPrice, 2)}`;
+            }
 
-            document.getElementById('spread').textContent = formatSpread(data.market?.spread || 0.06);
-            document.getElementById('volatility').textContent = formatVolatility(data.market?.volatility || 0.26);
+            const spread = parseFloat(data.market?.spread || 0.06);
+            const spreadEl = document.getElementById('spread');
+            if (spreadEl) {
+                spreadEl.textContent = isFinite(spread) ? `${spread.toFixed(2)}%` : '-';
+            }
+            
+            const volatility = parseFloat(data.market?.volatility || data.market?.tendency?.volatility || 0.26);
+            const volatilityEl = document.getElementById('volatility');
+            if (volatilityEl) {
+                volatilityEl.textContent = isFinite(volatility) ? `${volatility.toFixed(2)}%` : '-';
+            }
 
-            const totalPnL = parseFloat(data.stats?.totalPnL || 0);
+            const totalPnL = parseFloat(data.stats?.totalPnL || data.stats?.pnl_total || 0);
             const pnlEl = document.getElementById('pnl');
             const pnlCard = document.getElementById('pnlCard');
             
-            console.log('[Dashboard] PnL updating: ', totalPnL);
+            console.log('[Dashboard] PnL updating: totalPnL=', totalPnL, 'type=', typeof totalPnL);
             
-            pnlEl.textContent = `R$ ${totalPnL.toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })} ${totalPnL > 0 ? '📈' : totalPnL < 0 ? '📉' : '😐'}`;
+            if (pnlEl) {
+                if (isFinite(totalPnL)) {
+                    pnlEl.textContent = `R$ ${safeFormat(totalPnL, 2)} ${totalPnL > 0 ? '📈' : totalPnL < 0 ? '📉' : '😐'}`;
+                } else {
+                    pnlEl.textContent = 'R$ 0,00 😐';
+                }
+                
+                // Atualizar cor da borda do card PnL dinamicamente (sempre visível)
+                if (pnlCard) {
+                    if (totalPnL > 0) {
+                        pnlEl.className = "text-green-400 text-lg sm:text-xl font-bold";
+                        pnlCard.classList.remove('border-red-500', 'border-gray-500');
+                        pnlCard.classList.add('border-green-500');
+                    } else if (totalPnL < 0) {
+                        pnlEl.className = "text-red-400 text-lg sm:text-xl font-bold";
+                        pnlCard.classList.remove('border-green-500', 'border-gray-500');
+                        pnlCard.classList.add('border-red-500');
+                    } else {
+                        pnlEl.className = "text-gray-400 text-lg sm:text-xl font-bold";
+                        pnlCard.classList.remove('border-green-500', 'border-red-500');
+                        pnlCard.classList.add('border-gray-500');
+                    }
+                }
+            }
             
-            // Atualizar cor da borda do card PnL dinamicamente (sempre visível)
-            if (totalPnL > 0) {
-                pnlEl.className = "text-green-400 text-lg sm:text-xl font-bold";
-                pnlCard.classList.remove('border-red-500', 'border-gray-500');
-                pnlCard.classList.add('border-green-500');
-            } else if (totalPnL < 0) {
-                pnlEl.className = "text-red-400 text-lg sm:text-xl font-bold";
-                pnlCard.classList.remove('border-green-500', 'border-gray-500');
-                pnlCard.classList.add('border-red-500');
-            } else {
-                pnlEl.className = "text-gray-400 text-lg sm:text-xl font-bold";
-                pnlCard.classList.remove('border-green-500', 'border-red-500');
-                pnlCard.classList.add('border-gray-500');
+            const roi = parseFloat(data.stats?.roi || 0);
+            const roiEl = document.getElementById('roi');
+            if (roiEl) {
+                roiEl.textContent = `${isFinite(roi) ? safeFormat(roi, 2) : '0.00'}%`;
+                if (roi > 0) {
+                    roiEl.className = 'text-green-400';
+                } else if (roi < 0) {
+                    roiEl.className = 'text-red-400';
+                }
             }
 
-            document.getElementById('monthlyPnl').textContent = `Mensal: R$ ${parseFloat(data.stats?.monthlyPnL || 0).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
-
-            document.getElementById('brl').textContent = `R$ ${parseFloat(data.balances?.brl || 0).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
-            document.getElementById('btc').textContent = `${parseFloat(data.balances?.btc || 0).toFixed(8)} BTC`;
-            const totalFormatted = `R$ ${parseFloat(data.balances?.total || 0).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`;
-            document.getElementById('totalBalanceCard').textContent = totalFormatted;
-            document.getElementById('totalBalanceList').textContent = totalFormatted;
+            const brlEl = document.getElementById('brl');
+            const btcEl = document.getElementById('btc');
+            const totalBalanceCard = document.getElementById('totalBalanceCard');
+            const totalBalanceList = document.getElementById('totalBalanceList');
+            
+            if (brlEl) brlEl.textContent = `R$ ${safeFormat(data.balances?.brl || 0, 2)}`;
+            if (btcEl) btcEl.textContent = `${(parseFloat(data.balances?.btc || 0) || 0).toFixed(8)} BTC`;
+            
+            const total = parseFloat(data.balances?.total || 0) || 0;
+            const totalFormatted = `R$ ${safeFormat(total, 2)}`;
+            if (totalBalanceCard) totalBalanceCard.textContent = totalFormatted;
+            if (totalBalanceList) totalBalanceList.textContent = totalFormatted;
 
             const tbody = document.getElementById('ordersTable');
             tbody.innerHTML = '';
             (data.activeOrders || []).forEach(order => {
                 const age = order.ageSecMinHour || {ageHour: 0, ageMin: 0, ageSec: 0};
                 const ageStr = `${String(age.ageHour).padStart(2, '0')}:${String(age.ageMin % 60).padStart(2, '0')}:${String(age.ageSec % 60).padStart(2, '0')}`;
-                const priceFormatted = parseFloat(order.price || 0).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
+                const priceFormatted = window.safeBRFormat(order.price || 0, 2);
                 const tr = document.createElement('tr');
                 const pairId = order.pair_id ? order.pair_id : '❌ Sem par';
                 
@@ -615,398 +850,208 @@
                 tbody.appendChild(tr);
             });
 
-            if (pnlChart && btcChart && data.stats?.pnlHistory?.length > 0 && data.stats?.pnlTimestamps?.length > 0) {
-                const validPnLData = data.stats.pnlHistory
-                    .map((val, i) => ({value: parseFloat(val), timestamp: data.stats.pnlTimestamps[i]}))
-                    .filter(item => !isNaN(item.value) && item.value < 1e10 && item.timestamp);
-                
-                // Carregar histórico de preço BTC do servidor
-                const validPriceData = (data.stats?.priceHistory || [])
-                    .map((price, i) => ({price: parseFloat(price), timestamp: data.stats.priceTimestamps[i]}))
-                    .filter(item => !isNaN(item.price) && item.timestamp);
-                
-                // IMPORTANTE: Sempre recarregar dados completos do servidor
-                // Isso garante que ao fazer refresh, o histórico persista
-                const shouldRebuildPnLChart = pnlChart.data.labels.length === 0;
-                const shouldRebuildBtcChart = btcChart.data.labels.length === 0;
-                
-                if (shouldRebuildPnLChart) {
-                    // Primeira carga ou depois do refresh: carregar todos os dados do PnL
-                    pnlChart.data.labels = validPnLData.map(item => new Date(item.timestamp));
-                    pnlChart.data.datasets[0].data = validPnLData.map(item => ({
-                        x: new Date(item.timestamp),
-                        y: item.value
-                    }));
-                    pnlChart.update();
-                } else {
-                    // Atualização normal do PnL: apenas adiciona novo ponto
-                    const lastTimestamp = pnlChart.data.labels[pnlChart.data.labels.length - 1];
-                    const newTimestamp = new Date(data.timestamp);
-                    if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
-                        const lastValidPnL = validPnLData.length > 0 ? validPnLData[validPnLData.length - 1].value : parseFloat(data.stats.totalPnL || '0.06');
-                        
-                        pnlChart.data.labels.push(newTimestamp);
-                        pnlChart.data.datasets[0].data.push({
-                            x: newTimestamp,
-                            y: lastValidPnL
-                        });
-                    }
-                }
-                
-                // Manter apenas os últimos 60 pontos para performance (PnL)
-                if (pnlChart.data.labels.length > 60) {
-                    pnlChart.data.labels.shift();
-                    pnlChart.data.datasets[0].data.shift();
-                }
-                pnlChart.update();
-                
-                // ===== GRÁFICO DE BTC PRICE =====
-                if (shouldRebuildBtcChart) {
-                    // Primeira carga: carregar histórico de preço
-                    if (validPriceData.length > 0) {
-                        btcChart.data.labels = validPriceData.map(item => new Date(item.timestamp));
-                        btcChart.data.datasets[0].data = validPriceData.map(item => ({
+            // ========== GRÁFICOS ==========
+            try {
+                if (typeof pnlChart !== 'undefined' && typeof btcChart !== 'undefined' && 
+                    pnlChart && btcChart && 
+                    data.stats?.pnlHistory?.length > 0 && data.stats?.pnlTimestamps?.length > 0) {
+                    console.log('[Dashboard] Updating charts...');
+                    
+                    const validPnLData = data.stats.pnlHistory
+                        .map((val, i) => ({value: parseFloat(val), timestamp: data.stats.pnlTimestamps[i]}))
+                        .filter(item => !isNaN(item.value) && item.value < 1e10 && item.timestamp);
+                    
+                    // Carregar histórico de preço BTC do servidor
+                    const validPriceData = (data.stats?.priceHistory || [])
+                        .map((price, i) => ({price: parseFloat(price), timestamp: data.stats.priceTimestamps[i]}))
+                        .filter(item => !isNaN(item.price) && item.timestamp);
+                    
+                    // IMPORTANTE: Sempre recarregar dados completos do servidor
+                    // Isso garante que ao fazer refresh, o histórico persista
+                    const shouldRebuildPnLChart = pnlChart.data.labels.length === 0;
+                    const shouldRebuildBtcChart = btcChart.data.labels.length === 0;
+                    
+                    if (shouldRebuildPnLChart) {
+                        // Primeira carga ou depois do refresh: carregar todos os dados do PnL
+                        pnlChart.data.labels = validPnLData.map(item => new Date(item.timestamp));
+                        pnlChart.data.datasets[0].data = validPnLData.map(item => ({
                             x: new Date(item.timestamp),
-                            y: item.price
+                            y: item.value
                         }));
+                        pnlChart.update();
+                    } else {
+                        // Atualização normal do PnL: apenas adiciona novo ponto
+                        const lastTimestamp = pnlChart.data.labels[pnlChart.data.labels.length - 1];
+                        const newTimestamp = new Date(data.timestamp);
+                        if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
+                            const lastValidPnL = validPnLData.length > 0 ? validPnLData[validPnLData.length - 1].value : parseFloat(data.stats.totalPnL || '0.06');
+                            
+                            pnlChart.data.labels.push(newTimestamp);
+                            pnlChart.data.datasets[0].data.push({
+                                x: newTimestamp,
+                                y: lastValidPnL
+                            });
+                        }
+                    }
+                    
+                    // Manter apenas os últimos 60 pontos para performance (PnL)
+                    if (pnlChart.data.labels.length > 60) {
+                        pnlChart.data.labels.shift();
+                        pnlChart.data.datasets[0].data.shift();
+                    }
+                    pnlChart.update();
+                    
+                    // ===== GRÁFICO DE BTC PRICE =====
+                    if (shouldRebuildBtcChart) {
+                        // Primeira carga: carregar histórico de preço
+                        if (validPriceData.length > 0) {
+                            btcChart.data.labels = validPriceData.map(item => new Date(item.timestamp));
+                            btcChart.data.datasets[0].data = validPriceData.map(item => ({
+                                x: new Date(item.timestamp),
+                                y: item.price
+                            }));
+                        }
+                        btcChart.update();
+                    } else {
+                        // Atualização normal: adiciona novo ponto
+                        const lastTimestamp = btcChart.data.labels[btcChart.data.labels.length - 1];
+                        const newTimestamp = new Date(data.timestamp);
+                        if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
+                            const currentPrice = validPriceData.length > 0 ? validPriceData[validPriceData.length - 1].price : parseFloat(data.market?.last || 490000);
+                            
+                            btcChart.data.labels.push(newTimestamp);
+                            btcChart.data.datasets[0].data.push({
+                                x: newTimestamp,
+                                y: currentPrice
+                            });
+                        }
+                    }
+                    
+                    // Manter apenas os últimos 60 pontos para performance (BTC Price)
+                    if (btcChart.data.labels.length > 60) {
+                        btcChart.data.labels.shift();
+                        btcChart.data.datasets[0].data.shift();
                     }
                     btcChart.update();
-                } else {
-                    // Atualização normal: adiciona novo ponto
-                    const lastTimestamp = btcChart.data.labels[btcChart.data.labels.length - 1];
-                    const newTimestamp = new Date(data.timestamp);
-                    if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
-                        const currentPrice = validPriceData.length > 0 ? validPriceData[validPriceData.length - 1].price : parseFloat(data.market?.last || 490000);
-                        
-                        btcChart.data.labels.push(newTimestamp);
-                        btcChart.data.datasets[0].data.push({
-                            x: newTimestamp,
-                            y: currentPrice
-                        });
-                    }
-                }
-                
-                // Manter apenas os últimos 60 pontos para performance (BTC Price)
-                if (btcChart.data.labels.length > 60) {
-                    btcChart.data.labels.shift();
-                    btcChart.data.datasets[0].data.shift();
-                }
-                btcChart.update();
-            }
-
-            // Monitor de Recuperação - Mostrar sempre que PnL for negativo
-            const recoveryContainer = document.getElementById('recoveryMonitorContainer');
-            if (totalPnL < 0) {
-                recoveryContainer.style.display = 'block';
-                
-                // ===== BASELINE DINÂMICO GERENCIADO PELO SERVIDOR =====
-                // O baseline é SEMPRE o menor valor de PnL (mais negativo) registrado
-                // O bot.js atualiza automaticamente quando PnL piora
-                let recoveryBaseline = totalPnL; // Valor padrão se servidor falhar
-                let recoveryPoints = [];
-                
-                try {
-                    const recRes = await fetch(`/api/recovery?t=${Date.now()}`);
-                    const recData = await recRes.json();
                     
-                    if (recData && recData.activeSession && recData.activeSession.baseline !== undefined) {
-                        // Usar baseline do servidor (sempre o menor valor registrado)
-                        recoveryBaseline = parseFloat(recData.activeSession.baseline);
-                        recoveryPoints = recData.points || [];
-                        
-                        // Detectar nova sessão para exibir badge
-                        const prevSessionId = localStorage.getItem('lastRecoverySessionId');
-                        if (!prevSessionId || String(prevSessionId) !== String(recData.activeSession.id)) {
-                            const badge = document.getElementById('baselineBadge');
-                            if (badge) {
-                                badge.textContent = 'Nova recuperação iniciada';
-                                badge.classList.remove('hidden');
-                                setTimeout(() => badge.classList.add('hidden'), 3000);
-                            }
-                            localStorage.setItem('lastRecoverySessionId', String(recData.activeSession.id));
-                        }
-                        
-                        console.log(`✅ Baseline do servidor: R$ ${recoveryBaseline.toFixed(2)} | Pontos: ${recoveryPoints.length}`);
-                    } else {
-                        console.log(`⚠️ Nenhuma sessão ativa no servidor, usando PnL atual como baseline: R$ ${recoveryBaseline.toFixed(2)}`);
-                    }
-                } catch (e) {
-                    console.warn('⚠️ Falha ao carregar sessão de recuperação do servidor:', e?.message || e);
-                }
-                
-                // Calcular porcentagem de recuperação
-                // Baseline é SEMPRE o menor (mais negativo) valor registrado
-                // Progresso = quanto recuperou do baseline até R$ 0,00
-                // 0% = no baseline (pior momento), 100% = em R$ 0,00 (break-even)
-                const percentageRecovered = recoveryBaseline < 0 
-                    ? Math.max(0, Math.min(100, ((totalPnL - recoveryBaseline) / (0 - recoveryBaseline)) * 100))
-                    : 0;
-                
-                document.getElementById('recoveryPercentage').textContent = percentageRecovered.toFixed(1) + '%';
-                document.getElementById('recoveryProgressBar').style.width = percentageRecovered + '%';
-                document.getElementById('recoveryLoss').textContent = `R$ ${totalPnL.toFixed(2)}`;
-                document.getElementById('recoveryBaseline').textContent = `R$ ${recoveryBaseline.toFixed(2)}`;
-                
-                // Atualizar cor da barra baseado no progresso
-                const progressBar = document.getElementById('recoveryProgressBar');
-                if (percentageRecovered < 25) {
-                    progressBar.className = 'bg-gradient-to-r from-red-600 to-red-500 h-6 rounded-full transition-all duration-500';
-                } else if (percentageRecovered < 50) {
-                    progressBar.className = 'bg-gradient-to-r from-red-500 to-orange-500 h-6 rounded-full transition-all duration-500';
-                } else if (percentageRecovered < 75) {
-                    progressBar.className = 'bg-gradient-to-r from-orange-500 to-yellow-500 h-6 rounded-full transition-all duration-500';
+                    console.log('[Dashboard] ✅ Charts updated successfully');
                 } else {
-                    progressBar.className = 'bg-gradient-to-r from-yellow-500 to-green-500 h-6 rounded-full transition-all duration-500';
+                    console.log('[Dashboard] Charts not available or no historical data');
                 }
-                
-                if (!residualPnlChart) {
-                    residualPnlChart = new Chart(document.getElementById('residualPnlChart'), {
-                        type: 'line',
-                        data: {
-                            labels: [],
-                            datasets: [
-                                {
-                                    label: 'PnL Residual (R$)',
-                                    borderColor: '#f59e0b',
-                                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                    borderWidth: 2,
-                                    fill: true,
-                                    data: [],
-                                    tension: 0.4,
-                                    pointRadius: 4,
-                                    pointBackgroundColor: '#f59e0b',
-                                    pointHoverRadius: 6
-                                },
-                                {
-                                    label: 'Meta (R$ 0,00)',
-                                    borderColor: '#10b981',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    fill: false,
-                                    data: [],
-                                    tension: 0.4,
-                                    pointRadius: 0
-                                },
-                                {
-                                    label: 'Baseline (R$)',
-                                    borderColor: '#fbbf24',
-                                    borderWidth: 2,
-                                    borderDash: [3, 3],
-                                    fill: false,
-                                    data: [],
-                                    tension: 0.4,
-                                    pointRadius: 0
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            interaction: {mode: 'index', intersect: false},
-                            plugins: {
-                                legend: {display: true, position: 'top', labels: {color: '#9ca3af', font: {size: 11}}},
-                                tooltip: {
-                                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                                    titleColor: '#f3f4f6',
-                                    bodyColor: '#d1d5db',
-                                    borderColor: '#374151',
-                                    borderWidth: 1,
-                                    padding: 10,
-                                    displayColors: true,
-                                    callbacks: {
-                                        label: function(context) {
-                                            let label = context.dataset.label || '';
-                                            if (label) label += ': ';
-                                            if (context.parsed.y !== null) {
-                                                label += 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                            }
-                                            return label;
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'right',
-                                    ticks: {
-                                        color: '#9ca3af',
-                                        font: {size: 11},
-                                        callback: function(value) {
-                                            return 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                        }
-                                    },
-                                    grid: {color: 'rgba(75, 85, 99, 0.1)'},
-                                    min: Math.min(totalPnL * 1.5, -10),
-                                    max: 1
-                                },
-                                x: {
-                                    type: 'time',
-                                    time: {
-                                        unit: 'minute',
-                                        displayFormats: {minute: 'HH:mm'}
-                                    },
-                                    grid: {color: 'rgba(75, 85, 99, 0.1)'},
-                                    ticks: {color: '#9ca3af', font: {size: 10}}
-                                }
-                            }
-                        }
-                    });
-                }
-                // Atualizar dados do gráfico de recuperação com pontos do servidor (preferencial)
-                if (residualPnlChart) {
-                    let serverResidualPoints = [];
-                    try {
-                        // recData foi carregado acima para baseline; aproveitamos os pontos
-                        if (typeof recData !== 'undefined' && recData && Array.isArray(recData.points) && recData.points.length > 0) {
-                            serverResidualPoints = recData.points.map(p => ({
-                                value: parseFloat(p.pnl),
-                                timestamp: new Date(p.timestamp * 1000)
-                            })).filter(item => !isNaN(item.value));
-                        }
-                    } catch (e) {
-                        console.warn('⚠️ Falha ao preparar pontos de recuperação do servidor:', e?.message || e);
-                    }
-
-                    if (serverResidualPoints.length > 0) {
-                        // Construir séries a partir dos pontos do servidor
-                        const labels = serverResidualPoints.map(item => item.timestamp);
-                        const pnlSeries = serverResidualPoints.map(item => ({x: item.timestamp, y: item.value}));
-                        const targetSeries = serverResidualPoints.map(item => ({x: item.timestamp, y: 0}));
-                        const baselineSeries = serverResidualPoints.map(item => ({x: item.timestamp, y: recoveryBaseline}));
-
-                        residualPnlChart.data.labels = labels;
-                        residualPnlChart.data.datasets[0].data = pnlSeries;
-                        residualPnlChart.data.datasets[1].data = targetSeries;
-                        residualPnlChart.data.datasets[2].data = baselineSeries;
-                        // Manter último 30
-                        if (residualPnlChart.data.labels.length > 30) {
-                            const excess = residualPnlChart.data.labels.length - 30;
-                            residualPnlChart.data.labels.splice(0, excess);
-                            residualPnlChart.data.datasets.forEach(ds => ds.data.splice(0, excess));
-                        }
-                        residualPnlChart.update();
-                    } else if (data.stats?.pnlHistory?.length > 0) {
-                        // Fallback: usar histórico de PnL existente
-                        const residualData = data.stats.pnlHistory
-                            .map((val, i) => ({value: parseFloat(val), timestamp: data.stats.pnlTimestamps[i]}))
-                            .filter(item => !isNaN(item.value) && item.value < 0 && item.value > -1e10 && item.timestamp)
-                            .slice(-30);
-                        if (residualPnlChart.data.labels.length === 0 && residualData.length > 0) {
-                            residualPnlChart.data.labels = residualData.map(item => new Date(item.timestamp));
-                            residualPnlChart.data.datasets[0].data = residualData.map(item => ({x: new Date(item.timestamp), y: item.value}));
-                            residualPnlChart.data.datasets[1].data = residualData.map(item => ({x: new Date(item.timestamp), y: 0}));
-                            residualPnlChart.data.datasets[2].data = residualData.map(item => ({x: new Date(item.timestamp), y: recoveryBaseline}));
-                        } else if (residualData.length > 0) {
-                            const lastPoint = residualData[residualData.length - 1];
-                            const ts = new Date(lastPoint.timestamp);
-                            residualPnlChart.data.labels.push(ts);
-                            residualPnlChart.data.datasets[0].data.push({x: ts, y: lastPoint.value});
-                            residualPnlChart.data.datasets[1].data.push({x: ts, y: 0});
-                            residualPnlChart.data.datasets[2].data.push({x: ts, y: recoveryBaseline});
-                            if (residualPnlChart.data.labels.length > 30) {
-                                residualPnlChart.data.labels.shift();
-                                residualPnlChart.data.datasets[0].data.shift();
-                                residualPnlChart.data.datasets[1].data.shift();
-                                residualPnlChart.data.datasets[2].data.shift();
-                            }
-                        }
-                        residualPnlChart.update();
-                    }
-                }
-            } else {
-                recoveryContainer.style.display = 'none';
+            } catch (chartError) {
+                console.error('[Dashboard] ❌ Chart error:', chartError);
             }
 
-            document.getElementById('orderSize').textContent = data.config?.orderSize
+            // Atualizar elementos de configuração com verificação de null
+            const setElementText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+                else console.warn(`[Dashboard] Element #${id} not found`);
+            };
+
+            setElementText('orderSize', data.config?.orderSize
                 ? `${data.config.orderSize} BTC (~R$ ${(data.config.orderSize * (data.market?.last || 654973.00)).toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 })})`
-                : '0.00005 BTC (~R$ 32,75)';
-            document.getElementById('targetSpread').textContent = data.config?.spreadPct
+                : '0.00005 BTC (~R$ 32,75)');
+            setElementText('targetSpread', data.config?.spreadPct
                 ? `${(data.config.spreadPct * 100).toFixed(2)}% ${data.config.spreadPct < 0.01 ? '✅' : data.config.spreadPct < 0.02 ? '😐' : '⚠️'}`
-                : '0.02% ✅';
-            document.getElementById('cycleSec').textContent = `${data.config?.cycleSec || 15}s`;
-            document.getElementById('stopLoss').textContent = data.config?.stopLoss
+                : '0.02% ✅');
+            setElementText('cycleSec', `${data.config?.cycleSec || 15}s`);
+            setElementText('stopLoss', data.config?.stopLoss
                 ? `${(data.config.stopLoss * 100).toFixed(2)}%`
-                : '0.80%';
-            document.getElementById('takeProfit').textContent = data.config?.takeProfit
+                : '0.80%');
+            setElementText('takeProfit', data.config?.takeProfit
                 ? `${(data.config.takeProfit * 100).toFixed(2)}%`
-                : '2.00%';
-            document.getElementById('minVolume').textContent = data.config?.minVolume
+                : '2.00%');
+            setElementText('minVolume', data.config?.minVolume
                 ? `${data.config.minVolume} BTC`
-                : '0.00005 BTC';
-            document.getElementById('volatilityLimit').textContent = data.config?.volatilityLimit
+                : '0.00005 BTC');
+            setElementText('volatilityLimit', data.config?.volatilityLimit
                 ? `${(data.config.volatilityLimit).toFixed(2)}%`
-                : '3.50%';
-            document.getElementById('rsi').textContent = data.market?.tendency?.rsi
-                ? `${parseFloat(data.market.tendency.rsi).toFixed(2)} ${data.market.tendency.rsi >= 30 && data.market.tendency.rsi <= 70 ? '✅' : '⚠️'}`
-                : '33.22 ✅';
-            document.getElementById('rsi').parentElement.className = data.market?.tendency?.rsi && (data.market.tendency.rsi >= 30 && data.market.tendency.rsi <= 70) ? 'p-1 rounded pulse-green' : 'p-1 rounded';
-            document.getElementById('emaShort').textContent = data.market?.tendency?.emaShort
-                ? `R$ ${parseFloat(data.market.tendency.emaShort).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })}`
-                : 'R$ 655.200,77';
-            document.getElementById('emaLong').textContent = data.market?.tendency?.emaLong
-                ? `R$ ${parseFloat(data.market.tendency.emaLong).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })}`
-                : 'R$ 655.031,24';
-            document.getElementById('macd').textContent = data.market?.tendency?.macd
+                : '3.50%');
+            
+            const rsiEl = document.getElementById('rsi');
+            if (rsiEl) {
+                rsiEl.textContent = data.market?.tendency?.rsi
+                    ? `${parseFloat(data.market.tendency.rsi).toFixed(2)} ${data.market.tendency.rsi >= 30 && data.market.tendency.rsi <= 70 ? '✅' : '⚠️'}`
+                    : data.stats?.rsi ? `${parseFloat(data.stats.rsi).toFixed(2)} ✅` : '45.86 ✅';
+                if (rsiEl.parentElement) {
+                    rsiEl.parentElement.className = data.market?.tendency?.rsi && (data.market.tendency.rsi >= 30 && data.market.tendency.rsi <= 70) ? 'p-1 rounded pulse-green' : 'p-1 rounded';
+                }
+            }
+            
+            setElementText('emaShort', data.market?.tendency?.emaShort
+                ? `R$ ${window.safeBRFormat(data.market.tendency.emaShort, 2)}`
+                : data.stats?.emaShort ? `R$ ${window.safeBRFormat(data.stats.emaShort, 2)}` : 'R$ 481.857,04');
+            setElementText('emaLong', data.market?.tendency?.emaLong
+                ? `R$ ${window.safeBRFormat(data.market.tendency.emaLong, 2)}`
+                : data.stats?.emaLong ? `R$ ${window.safeBRFormat(data.stats.emaLong, 2)}` : 'R$ 481.761,71');
+            setElementText('macd', data.market?.tendency?.macd
                 ? parseFloat(data.market.tendency.macd).toFixed(2)
-                : '382.09';
-            document.getElementById('signal').textContent = data.market?.tendency?.signal
-                ? `${parseFloat(data.market.tendency.signal).toFixed(2)} ${Math.abs(data.market.tendency.signal) > 1000 ? '⚠️' : '✅'}`
-                : '382.09 ✅';
-            document.getElementById('signal').parentElement.className = data.market?.tendency?.signal && Math.abs(data.market.tendency.signal) > 1000 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
-            document.getElementById('expectedProfitScore').textContent = data.stats?.expectedProfitScore
+                : '382.09');
+            
+            const signalEl = document.getElementById('signal');
+            if (signalEl) {
+                signalEl.textContent = data.market?.tendency?.signal
+                    ? `${parseFloat(data.market.tendency.signal).toFixed(2)} ${Math.abs(data.market.tendency.signal) > 1000 ? '⚠️' : '✅'}`
+                    : '382.09 ✅';
+                if (signalEl.parentElement) {
+                    signalEl.parentElement.className = data.market?.tendency?.signal && Math.abs(data.market.tendency.signal) > 1000 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
+                }
+            }
+            
+            setElementText('expectedProfitScore', data.stats?.expectedProfitScore
                 ? `${parseFloat(data.stats.expectedProfitScore).toFixed(2)} ${data.stats.expectedProfitScore >= 0.1 ? '✅' : '⚠️'}`
-                : '1.00 ✅';
-            document.getElementById('confidence').textContent = data.market?.tendency?.confidence
-                ? `${parseFloat(data.market.tendency.confidence).toFixed(2)} ${data.market.tendency.confidence >= 0.5 ? '✅' : '⚠️'}`
-                : '1.00 ✅';
-            document.getElementById('inventoryBias').textContent = data.stats?.inventoryBias
+                : '1.00 ✅');
+            
+            const confidenceEl = document.getElementById('confidence');
+            if (confidenceEl) {
+                confidenceEl.textContent = data.market?.tendency?.confidence
+                    ? `${parseFloat(data.market.tendency.confidence).toFixed(2)} ${data.market.tendency.confidence >= 0.5 ? '✅' : '⚠️'}`
+                    : '1.00 ✅';
+            }
+            
+            setElementText('inventoryBias', data.stats?.inventoryBias
                 ? parseFloat(data.stats.inventoryBias).toFixed(6)
-                : '0.000013';
-            document.getElementById('trendBias').textContent = data.stats?.trendBias
+                : '0.000013');
+            setElementText('trendBias', data.stats?.trendBias
                 ? parseFloat(data.stats.trendBias).toFixed(6)
-                : '-0.026300';
-            document.getElementById('totalBias').textContent = data.stats?.totalBias
+                : '-0.026300');
+            setElementText('totalBias', data.stats?.totalBias
                 ? parseFloat(data.stats.totalBias).toFixed(6)
-                : '-0.010000';
+                : '-0.010000');
 
             // Atualizar dados de tendência externa
             if (data.externalTrend) {
                 if (data.externalTrend.error) {
-                    document.getElementById('alignment').textContent = '❌ Indisponível';
-                    document.getElementById('alignmentStatus').className = 'p-1 rounded pulse-orange';
-                    document.getElementById('externalTrend').textContent = '--';
-                    document.getElementById('externalConfidence').textContent = '--';
-                    document.getElementById('externalScore').textContent = '--';
-                    document.getElementById('externalSources').textContent = 'Offline';
-                    document.getElementById('botVsExternal').textContent = `Bot: ${data.externalTrend.botTrend || '--'} (${parseFloat(data.externalTrend.botConfidence || 0).toFixed(2)})`;
+                    setElementText('alignment', '❌ Indisponível');
+                    const alignmentStatusEl = document.getElementById('alignmentStatus');
+                    if (alignmentStatusEl) alignmentStatusEl.className = 'p-1 rounded pulse-orange';
+                    setElementText('externalTrend', '--');
+                    setElementText('externalConfidence', '--');
+                    setElementText('externalScore', '--');
+                    setElementText('externalSources', 'Offline');
+                    setElementText('botVsExternal', `Bot: ${data.externalTrend.botTrend || '--'} (${parseFloat(data.externalTrend.botConfidence || 0).toFixed(2)})`);
                 } else {
                     // Status de alinhamento
                     const isAligned = data.externalTrend.botAlignment === 'aligned';
-                    document.getElementById('alignment').textContent = isAligned ? '✅ Alinhado' : '⚠️ Divergente';
-                    document.getElementById('alignmentStatus').className = isAligned ? 'p-1 rounded pulse-green' : 'p-1 rounded pulse-orange';
+                    setElementText('alignment', isAligned ? '✅ Alinhado' : '⚠️ Divergente');
+                    const alignmentStatusEl = document.getElementById('alignmentStatus');
+                    if (alignmentStatusEl) alignmentStatusEl.className = isAligned ? 'p-1 rounded pulse-green' : 'p-1 rounded pulse-orange';
                     
                     // Tendência externa
                     const trendIcon = data.externalTrend.trend === 'up' ? '🔥' : data.externalTrend.trend === 'down' ? '❄️' : '➡️';
-                    document.getElementById('externalTrend').textContent = `${data.externalTrend.trend} ${trendIcon}`;
+                    setElementText('externalTrend', `${data.externalTrend.trend} ${trendIcon}`);
                     
                     // Confiança externa
-                    document.getElementById('externalConfidence').textContent = `${parseFloat(data.externalTrend.confidence).toFixed(2)} ${data.externalTrend.confidence >= 0.5 ? '✅' : '⚠️'}`;
+                    setElementText('externalConfidence', `${parseFloat(data.externalTrend.confidence).toFixed(2)} ${data.externalTrend.confidence >= 0.5 ? '✅' : '⚠️'}`);
                     
                     // Score
                     const score = parseFloat(data.externalTrend.score);
                     const scoreIcon = score > 0.1 ? '📈' : score < -0.1 ? '📉' : '➡️';
-                    document.getElementById('externalScore').textContent = `${score.toFixed(2)} ${scoreIcon}`;
+                    setElementText('externalScore', `${score.toFixed(2)} ${scoreIcon}`);
                     
                     // Status das fontes
                     const sources = data.externalTrend.sources;
@@ -1014,79 +1059,90 @@
                     if (sources.coinGecko) sourcesStatus.push('CG✅');
                     if (sources.binance) sourcesStatus.push('BIN✅');
                     if (sources.fearGreed) sourcesStatus.push('FG✅');
-                    document.getElementById('externalSources').textContent = sourcesStatus.length > 0 ? sourcesStatus.join(' ') : 'Nenhuma ativa';
+                    setElementText('externalSources', sourcesStatus.length > 0 ? sourcesStatus.join(' ') : 'Nenhuma ativa');
                     
                     // Comparação Bot vs Externo
                     if (data.externalTrend.details) {
                         const botTrendIcon = data.externalTrend.details.botTrend === 'up' ? '🔥' : data.externalTrend.details.botTrend === 'down' ? '❄️' : '➡️';
                         const extTrendIcon = data.externalTrend.details.externalTrend === 'up' ? '🔥' : data.externalTrend.details.externalTrend === 'down' ? '❄️' : '➡️';
-                        document.getElementById('botVsExternal').textContent = `${botTrendIcon} ${parseFloat(data.externalTrend.details.botConfidence).toFixed(2)} vs ${extTrendIcon} ${parseFloat(data.externalTrend.details.externalConfidence).toFixed(2)}`;
+                        setElementText('botVsExternal', `${botTrendIcon} ${parseFloat(data.externalTrend.details.botConfidence).toFixed(2)} vs ${extTrendIcon} ${parseFloat(data.externalTrend.details.externalConfidence).toFixed(2)}`);
                     }
                 }
             } else {
-                document.getElementById('alignment').textContent = '❓ Sem dados';
-                document.getElementById('alignmentStatus').className = 'p-1 rounded';
-                document.getElementById('externalTrend').textContent = '--';
-                document.getElementById('externalConfidence').textContent = '--';
-                document.getElementById('externalScore').textContent = '--';
-                document.getElementById('externalSources').textContent = '--';
-                document.getElementById('botVsExternal').textContent = '--';
+                setElementText('alignment', '❓ Sem dados');
+                const alignmentStatusEl = document.getElementById('alignmentStatus');
+                if (alignmentStatusEl) alignmentStatusEl.className = 'p-1 rounded';
+                setElementText('externalTrend', '--');
+                setElementText('externalConfidence', '--');
+                setElementText('externalScore', '--');
+                setElementText('externalSources', '--');
+                setElementText('botVsExternal', '--');
             }
 
-            document.getElementById('unrealizedPnl').textContent = data.stats?.unrealizedPnl
-                ? `R$ ${parseFloat(data.stats.unrealizedPnl).toFixed(2)} ${data.stats.unrealizedPnl > 0 ? '📈' : data.stats.unrealizedPnl < 0 ? '📉' : '😐'}`
-                : 'R$ 0.00 📈';
-            document.getElementById('unrealizedPnl').parentElement.className = data.stats?.unrealizedPnl && data.stats.unrealizedPnl < 0 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
-            document.getElementById('btcPosition').textContent = data.stats?.btcPosition
+            const unrealizedPnlEl = document.getElementById('unrealizedPnl');
+            if (unrealizedPnlEl) {
+                unrealizedPnlEl.textContent = data.stats?.unrealizedPnl
+                    ? `R$ ${parseFloat(data.stats.unrealizedPnl).toFixed(2)} ${data.stats.unrealizedPnl > 0 ? '📈' : data.stats.unrealizedPnl < 0 ? '📉' : '😐'}`
+                    : 'R$ 0.00 📈';
+                if (unrealizedPnlEl.parentElement) {
+                    unrealizedPnlEl.parentElement.className = data.stats?.unrealizedPnl && data.stats.unrealizedPnl < 0 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
+                }
+            }
+            setElementText('btcPosition', data.stats?.btcPosition
                 ? `${parseFloat(data.stats.btcPosition).toFixed(8)} BTC`
-                : '0.00002000 BTC';
-            document.getElementById('fillRate').textContent = data.stats?.fillRate
+                : '0.00002000 BTC');
+            setElementText('fillRate', data.stats?.fillRate
                 ? `${data.stats.fillRate} ${data.stats.fillRate.replace('%', '') >= 20 ? '✅' : '⚠️'}`
-                : '24.0% ✅';
-            document.getElementById('avgFillPrice').textContent = data.stats?.avgFillPrice
-                ? `R$ ${parseFloat(data.stats.avgFillPrice).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })}`
-                : 'R$ 654.259,13';
-            document.getElementById('uptime').textContent = data.stats?.uptime
+                : '24.0% ✅');
+            setElementText('avgFillPrice', data.stats?.avgFillPrice
+                ? `R$ ${window.safeBRFormat(data.stats.avgFillPrice, 2)}`
+                : 'R$ 654.259,13');
+            setElementText('uptime', data.stats?.uptime
                 ? `${data.stats.uptime}`
-                : '23 minutos';
-            document.getElementById('roi').textContent = data.stats?.roi
-                ? `${parseFloat(data.stats.roi).toFixed(2)}% ${data.stats.roi > 0 ? '📈' : data.stats.roi < 0 ? '📉' : '😐'}`
-                : '0.01% 📈';
+                : '23 minutos');
+            
+            const roiEl2 = document.getElementById('roi');
+            if (roiEl2) {
+                roiEl2.textContent = data.stats?.roi
+                    ? `${parseFloat(data.stats.roi).toFixed(2)}% ${data.stats.roi > 0 ? '📈' : data.stats.roi < 0 ? '📉' : '😐'}`
+                    : '0.01% 📈';
+                if (roiEl2.parentElement) {
+                    roiEl2.parentElement.className = data.stats?.roi && data.stats.roi < 0 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
+                }
+            }
             
             const regimeEl = document.getElementById('regime');
-            if (data.stats?.regime) {
+            if (regimeEl && data.stats?.regime) {
                 regimeEl.textContent = data.stats.regime;
                 regimeEl.className = data.stats.regime.includes('BULL') ? 'text-green-400 font-bold' : 
                                    data.stats.regime.includes('BEAR') ? 'text-red-400 font-bold' : 'text-gray-400 font-bold';
             }
-            document.getElementById('roi').parentElement.className = data.stats?.roi && data.stats.roi < 0 ? 'p-1 rounded pulse-orange' : 'p-1 rounded pulse-green';
 
             const trendEl = document.getElementById('trend');
-            const priceToUse = data.config?.simulate ? parseFloat(data.market?.tendency?.midPrice || 654973.00) : parseFloat(data.market?.last || 654973.00);
-            if (data.market?.tendency?.trend === 'up') {
-                trendEl.textContent = `Alta 📈 - R$ ${priceToUse.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })}`;
-                trendEl.className = "text-green-400 font-bold";
-                trendEl.parentElement.className = 'p-1 rounded pulse-green';
-            } else if (data.market?.tendency?.trend === 'down') {
-                trendEl.textContent = `Baixa 📉 - R$ ${priceToUse.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })}`;
-                trendEl.className = "text-red-400 font-bold";
-                trendEl.parentElement.className = 'p-1 rounded pulse-orange';
-            } else {
-                trendEl.textContent = `Neutra ➡️ - R$ ${priceToUse.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })}`;
-                trendEl.className = "text-gray-400 font-bold";
-                trendEl.parentElement.className = 'p-1 rounded';
+            if (trendEl) {
+                const priceToUse = data.config?.simulate ? parseFloat(data.market?.tendency?.midPrice || 654973.00) : parseFloat(data.market?.last || 654973.00);
+                if (data.market?.tendency?.trend === 'up') {
+                    trendEl.textContent = `Alta 📈 - R$ ${priceToUse.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`;
+                    trendEl.className = "text-green-400 font-bold";
+                    if (trendEl.parentElement) trendEl.parentElement.className = 'p-1 rounded pulse-green';
+                } else if (data.market?.tendency?.trend === 'down') {
+                    trendEl.textContent = `Baixa 📉 - R$ ${priceToUse.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`;
+                    trendEl.className = "text-red-400 font-bold";
+                    if (trendEl.parentElement) trendEl.parentElement.className = 'p-1 rounded pulse-orange';
+                } else {
+                    trendEl.textContent = `Neutra ➡️ - R$ ${priceToUse.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`;
+                    trendEl.className = "text-gray-400 font-bold";
+                    if (trendEl.parentElement) trendEl.parentElement.className = 'p-1 rounded';
+                }
             }
 
             // ===== CARREGAR PARES BUY/SELL =====
@@ -1095,12 +1151,14 @@
                 const pairsData = await pairsRes.json();
                 
                 if (pairsData && pairsData.pairs && Array.isArray(pairsData.pairs)) {
-                    // Atualizar contadores
-                    document.getElementById('totalPairsCount').textContent = pairsData.totalPairs || 0;
-                    document.getElementById('completePairsCount').textContent = pairsData.completePairs || 0;
-                    document.getElementById('incompletePairsCount').textContent = pairsData.incompletePairs || 0;
+                    const displayPairs = pairsData.pairs.filter(p => p.status !== 'COMPLETO');
+
+                    // Atualizar contadores completos do backend
+                    setElementText('totalPairsCount', pairsData.totalPairs || pairsData.pairs.length || 0);
+                    setElementText('completePairsCount', pairsData.completePairs || 0);
+                    setElementText('incompletePairsCount', pairsData.incompletePairs || 0);
                     
-                    // Calcular ROI médio apenas para pares completos
+                    // Calcular ROI médio apenas para pares completos (não exibidos)
                     const completePairs = pairsData.pairs.filter(p => p.status === 'COMPLETO');
                     let avgRoi = 0;
                     if (completePairs.length > 0) {
@@ -1111,16 +1169,16 @@
                         }, 0);
                         avgRoi = totalRoi / completePairs.length;
                     }
-                    document.getElementById('avgPairRoi').textContent = avgRoi.toFixed(3) + '%';
+                    setElementText('avgPairRoi', avgRoi.toFixed(3) + '%');
                     
                     // Atualizar tabela de pares
                     const tbody = document.getElementById('pairsTableBody');
                     tbody.innerHTML = '';
                     
-                    if (pairsData.pairs.length === 0) {
+                    if (displayPairs.length === 0) {
                         tbody.innerHTML = '<tr><td class="p-2 text-gray-400 text-center" colspan="6">Nenhum par registrado</td></tr>';
                     } else {
-                        pairsData.pairs.forEach(pair => {
+                        displayPairs.forEach(pair => {
                             const tr = document.createElement('tr');
                             tr.className = 'border-b border-gray-700 hover:bg-gray-700 transition';
                             
@@ -1168,91 +1226,396 @@
                     }
                     
                     // Atualizar badge de refresh
-                    document.getElementById('pairsRefreshBadge').textContent = `Atualizado ${new Date().toLocaleTimeString('pt-BR')}`;
-                    document.getElementById('pairsRefreshBadge').className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-200';
+                    const pairsRefreshBadge = document.getElementById('pairsRefreshBadge');
+                    if (pairsRefreshBadge) {
+                        pairsRefreshBadge.textContent = `Atualizado ${new Date().toLocaleTimeString('pt-BR')}`;
+                        pairsRefreshBadge.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-200';
+                    }
                 }
             } catch (pairsError) {
                 console.error('❌ Erro ao carregar pares:', pairsError);
-                document.getElementById('pairsRefreshBadge').textContent = 'Erro ao carregar pares';
-                document.getElementById('pairsRefreshBadge').className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
+                const pairsRefreshBadge = document.getElementById('pairsRefreshBadge');
+                if (pairsRefreshBadge) {
+                    pairsRefreshBadge.textContent = 'Erro ao carregar pares';
+                    pairsRefreshBadge.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
+                }
             }
 
-        } catch (error) {
-            console.error('❌ Error loading data:', error);
-            document.getElementById('pnl').textContent = 'Erro ao carregar';
-            document.getElementById('spread').textContent = 'Erro';
-            document.getElementById('lastPrice').textContent = 'Erro';
-        }
-    }
-
-    // ===== EVENT LISTENER PARA BOTÃO DE RESET =====
-    document.addEventListener('DOMContentLoaded', () => {
-        const resetBtn = document.getElementById('resetBaselineBtn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', async () => {
-                if (!confirm('⚠️ Confirma atualização do baseline da sessão ativa para o PnL atual?\n\nIsso NÃO encerrará a sessão; apenas atualiza o baseline para o valor do PnL no momento.')) {
-                    return;
-                }
+            // ========== CARREGAR ORDENS DE MOMENTUM DO BANCO ==========
+            try {
+                const momentumRes = await fetch(`/api/momentum?limit=50&t=${Date.now()}`);
+                const momentumData = await momentumRes.json();
                 
-                try {
-                    resetBtn.disabled = true;
-                    resetBtn.textContent = 'Atualizando...';
-                    
-                    const response = await fetch('/api/recovery/reset', {method: 'POST'});
-                    const result = await response.json();
-                    
-                    if (response.ok) {
-                        localStorage.removeItem('lastRecoverySessionId');
-                        console.log('✅ Baseline atualizado com sucesso:', result.message, 'novo baseline:', result.baseline);
-                        
-                        const badge = document.getElementById('baselineBadge');
-                        if (badge) {
-                            badge.textContent = `Baseline: R$ ${parseFloat(result.baseline).toFixed(2)}`;
-                            badge.classList.remove('hidden');
-                            setTimeout(() => badge.classList.add('hidden'), 6000);
-                        }
-                        
-                        // Recarregar dados após 1 segundo para refletir baseline atual
-                        setTimeout(() => location.reload(), 1000);
+                const status = momentumData.status || {};
+                
+                // Atualizar contadores
+                setElementText('momentumSimulatedCount', status.simulated || 0);
+                setElementText('momentumPendingCount', status.pending || 0);
+                setElementText('momentumConfirmedCount', status.confirmed || 0);
+                setElementText('momentumRejectedCount', status.rejected || 0);
+                setElementText('momentumExpiredCount', status.expired || 0);
+                
+                // Atualizar tabela de ordens
+                const tbody = document.getElementById('momentumOrdersTable');
+                if (!tbody) {
+                    console.warn('[Dashboard] Elemento momentumOrdersTable não encontrado');
+                } else {
+                    const displayOrders = (momentumData.simulatedOrders || []).filter(order => order.status !== 'confirmed');
+
+                    if (!displayOrders || displayOrders.length === 0) {
+                        tbody.innerHTML = '<tr><td class="p-2 text-gray-500 text-center" colspan="9">Nenhuma ordem em validação</td></tr>';
                     } else {
-                        alert('❌ Erro ao atualizar baseline: ' + (result.error || 'Erro desconhecido'));
+                        tbody.innerHTML = '';
+                        displayOrders.forEach(order => {
+                            const tr = document.createElement('tr');
+                            const variation = ((order.current_price - order.created_price) / order.created_price * 100);
+                            const variationColor = variation > 0 ? 'text-green-400' : variation < 0 ? 'text-red-400' : 'text-gray-400';
+                            
+                            // Status com cor
+                            let statusColor = 'text-gray-400';
+                            let statusIcon = '❓';
+                            if (order.status === 'simulated') {
+                                statusColor = 'text-purple-400';
+                                statusIcon = '⏳';
+                            } else if (order.status === 'pending') {
+                                statusColor = 'text-yellow-400';
+                                statusIcon = '⏸️';
+                            } else if (order.status === 'confirmed') {
+                                statusColor = 'text-green-400';
+                                statusIcon = '✅';
+                            } else if (order.status === 'rejected') {
+                                statusColor = 'text-red-400';
+                                statusIcon = '❌';
+                            } else if (order.status === 'expired') {
+                                statusColor = 'text-gray-500';
+                                statusIcon = '⏰';
+                            }
+                            
+                            // Picos e vales (JSON do banco)
+                            let peaks = [];
+                            let valleys = [];
+                            try {
+                                peaks = typeof order.peaks === 'string' ? JSON.parse(order.peaks) : (order.peaks || []);
+                                valleys = typeof order.valleys === 'string' ? JSON.parse(order.valleys) : (order.valleys || []);
+                            } catch (e) {
+                                console.warn('Erro ao parsear peaks/valleys:', e);
+                            }
+                            const peaksStr = peaks && peaks.length > 0 ? `📈 ${peaks.length}` : '';
+                            const valleysStr = valleys && valleys.length > 0 ? `📉 ${valleys.length}` : '';
+                            const peaksValleys = [peaksStr, valleysStr].filter(s => s).join(' ');
+                            
+                            tr.innerHTML = `
+                                <td class="p-2 font-mono text-xs">${order.id.substring(0, 8)}...</td>
+                                <td class="p-2">${order.side === 'buy' ? '🟢 BUY' : '🔴 SELL'}</td>
+                                <td class="p-2 text-right">R$ ${(() => { const p = parseFloat(order.created_price); return isFinite(p) ? p.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '-'; })()}</td>
+                                <td class="p-2 text-right">R$ ${(() => { const p = parseFloat(order.current_price); return isFinite(p) ? p.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '-'; })()}</td>
+                                <td class="p-2 text-right ${variationColor}">${variation > 0 ? '+' : ''}${variation.toFixed(2)}%</td>
+                                <td class="p-2 text-center"><span class="${statusColor}">${statusIcon} ${order.status}</span></td>
+                                <td class="p-2 text-center">${order.confirmation_reversals || 0}</td>
+                                <td class="p-2 text-xs">${peaksValleys || '—'}</td>
+                                <td class="p-2 text-xs text-red-400">${order.reason ? order.reason.substring(0, 30) : '—'}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
                     }
-                } catch (err) {
-                    console.error('Erro ao atualizar baseline:', err);
-                    alert('❌ Erro de conexão ao tentar atualizar baseline');
-                } finally {
-                    resetBtn.disabled = false;
-                    resetBtn.textContent = '↻ Atualizar baseline';
+                }
+            } catch (momentumError) {
+                console.error('❌ Erro ao atualizar momentum:', momentumError);
+            }
+        } catch (error) {
+                console.error('❌ Error loading data:', error);
+                console.error('Full error:', error.toString(), error.stack);
+                // Mostra erro mas não quebra a página
+                const errorMsg = error.message.substring(0, 50);
+                document.getElementById('pnl').textContent = `Erro: ${errorMsg}`;
+                document.getElementById('spread').textContent = '-';
+                document.getElementById('lastPrice').textContent = '-';
+            }
+        }
+
+    // ========== FUNÇÕES DE TESTES AUTOMATIZADOS ==========
+    
+    let testsLoading = false;
+    
+    async function loadTestResults() {
+        try {
+            const res = await fetch(`/api/tests?t=${Date.now()}`);
+            const data = await res.json();
+            
+            console.log('[Dashboard] Test results loaded:', data);
+            
+            const statusEl = document.getElementById('testsStatus');
+            const runBtn = document.getElementById('runTestsBtn');
+            
+            if (data.isRunning) {
+                if (statusEl) {
+                    statusEl.textContent = '⏳ Executando testes...';
+                    statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-200 animate-pulse';
+                }
+                if (runBtn) runBtn.disabled = true;
+                return;
+            }
+            
+            if (runBtn) runBtn.disabled = false;
+            
+            if (!data.hasResults || !data.results) {
+                if (statusEl) {
+                    statusEl.textContent = '⏳ Aguardando execução';
+                    statusEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
+                }
+                return;
+            }
+            
+            const results = data.results;
+            
+            // Atualizar status
+            if (statusEl) {
+                if (results.status === 'completed') {
+                    const passRate = parseFloat(results.summary.passRate || 0);
+                    if (passRate >= 80) {
+                        statusEl.textContent = '✅ Testes OK';
+                        statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-200';
+                    } else if (passRate >= 50) {
+                        statusEl.textContent = '⚠️ Atenção';
+                        statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-200';
+                    } else {
+                        statusEl.textContent = '❌ Problemas';
+                        statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
+                    }
+                } else if (results.status === 'error') {
+                    statusEl.textContent = '❌ Erro';
+                    statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
+                }
+            }
+            
+            // Atualizar resumo
+            document.getElementById('testsTotal').textContent = results.summary.total || '-';
+            document.getElementById('testsPassed').textContent = results.summary.passed || '-';
+            document.getElementById('testsFailed').textContent = results.summary.failed || '-';
+            document.getElementById('testsPassRate').textContent = (results.summary.passRate || '0') + '%';
+            document.getElementById('testsDataSource').textContent = results.summary.dataSource || '-';
+            
+            // Info do período
+            document.getElementById('testsHours').textContent = (results.hours || 24) + 'h';
+            document.getElementById('testsDataPoints').textContent = results.summary.dataPoints || '-';
+            
+            if (results.summary.priceRange) {
+                document.getElementById('testsPriceStart').textContent = 'R$ ' + parseFloat(results.summary.priceRange.start).toLocaleString('pt-BR');
+                document.getElementById('testsPriceEnd').textContent = 'R$ ' + parseFloat(results.summary.priceRange.end).toLocaleString('pt-BR');
+                
+                const change = parseFloat(results.summary.priceRange.change);
+                const changeEl = document.getElementById('testsPriceChange');
+                changeEl.textContent = (change >= 0 ? '+' : '') + change + '%';
+                changeEl.className = change >= 0 ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
+            }
+            
+            // Última execução
+            if (data.lastRunTime) {
+                const lastRun = new Date(data.lastRunTime);
+                document.getElementById('testsLastRun').textContent = lastRun.toLocaleString('pt-BR');
+            }
+            
+            if (data.cacheAgeSeconds) {
+                const mins = Math.floor(data.cacheAgeSeconds / 60);
+                document.getElementById('testsCacheAge').textContent = mins > 0 ? `${mins}m atrás` : 'agora';
+            }
+            
+            // 💰 PROJEÇÃO DE GANHOS - Pegar o melhor teste (maior vs HOLD)
+            let bestTest = null;
+            let bestVsHold = -Infinity;
+            results.tests.forEach(t => {
+                if (t.projection && t.vsHoldBRL !== undefined) {
+                    const vsHold = parseFloat(t.vsHoldBRL);
+                    if (vsHold > bestVsHold) {
+                        bestVsHold = vsHold;
+                        bestTest = t;
+                    }
                 }
             });
-        }
-    });
-
-    // Exibir badge se houve reset na última atualização
-    function checkResetBadge() {
-        const flag = localStorage.getItem('baselineResetJustNow');
-        if (flag === '1') {
-            const badge = document.getElementById('baselineBadge');
-            if (badge) {
-                badge.textContent = 'Baseline resetado';
-                badge.classList.remove('hidden');
-                setTimeout(() => badge.classList.add('hidden'), 3000);
+            
+            const integratedTest = bestTest;
+            if (integratedTest && integratedTest.projection) {
+                // Atualizar nome do melhor teste
+                document.getElementById('bestTestName').textContent = integratedTest.testName;
+                
+                const proj = integratedTest.projection;
+                const pnl = parseFloat(integratedTest.pnlBRL || 0);
+                const vsHold = parseFloat(integratedTest.vsHoldBRL || 0);
+                const monthly = parseFloat(proj.monthlyBRL || 0);
+                const yearly = parseFloat(proj.yearlyBRL || 0);
+                
+                // PnL no teste
+                const pnlEl = document.getElementById('projPnlTest');
+                pnlEl.textContent = 'R$ ' + pnl.toFixed(2);
+                pnlEl.className = 'text-xl font-bold ' + (pnl >= 0 ? 'text-green-400' : 'text-red-400');
+                
+                // vs HOLD
+                const vsHoldEl = document.getElementById('projVsHold');
+                vsHoldEl.textContent = (vsHold >= 0 ? '+' : '') + 'R$ ' + vsHold.toFixed(2);
+                vsHoldEl.className = 'text-xl font-bold ' + (vsHold >= 0 ? 'text-green-400' : 'text-red-400');
+                
+                // Projeção Mensal
+                const monthlyEl = document.getElementById('projMonthly');
+                monthlyEl.textContent = (monthly >= 0 ? '+' : '') + 'R$ ' + monthly.toFixed(2);
+                monthlyEl.className = 'text-xl font-bold ' + (monthly >= 0 ? 'text-green-400' : 'text-red-400');
+                document.getElementById('projMonthlyRoi').textContent = proj.monthlyRoi + '% ROI';
+                
+                // Projeção Anual
+                const yearlyEl = document.getElementById('projYearly');
+                yearlyEl.textContent = (yearly >= 0 ? '+' : '') + 'R$ ' + yearly.toFixed(2);
+                yearlyEl.className = 'text-xl font-bold ' + (yearly >= 0 ? 'text-green-400' : 'text-red-400');
+                document.getElementById('projYearlyRoi').textContent = proj.yearlyRoi + '% ROI';
+                
+                // Horas do teste
+                document.getElementById('projHours').textContent = proj.hoursInTest;
             }
-            localStorage.removeItem('baselineResetJustNow');
+            
+            // Tabela de resultados
+            const tbody = document.getElementById('testsTableBody');
+            if (tbody && results.tests && results.tests.length > 0) {
+                tbody.innerHTML = '';
+                
+                results.tests.forEach(test => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-gray-700 hover:bg-gray-700 transition';
+                    
+                    const statusIcon = test.passed ? '✅' : '❌';
+                    const statusColor = test.passed ? 'text-green-400' : 'text-red-400';
+                    
+                    const pnl = parseFloat(test.pnlBRL || 0);
+                    const pnlColor = pnl >= 0 ? 'text-green-400' : 'text-red-400';
+                    
+                    const vsHold = parseFloat(test.vsHoldBRL || 0);
+                    const vsHoldColor = vsHold >= 0 ? 'text-green-400' : 'text-red-400';
+                    
+                    const roi = parseFloat(test.roi || 0);
+                    const roiColor = roi >= 0 ? 'text-green-400' : 'text-red-400';
+                    
+                    const btcGained = parseFloat(test.btcGained || 0);
+                    const btcColor = btcGained >= 0 ? 'text-green-400' : 'text-red-400';
+                    
+                    const monthly = test.projection ? parseFloat(test.projection.monthlyBRL || 0) : 0;
+                    const monthlyColor = monthly >= 0 ? 'text-green-400' : 'text-red-400';
+                    
+                    // Para testes de Momentum (sem projeção)
+                    if (test.testName.includes('Momentum')) {
+                        tr.innerHTML = `
+                            <td class="p-2 text-gray-300">${test.testName}</td>
+                            <td class="p-2 text-center ${statusColor}">${statusIcon}</td>
+                            <td class="p-2 text-right text-gray-400">-</td>
+                            <td class="p-2 text-right text-gray-400">-</td>
+                            <td class="p-2 text-right text-purple-400">${test.accuracy || '-'}%</td>
+                            <td class="p-2 text-right text-gray-400">-</td>
+                            <td class="p-2 text-right text-gray-400">-</td>
+                        `;
+                    } 
+                    // Para testes com projeção (Accumulator e Integrado)
+                    else {
+                        tr.innerHTML = `
+                            <td class="p-2 text-gray-300">${test.testName}</td>
+                            <td class="p-2 text-center ${statusColor}">${statusIcon}</td>
+                            <td class="p-2 text-right ${pnlColor}">R$ ${test.pnlBRL || '-'}</td>
+                            <td class="p-2 text-right ${vsHoldColor}">${vsHold >= 0 ? '+' : ''}R$ ${test.vsHoldBRL || '-'}</td>
+                            <td class="p-2 text-right ${roiColor}">${test.roi || '-'}%</td>
+                            <td class="p-2 text-right ${btcColor}">${test.btcGained || '-'}</td>
+                            <td class="p-2 text-right ${monthlyColor}">${test.projection ? (monthly >= 0 ? '+' : '') + 'R$ ' + test.projection.monthlyBRL : '-'}</td>
+                        `;
+                    }
+                    
+                    tbody.appendChild(tr);
+                });
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro ao carregar resultados de testes:', error);
+            const statusEl = document.getElementById('testsStatus');
+            if (statusEl) {
+                statusEl.textContent = '❌ Erro ao carregar';
+                statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
+            }
+        }
+    }
+    
+    async function runAutomatedTests() {
+        const btn = document.getElementById('runTestsBtn');
+        const statusEl = document.getElementById('testsStatus');
+        
+        if (testsLoading) return;
+        testsLoading = true;
+        
+        try {
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Executando...';
+            }
+            if (statusEl) {
+                statusEl.textContent = '⏳ Iniciando testes...';
+                statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-200 animate-pulse';
+            }
+            
+            const res = await fetch('/api/tests/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hours: 24 })
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok) {
+                console.log('[Dashboard] Tests started:', data);
+                // Aguardar um pouco e depois começar a verificar
+                setTimeout(loadTestResults, 3000);
+                // Verificar a cada 2 segundos até completar
+                const checkInterval = setInterval(async () => {
+                    const statusRes = await fetch('/api/tests/status');
+                    const statusData = await statusRes.json();
+                    if (!statusData.isRunning) {
+                        clearInterval(checkInterval);
+                        await loadTestResults();
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = '🔄 Refazer Testes (24h)';
+                        }
+                        testsLoading = false;
+                    }
+                }, 2000);
+            } else {
+                throw new Error(data.error || 'Erro ao iniciar testes');
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro ao executar testes:', error);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '🔄 Refazer Testes (24h)';
+            }
+            if (statusEl) {
+                statusEl.textContent = '❌ Erro';
+                statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
+            }
+            testsLoading = false;
         }
     }
 
-    // Iniciar atualização automática apenas após DOM estar pronto
+    // Função para iniciar após gráficos estarem prontos
+    function startDataLoading() {
+        console.log('[Dashboard] ✅ Starting data loading cycle...');
+        loadData();
+        loadTestResults(); // Carregar resultados de testes
+        setInterval(loadData, 5 * 1000);
+        setInterval(loadTestResults, 30 * 1000); // Atualizar testes a cada 30s
+    }
+
+    // Aguardar gráficos serem criados (eles são criados no primeiro DOMContentLoaded)
+    // Usar setTimeout para garantir que o primeiro listener já executou
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-                checkResetBadge();
-            loadData();
-            setInterval(loadData, 5 * 1000);
+            // Aguardar 100ms para garantir que os gráficos foram criados
+            setTimeout(startDataLoading, 100);
         });
     } else {
-            checkResetBadge();
-        loadData();
-        setInterval(loadData, 5 * 1000);
+        // DOM já carregado, aguardar gráficos
+        setTimeout(startDataLoading, 100);
     }
 </script>
 </body>

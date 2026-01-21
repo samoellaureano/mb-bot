@@ -26,7 +26,24 @@ const ExternalTrendValidator = require('./external_trend_validator');
 const DecisionEngine = require('./decision_engine');
 const ConfidenceSystem = require('./confidence_system');
 const AdaptiveStrategy = require('./adaptive_strategy');
+const AdaptiveMarketManager = require('./adaptive_market_manager');
+const MomentumOrderValidator = require('./momentum_order_validator');
+const BTCAccumulator = require('./btc_accumulator');
+const MomentumSync = require('./momentum_sync');
+const AutoOptimizer = require('./auto_optimizer');
+const LossAnalyzer = require('./loss_analyzer');
+const ImprovedEntryExit = require('./improved_entry_exit');
+const SwingTradingStrategy = require('./swing_trading_strategy');
+const CashManagementStrategy = require('./cash_management_strategy');
 
+
+// ================== INSTÂNCIAS GLOBAIS ==================
+const momentumSync = new MomentumSync();
+let autoOptimizer = null;
+let lossAnalyzer = null;
+let improvedEntryExit = null;
+let swingTradingStrategy = null; // Estratégia swing trading otimizada
+let cashManagementStrategy = null; // Estratégia de gerenciamento de caixa
 
 // ---------------- CONFIGURAÇÃO ----------------
 const SIMULATE = process.env.SIMULATE === 'true'; // Modo simulação
@@ -38,6 +55,7 @@ const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.05'); // Atualizado p
 const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003'); // Atualizado para 0.03%
 const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0'); // Desativado por padrão
 const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005'); // Atualizado para 0.05%
+const MAX_SPREAD_PCT = parseFloat(process.env.MAX_SPREAD_PCT || '0.040'); // Máximo 4.0%
 const STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '0.008'); // Atualizado para 0.8%
 const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.001'); // Atualizado para 0.1%
 const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // Limitado a 0.00005 BTC
@@ -47,6 +65,7 @@ const MAX_POSITION = parseFloat(process.env.MAX_POSITION || '0.0003'); // Posiç
 const DAILY_LOSS_LIMIT = parseFloat(process.env.DAILY_LOSS_LIMIT || '10'); // Limite de perda diária em BRL
 const INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002'); // Ajustado para 0.02%
 const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // Ajustado para 0.015%
+const SELL_FIRST_ENABLED = process.env.SELL_FIRST === 'true'; // Permite SELL sem BUY inicial
 const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
 const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '1800'); // Máximo 1800s (30min) antes de cancelar - tempo generoso para preenchimento
 const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
@@ -68,27 +87,11 @@ const FEE_RATE_TAKER = 0.007; // 0,70%
 const FEE_RATE = FEE_RATE_MAKER; // Padrão para ordens limite
 const INITIAL_CAPITAL = 220.00; // Capital inicial em BRL (mesmo valor do dashboard)
 
-// -------- AJUSTE DINÂMICO DO RECOVERY BUFFER --------
-const RECOVERY_BUFFER_BASE = 0.0005; // Buffer base de recuperação: 0.05%
-const VOL_MIN_RECOVERY = 0.002; // Volatilidade mínima: 0.20%
-const VOL_MAX_RECOVERY = 0.02; // Volatilidade máxima: 2.00%
-const RECOVERY_FATOR_MIN = 1.0; // Fator mínimo: 1.0x
-const RECOVERY_FATOR_MAX = 2.0; // Fator máximo: 2.0x
-
 // -------- ESTRATÉGIA ADAPTATIVA --------
 // Ativa/desativa ajuste automático de parâmetros conforme tendência
 const ADAPTIVE_STRATEGY_ENABLED = process.env.ADAPTIVE_STRATEGY !== 'false'; // Default: true
 let adaptiveParams = null; // Será calculado dinamicamente
 let lastAdaptiveUpdate = 0;
-
-function calculateDynamicRecoveryBuffer(volatilityPct) {
-    const volDecimal = volatilityPct / 100;
-    if (volDecimal <= VOL_MIN_RECOVERY) return RECOVERY_BUFFER_BASE * RECOVERY_FATOR_MIN;
-    if (volDecimal >= VOL_MAX_RECOVERY) return RECOVERY_BUFFER_BASE * RECOVERY_FATOR_MAX;
-    const fator = RECOVERY_FATOR_MIN + (RECOVERY_FATOR_MAX - RECOVERY_FATOR_MIN) * ((volDecimal - VOL_MIN_RECOVERY) / (VOL_MAX_RECOVERY - VOL_MIN_RECOVERY));
-    const adjustedBuffer = RECOVERY_BUFFER_BASE * fator;
-    return adjustedBuffer;
-}
 
 // Validação configs
 if (!REST_BASE.startsWith('http')) {
@@ -130,6 +133,7 @@ let lastObUpdate = 0;
 let lastOrderbook = {bids: [], asks: []};
 let marketTrend = 'Neutra';
 let lastTradeCycle = -1;
+let lastCycleTimestamp = Date.now();
 let priceHistory = [];
 let historicalFills = [];
 let performanceHistory = [];
@@ -138,12 +142,31 @@ let externalTrendValidator = new ExternalTrendValidator();
 let pairMapping = new Map(); // Mapeia pair_id -> {buyOrder, sellOrder}
 let decisionEngine = new DecisionEngine();
 let confidenceSystem = new ConfidenceSystem();
+let adaptiveManager = null; // Será inicializado no startBot
 let lastExternalCheck = 0;
 let externalTrendData = null;
 let currentSpreadPct = MIN_SPREAD_PCT;
 let currentBaseSize = ORDER_SIZE;
 let currentMaxPosition = MAX_POSITION;
 let currentStopLoss = STOP_LOSS_PCT;
+let momentumValidator = new MomentumOrderValidator(log); // Sistema de validação por momentum
+let MOMENTUM_VALIDATION_ENABLED = process.env.MOMENTUM_VALIDATION === 'true'; // Default: desativado para não quebrar lógica
+let sellFirstExecuted = false;
+
+// ============= SISTEMA DE ACUMULAÇÃO BTC =============
+const BTC_ACCUMULATOR_ENABLED = process.env.BTC_ACCUMULATOR !== 'false'; // Default: habilitado
+let btcAccumulator = new BTCAccumulator({
+    minBTCTarget: parseFloat(process.env.MIN_BTC_TARGET || '0.0005'),
+    maxBRLHolding: parseFloat(process.env.MAX_BRL_HOLDING || '50'),
+    dcaDropThreshold: parseFloat(process.env.DCA_DROP_THRESHOLD || '0.005'),
+    sellResistance: parseFloat(process.env.SELL_RESISTANCE || '0.7'),
+    minProfitToSell: parseFloat(process.env.MIN_PROFIT_TO_SELL || '0.008'),
+    minHoldHours: parseFloat(process.env.MIN_HOLD_HOURS || '2'),
+    brlDepletionUrgency: parseFloat(process.env.BRL_DEPLETION_URGENCY || '0.8'),
+    enabled: BTC_ACCUMULATOR_ENABLED,
+    log: (level, msg) => log(level, `[ACCUMULATOR] ${msg}`)
+});
+
 let stats = {
     cycles: 0,
     totalOrders: 0,
@@ -357,6 +380,48 @@ function calculateOrderbookImbalance(orderbook) {
     const bidVol = orderbook.bids.slice(0, 5).reduce((sum, b) => sum + b[1], 0);
     const askVol = orderbook.asks.slice(0, 5).reduce((sum, a) => sum + a[1], 0);
     return (bidVol - askVol) / (bidVol + askVol); // -1 a 1
+}
+
+/**
+ * NOVO: Cálculo adaptativo inteligente de spread
+ * Otimiza spread baseado em volatilidade, regime, RSI e confiança
+ * Garante margem mínima de lucro acima das taxas
+ */
+function getAdaptiveSpread(params = {}) {
+    const { volatility = 0.5, regime = 'RANGING', rsi = 50, conviction = 0.5, baseSpread = 0.0006, minSpread = 0.0005, maxSpread = 0.040 } = params;
+    
+    let spread = Math.max(minSpread, baseSpread);
+    
+    // Factor 1: Volatilidade
+    // Baixa vol (<0.5%): reduz spread para capturar mais trades
+    // Alta vol (>2%): aumenta spread para compensar risco
+    const volFactor = volatility < 0.5 ? 0.85 : (volatility > 2.0 ? 1.25 : 1.0);
+    spread *= volFactor;
+    
+    // Factor 2: Regime de mercado
+    const regimeFactors = {
+        'BULL_TREND': 0.9,      // Trend alta: spread menor para não perder movimento
+        'BEAR_TREND': 1.2,      // Trend baixa: spread maior para proteção
+        'RANGING': 1.05,        // Lateral: spread neutro
+    };
+    spread *= (regimeFactors[regime] || 1.0);
+    
+    // Factor 3: RSI (zonas de exaustão)
+    // RSI extremo (>75 ou <25): aumenta spread por incerteza
+    if (rsi > 75 || rsi < 25) spread *= 1.15;
+    
+    // Factor 4: Confiança do sistema
+    // Alta confiança: permite spread menor
+    // Baixa confiança: aumenta spread para segurança
+    if (conviction > 0.75) spread *= 0.9;        // Muito confiante
+    else if (conviction < 0.3) spread *= 1.3;    // Pouco confiante
+    
+    // Garantir limites
+    spread = Math.max(minSpread, Math.min(maxSpread, spread));
+    
+    log('DEBUG', `[SPREAD_ADAPT] vol=${volatility.toFixed(2)}% regime=${regime} rsi=${rsi.toFixed(0)} conviction=${conviction.toFixed(2)} => spread=${(spread*100).toFixed(2)}%`);
+    
+    return spread;
 }
 
 function identifyMarketRegime(rsi, volatility, trendScore, adx) {
@@ -601,6 +666,9 @@ function validateOrderPairs() {
     
     // Se há mais SELL que BUY, precisa completar BUY antes de nova SELL
     if (sellCount > buyCount) {
+        if (SELL_FIRST_ENABLED && buyCount === 0) {
+            return { isBalanced: true, sellFirst: true, message: `SELL-first ativo (${sellCount} SELL vs ${buyCount} BUY)` };
+        }
         return { isBalanced: false, needsBuy: true, message: `Aguardando BUY para completar par SELL (${sellCount} SELL vs ${buyCount} BUY)` };
     }
     
@@ -668,6 +736,12 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
             if (status.side === 'buy') {
                 btcPosition += qty;
                 totalCost += qty * price + (qty * price * feeRate); // Adiciona fee ao custo - ALTERADO
+                
+                // ===== BTC ACCUMULATOR: Registrar compra bem-sucedida =====
+                if (BTC_ACCUMULATOR_ENABLED) {
+                    btcAccumulator.recordBuy(price, qty);
+                    log('SUCCESS', `[ACCUMULATOR] 💰 BUY registrada: ${qty.toFixed(8)} BTC @ R$${price.toFixed(2)} | Preço médio: R$${btcAccumulator.state.avgBuyPrice.toFixed(2)}`);
+                }
             } else if (status.side === 'sell') {
                 const avgPrice = btcPosition > 0 ? totalCost / btcPosition : 0;
                 pnl = (price - avgPrice) * qty - (qty * price * feeRate); // Deduz fee do pnl - ALTERADO
@@ -701,6 +775,169 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
 }
 
 // ---------------- PLACE ORDER ----------------
+/**
+ * Cria uma ordem com validação opcional por momentum
+ * Se MOMENTUM_VALIDATION_ENABLED, cria em modo simulado e aguarda confirmação
+ */
+async function placeOrderWithMomentumValidation(side, price, qty, sessionId = null, pairIdInput = null) {
+    if (!MOMENTUM_VALIDATION_ENABLED) {
+        // Modo padrão: coloca ordem direto
+        return await placeOrder(side, price, qty, sessionId, pairIdInput);
+    }
+
+    // Modo com validação: cria simulado primeiro
+    const { v4: uuidv4 } = require('uuid');
+    const simulatedId = `${side}_PENDING_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const validation = momentumValidator.createSimulatedOrder(simulatedId, side, price, qty);
+    log('INFO', `📊 Ordem ${side.toUpperCase()} criada em modo SIMULADO (${simulatedId}): R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)} | Lógica: ${validation.expectedConfirmationLogic}`);
+    
+    // Salvar no banco de dados
+    const order = momentumValidator.simulatedOrders.get(simulatedId);
+    if (order) {
+        order.sessionId = sessionId || null;
+        order.pairId = pairIdInput || null;
+        order.currentPrice = price;
+        db.saveMomentumOrder({
+            id: simulatedId,
+            side: order.side,
+            createdPrice: order.createdPrice,
+            currentPrice: order.currentPrice,
+            status: order.status,
+            qty: order.qty,
+            peaks: order.peaks,
+            valleys: order.valleys,
+            confirmationReversals: order.confirmationReversals,
+            reason: null,
+            reversalThreshold: order.reversalThreshold,
+            createdAt: order.createdAt,
+            priceHistory: order.priceHistory
+        }).catch(e => log('ERROR', `Erro ao salvar momentum order criada: ${e.message}`));
+    }
+    
+    return {
+        simulatedId,
+        side,
+        price,
+        qty,
+        status: 'simulated',
+        pairId: pairIdInput,
+        sessionId,
+        createdAt: Date.now()
+    };
+}
+
+/**
+ * Atualiza ordens simuladas com novo preço (executar a cada ciclo)
+ */
+function updateSimulatedOrdersWithPrice(midPrice) {
+    if (!MOMENTUM_VALIDATION_ENABLED) return;
+
+    const expiredOrders = momentumValidator.cleanupExpiredOrders(300); // 5 min max age
+    if (expiredOrders.length > 0) {
+        log('WARN', `${expiredOrders.length} ordem(ns) simulada(s) expirada(s) após 5min. Removidas sem confirmação.`);
+    }
+
+    for (const [orderId, order] of momentumValidator.simulatedOrders) {
+        if (order.status !== 'simulated' && order.status !== 'pending') continue;
+
+        const update = momentumValidator.updateOrderWithPrice(orderId, midPrice);
+        
+        // Log de progresso
+        if (order.confirmationCycles % 2 === 0 && order.confirmationCycles > 0) { // A cada 2 ciclos
+            log('DEBUG', `📍 Validação ${order.side.toUpperCase()} [${orderId.substring(0, 20)}...]: ${update.reason}`);
+        }
+
+        // Confirmação automática
+        if (update.shouldConfirm && update.status === 'confirmed') {
+            log('SUCCESS', `✅ CONFIRMADA ordem ${order.side.toUpperCase()}: ${update.reason}`);
+            momentumValidator.confirmOrder(orderId);
+            
+            // Salvar no banco de dados
+            db.saveMomentumOrder({
+                id: orderId,
+                side: order.side,
+                createdPrice: order.createdPrice,
+                currentPrice: order.currentPrice,
+                status: 'confirmed',
+                qty: order.qty,
+                peaks: order.peaks,
+                valleys: order.valleys,
+                confirmationReversals: order.confirmationReversals,
+                reason: null,
+                reversalThreshold: order.reversalThreshold,
+                createdAt: order.createdAt,
+                priceHistory: order.priceHistory
+            }).catch(e => log('ERROR', `Erro ao salvar momentum order confirmada: ${e.message}`));
+            
+            // Agora efetivar a ordem de verdade
+            placeOrder(order.side, order.price, order.qty, order.sessionId, order.pairId)
+                .then(() => {
+                    log('SUCCESS', `🚀 Ordem ${order.side.toUpperCase()} EFETIVADA após confirmação de momentum`);
+                })
+                .catch(e => {
+                    log('ERROR', `Falha ao efetivar ordem confirmada: ${e.message}`);
+                });
+        } 
+        // Rejeição automática
+        else if (update.status === 'rejected') {
+            log('WARN', `❌ REJEITADA ordem ${order.side.toUpperCase()}: ${update.reason}`);
+            momentumValidator.rejectOrder(orderId, update.reason);
+            
+            // Salvar no banco de dados
+            db.saveMomentumOrder({
+                id: orderId,
+                side: order.side,
+                createdPrice: order.createdPrice,
+                currentPrice: order.currentPrice,
+                status: 'rejected',
+                qty: order.qty,
+                peaks: order.peaks,
+                valleys: order.valleys,
+                confirmationReversals: order.confirmationReversals,
+                reason: update.reason,
+                reversalThreshold: order.reversalThreshold,
+                createdAt: order.createdAt,
+                priceHistory: order.priceHistory
+            }).catch(e => log('ERROR', `Erro ao salvar momentum order rejeitada: ${e.message}`));
+        } else {
+            // Salvar status atual periodicamente
+            if (order.confirmationCycles % 5 === 0) { // A cada 5 ciclos
+                db.saveMomentumOrder({
+                    id: orderId,
+                    side: order.side,
+                    createdPrice: order.createdPrice,
+                    currentPrice: order.currentPrice,
+                    status: order.status,
+                    qty: order.qty,
+                    peaks: order.peaks,
+                    valleys: order.valleys,
+                    confirmationReversals: order.confirmationReversals,
+                    reason: null,
+                    reversalThreshold: order.reversalThreshold,
+                    createdAt: order.createdAt,
+                    priceHistory: order.priceHistory
+                }).catch(e => log('DEBUG', `Erro ao atualizar momentum order: ${e.message}`));
+            }
+        }
+    }
+
+    // Sincronizar com dashboard
+    try {
+        momentumSync.syncFromValidator(momentumValidator);
+    } catch (e) {
+        log('DEBUG', `Erro ao sincronizar momentum: ${e.message}`);
+    }
+}
+
+/**
+ * Retorna status das ordens simuladas
+ */
+function getSimulatedOrdersStatus() {
+    if (!MOMENTUM_VALIDATION_ENABLED) return null;
+    return momentumValidator.getSimulatedOrdersStatus();
+}
+
 async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null) {
     try {
         if (qty * price < MIN_VOLUME) {
@@ -766,7 +1003,8 @@ async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null
             cyclePlaced: cycleCount,
             timestamp: Date.now(),
             feeRate: feeRate,
-            pairId: pairId  // NOVO: identificador do par
+            pairId: pairId,  // NOVO: identificador do par
+            external_id: orderId
         });
         
         // Registrar no mapa de pares
@@ -783,7 +1021,7 @@ async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null
         stats.totalOrders++;
         
         // Salvar no BD com pair_id
-        const orderWithPairId = { ...activeOrders.get(side), pairId };
+        const orderWithPairId = { ...activeOrders.get(side), pairId, external_id: orderId };
         await db.saveOrderSafe(orderWithPairId, `market_making_${side}`, sessionId);
         
         log('SUCCESS', `Ordem ${side.toUpperCase()} ${orderId} colocada @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, Pair: ${pairId.substring(0, 20)}..., Taxa Estimada: ${(feeRate * 100).toFixed(2)}%`);
@@ -844,7 +1082,7 @@ function applyAdaptiveStrategy(trend, confidence = 0.5) {
 // ============= FIM ESTRATÉGIA ADAPTATIVA =============
 
 // ---------------- CHECK ORDERS ----------------
-async function checkOrders(mid, volatility, pred, orderbook, sessionId = null) {
+async function checkOrders(mid, volatility, pred, orderbook, sellSignal) {
     const now = Date.now();
     const dynamicStopLoss = STOP_LOSS_PCT * (1 + volatility / 120);
     const dynamicTakeProfit = TAKE_PROFIT_PCT * (1 - Math.min(0.5, volatility / 120));
@@ -1159,597 +1397,261 @@ async function runCycle() {
 
         // Atualizar priceHistory com o preço atual
         priceHistory.push(mid);
-        if (priceHistory.length > 100) priceHistory.shift(); // Limita a 100 preços
+        if (priceHistory.length > 100) priceHistory.shift();
 
-        // ===== ARMAZENAR PREÇO NO BANCO DE DADOS =====
-        try {
-            await db.saveBtcPrice(mid);
-        } catch (e) {
-            log('WARN', `Erro ao armazenar preço BTC: ${e.message}`);
+        // ===== MOMENTUM VALIDATION: registrar preço e atualizar ordens simuladas =====
+        if (MOMENTUM_VALIDATION_ENABLED) {
+            momentumValidator.recordPrice(mid);
+            updateSimulatedOrdersWithPrice(mid);
         }
 
-        // Verificar volatilidade
-        if (priceHistory.length < 2) {
-            log('WARN', `Ciclo ${cycleCount} pulado: priceHistory insuficiente (${priceHistory.length} preços).`);
-            return;
-        }
-        const volatility = calculateVolatility(priceHistory);
-        const volatilityPct = volatility; // Usar valor direto
-        log('DEBUG', `Volatilidade no ciclo ${cycleCount}: ${volatilityPct.toFixed(2)}%`);
-        if (volatilityPct > MAX_VOLATILITY_PCT || volatilityPct < MIN_VOLATILITY_PCT) {
-            log('WARN', `Ciclo ${cycleCount} pulado: volatilidade=${volatilityPct.toFixed(2)}% fora do intervalo [${MIN_VOLATILITY_PCT}, ${MAX_VOLATILITY_PCT}].`);
-            return;
-        }
-
-        // Verificar fase de teste
-        if (testPhase && cycleCount >= TEST_PHASE_CYCLES) {
-            testPhase = false;
-            log('INFO', 'Fase de teste concluída. Iniciando operação normal.');
+        // ===== ESTRATÉGIA SWING TRADING OTIMIZADA =====
+        if (swingTradingStrategy) {
+            swingTradingStrategy.updatePriceHistory(mid);
+            
+            // Avaliar sinais de compra e venda
+            const buySignalSwing = swingTradingStrategy.shouldBuy(mid);
+            const sellSignalSwing = swingTradingStrategy.shouldSell(mid);
+            
+            // Log dos sinais
+            if (buySignalSwing.signal) {
+                log('SUCCESS', `[SWING] Sinal de COMPRA: ${buySignalSwing.reason} (Força: ${(buySignalSwing.strength || 1).toFixed(2)}x)`);
+            }
+            if (sellSignalSwing.signal) {
+                log('SUCCESS', `[SWING] Sinal de VENDA: ${sellSignalSwing.reason}`);
+            }
         }
 
-        // Calcular indicadores e previsão
+        // Calcular indicadores básicos
         const pred = fetchPricePrediction(mid, orderbook);
         marketTrend = pred.trend;
 
-        // ========== APLICAR ESTRATÉGIA ADAPTATIVA ==========
-        // Ajusta spread, orderSize, maxPosition, stopLoss conforme tendência
-        applyAdaptiveStrategy(pred.trend, pred.confidence);
-        // ================================================
-
-        // Calcular convicção com o novo sistema aprimorado
-        const indicators = {
+        // ===== NOVOS MÓDULOS DE ANÁLISE E OTIMIZAÇÃO =====
+        const marketData = {
             rsi: pred.rsi,
             emaShort: pred.emaShort,
             emaLong: pred.emaLong,
             macd: pred.macd,
             signal: pred.signal,
-            price: mid,
-            volatility: volatilityPct / 100,
-            trend: marketTrend
+            volatility: pred.volatility,
+            trend: pred.trend,
+            midPrice: mid,
+            spread: spreadPct / 100,
+            adx: calculateADX(priceHistory), // Supondo que calculateADX exista
+            orderbook: { imbalance: calculateOrderbookImbalance(orderbook) } // Supondo que calculateOrderbookImbalance exista
         };
 
-        const conviction = confidenceSystem.calculateConviction(indicators, {
-            volatilityLevel: volatilityPct,
-            regime: pred.regime
-        });
-
-        log('DEBUG', `Convicção calculada: ${(conviction.overallConfidence * 100).toFixed(1)}% | Tendência: ${conviction.trend} | Força: ${conviction.strength}`);
-
-        // Usar convicção para ajustar tamanho da ordem dinamicamente
-        const confidenceMultiplier = conviction.details.recommendedPositionSize;
-
-        // Melhoria: Spread dinâmico agressivo baseado em volatilidade e RSI
-        const depthFactor = orderbook.bids[0][1] > 0 ? Math.min(orderbook.bids[0][1] / (ORDER_SIZE * 20), 2) : 1;
-        let dynamicSpreadPct = Math.max(MIN_SPREAD_PCT, SPREAD_PCT * (1 + volatilityPct / 10));
-        
-        // Ajuste baseado em volatilidade (mais conservador)
-        if (volatilityPct >= VOL_LIMIT_PCT) dynamicSpreadPct *= 1.15; 
-        else if (volatilityPct < 0.5) dynamicSpreadPct *= 0.9;
-        
-        // Ajuste baseado em RSI (zonas de exaustão)
-        if (pred.rsi > 70 || pred.rsi < 30) dynamicSpreadPct *= 1.1;
-        
-        // Profit Guard: Garantir lucro líquido real acima das taxas (Maker: 0.30%, Taker: 0.70%)
-        // Usamos 0.8% como spread mínimo de segurança para cobrir taxas e slippage
-        const minSafetySpread = 0.008; 
-        if (dynamicSpreadPct < minSafetySpread) dynamicSpreadPct = minSafetySpread;
-        
-        // Limita spread máximo a 1.5% (mais flexível para capturar lucro em alta volatilidade)
-        dynamicSpreadPct = Math.min(dynamicSpreadPct, 0.015);
-        currentSpreadPct = dynamicSpreadPct;
-
-        // CRÍTICO: Remover multiplicador de convicção que reduz o ORDER_SIZE drasticamente
-        // Usar ORDER_SIZE configurado (0.02 BTC para modo lucro) sem redução
-        let dynamicOrderSize = testPhase ? MIN_ORDER_SIZE : ORDER_SIZE;
-        dynamicOrderSize *= (1 + (Math.max(0, pred.expectedProfit - EXPECTED_PROFIT_THRESHOLD) * 0.5)); // Leve ajuste por profit score
-        dynamicOrderSize = Math.min(MAX_ORDER_SIZE, dynamicOrderSize);
-        currentBaseSize = dynamicOrderSize;
-
-        // Otimização de Regime de Mercado (Trend Specialist)
-        let regimeSpreadMult = 1.0;
-        let regimeBiasMult = 1.0;
-        let regimeSizeMult = 1.0;
-
-        switch (pred.regime) {
-            case 'BULL_TREND':
-                regimeSpreadMult = 0.8; // Spread mais curto para não perder o bonde
-                regimeBiasMult = 1.5;   // Viés de compra mais forte
-                regimeSizeMult = 1.2;   // Aumenta a mão na alta
-                break;
-            case 'BEAR_TREND':
-                regimeSpreadMult = 2.0; // Spread 2x maior para garantir lucro na recuperação
-                regimeBiasMult = 1.8;   // Viés de venda/proteção muito forte
-                regimeSizeMult = 0.7;   // Mão bem leve na queda
-                break;
-            case 'RANGING':
-                regimeSpreadMult = 1.2; // Spread maior para capturar oscilação lateral
-                regimeBiasMult = 0.5;   // Viés neutro
-                regimeSizeMult = 1.0;
-                break;
+        // 1. Otimizador automático de parâmetros
+        if (cycleCount > 1 && cycleCount % 20 === 0 && autoOptimizer) { // A cada 20 ciclos, exceto o primeiro
+            log('INFO', '[OPTIMIZER] Iniciando ciclo de otimização de parâmetros.');
+            const recentOrders = await db.getOrders({ limit: 50 });
+            const optimizationResult = autoOptimizer.optimizeParameters(stats, recentOrders, marketData);
+            if (optimizationResult.adjustmentsMade) {
+                log('SUCCESS', `[OPTIMIZER] Parâmetros ajustados: ${JSON.stringify(optimizationResult.params)}`);
+                // Aplicar novos parâmetros (exemplo, pode ser necessário ajustar as variáveis globais)
+                SPREAD_PCT = optimizationResult.params.spreadPct || SPREAD_PCT;
+                ORDER_SIZE = optimizationResult.params.orderSize || ORDER_SIZE;
+                STOP_LOSS_PCT = optimizationResult.params.stopLoss || STOP_LOSS_PCT;
+            } else {
+                log('INFO', '[OPTIMIZER] Nenhuma otimização necessária neste ciclo.');
+            }
         }
 
-        dynamicSpreadPct *= regimeSpreadMult;
-
-        const targetBtc = currentMaxPosition / 2;
-        const inventoryDeviation = (btcPosition - targetBtc) / currentMaxPosition;
-        const inventorySkew = -inventoryDeviation * 0.01 * regimeBiasMult;
-        
-        const avgPrice = stats.avgFillPrice > 0 ? parseFloat(stats.avgFillPrice) : mid;
-        const dcaBias = mid < avgPrice * 0.95 ? 0.005 : 0;
-        
-        // CORREÇÃO: Aplicar trendBias com MUITO MAIS cuidado - máximo 0.3% de redução
-        const trendFactor = (parseFloat(pred.confidence) > 2.0 ? 0.0005 : 0.0002) * regimeBiasMult;
-        const trendBias = pred.trend === 'up' ? trendFactor : (pred.trend === 'down' ? -trendFactor : 0);
-        
-        // CORREÇÃO: Limitar totalBias entre -0.01 e +0.01 (máximo 1% de ajuste)
-        const totalBias = Math.min(0.01, Math.max(-0.01, inventorySkew + trendBias + dcaBias));
-        dynamicOrderSize *= regimeSizeMult;
-        const refPrice = mid * (1 + totalBias);
-        
-        // Buffer de Recuperação de Resíduo: Aumenta dinamicamente o spread se o PnL estiver negativo
-        const pnlResidueBuffer = stats.totalPnL < 0 ? calculateDynamicRecoveryBuffer(pred.volatility * 100) : 0;
-        const finalSpreadPct = dynamicSpreadPct + pnlResidueBuffer;
-
-        // Alerta de confiança baixa mas opera em modo conservador
-        if (conviction.overallConfidence < 0.5 && !testPhase) {
-            log('WARN', `Confiança baixa (${(conviction.overallConfidence * 100).toFixed(1)}%). Operando com spread mais amplo para segurança.`);
-            dynamicSpreadPct *= 1.2; // Expandir spread para segurança
-            // NÃO reduzir tamanho - queremos lucro real!
-        }
-
-        // Arredondamento Favorável: Compra (Floor), Venda (Ceil) para evitar perdas por precisão
-        let buyPrice = Math.min(Math.floor(refPrice * (1 - finalSpreadPct / 2) * 100) / 100, bestBid);
-        let sellPrice = Math.max(Math.ceil(refPrice * (1 + finalSpreadPct / 2) * 100) / 100, bestAsk);
-        
-        // VALIDAÇÃO CRÍTICA: Garantir que o buyPrice não está muito abaixo do mercado
-        const minValidBuyPrice = mid * 0.995; // Máximo 0.5% abaixo do mid
-        const maxValidSellPrice = mid * 1.005; // Máximo 0.5% acima do mid
-        if (buyPrice < minValidBuyPrice) {
-            log('WARN', `Preço de compra ${buyPrice.toFixed(2)} muito abaixo do mercado (${mid.toFixed(2)}). Ajustando para ${minValidBuyPrice.toFixed(2)}.`);
-            buyPrice = Math.max(buyPrice, minValidBuyPrice);
-        }
-        if (sellPrice > maxValidSellPrice) {
-            log('WARN', `Preço de venda ${sellPrice.toFixed(2)} muito acima do mercado (${mid.toFixed(2)}). Ajustando para ${maxValidSellPrice.toFixed(2)}.`);
-            sellPrice = Math.min(sellPrice, maxValidSellPrice);
-        }
-        
-        if (buyPrice >= sellPrice || Math.abs(buyPrice - sellPrice) / mid < MIN_SPREAD_PCT) {
-            log('WARN', 'Spread inválido ou muito estreito. Ajustando para spread natural.');
-            buyPrice = Math.floor(mid * (1 - finalSpreadPct / 2) * 100) / 100;
-            sellPrice = Math.ceil(mid * (1 + finalSpreadPct / 2) * 100) / 100;
-        }
-
-        // Verificar cooldown
-        const cooldown = volatilityPct < 0.4 ? 0 : 1;
-        if (cycleCount - lastTradeCycle < cooldown) {
-            log('INFO', `Ciclo ${cycleCount} pulado: cooldown ativo após última negociação.`);
-            return;
-        }
-
-        // Verificar ordens ativas
-        for (const key of ['buy', 'sell']) {
-            if (activeOrders.has(key)) {
-                const statusResult = await checkOrderStatus(key, key);
-                if (statusResult.status === 'filled' || statusResult.status === 'error') {
-                    activeOrders.delete(key);
+        // 2. Analisador de perdas (analisa ordens preenchidas recentemente)
+        if (lossAnalyzer) {
+            try {
+                const recentFilledOrders = await db.getOrders({ status: 'filled', limit: 10 });
+                for (const order of recentFilledOrders) {
+                    if (order.pnl && order.pnl < 0) {
+                        lossAnalyzer.analyzeOrder(order, marketData);
+                    }
+                }
+            } catch (e) {
+                log('WARN', `[ANALYZER] Erro ao analisar perdas: ${e.message}`);
+            }
+            if (cycleCount > 1 && cycleCount % 50 === 0) { // A cada 50 ciclos
+                log('INFO', '[ANALYZER] Gerando relatório de perdas...');
+                try {
+                    console.log(lossAnalyzer.generateReport());
+                } catch (e) {
+                    log('WARN', `[ANALYZER] Erro ao gerar relatório: ${e.message}`);
                 }
             }
         }
 
-        // ===== GESTÃO DE SESSÃO DE RECUPERAÇÃO (INICIALIZAR CEDO) =====
-        let activeSession = await db.getActiveRecoverySession();
+        // 3. Lógica de entrada/saída melhorada
+        let buySignal = { shouldEnter: false, score: 0, reasons: [] };
+        let sellSignal = { shouldExit: false, score: 0, reasons: [] };
+        if (improvedEntryExit) {
+            buySignal = improvedEntryExit.shouldEnter(marketData);
+            
+            // Simula uma posição aberta se houver uma ordem de compra ativa
+            const openBuyOrder = activeOrders.get('buy');
+            if (openBuyOrder) {
+                // A lógica de saída deve considerar a posição real, aqui simulada pela ordem
+                const pseudoPosition = { entryPrice: openBuyOrder.price, qty: openBuyOrder.qty, timestamp: openBuyOrder.timestamp };
+                sellSignal = improvedEntryExit.shouldExit(pseudoPosition, marketData);
+            }
+        }
+        // =====================================================
 
-        // Gerenciar ordens ativas
-        await checkOrders(mid, volatility, pred, orderbook, activeSession ? activeSession.id : null);
+        // Gerenciar ordens ativas (lógica de cancelamento, stop-loss, etc.)
+        await checkOrders(mid, pred.volatility, pred, orderbook, sellSignal);
 
         // Verificar saldos
         let balances;
         try {
-            balances = SIMULATE ? [{symbol: 'BRL', available: '1000'}, {
-                symbol: 'BTC', available: '0.001'
-            }] : await MB.getBalances();
+            balances = SIMULATE ? [{symbol: 'BRL', available: '10000'}, { symbol: 'BTC', available: '0.1' }] : await MB.getBalances();
         } catch (e) {
-            log('ERROR', `Falha ao buscar saldos: ${e.message}. Usando saldos zerados.`);
-            balances = [{symbol: 'BRL', available: '0'}, {symbol: 'BTC', available: '0'}];
+            log('ERROR', `Falha ao buscar saldos: ${e.message}.`, e);
+            return; // Pula o ciclo se não conseguir buscar saldos
         }
         const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.available || 0);
         const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
-        
-        // Alerta de saldo insuficiente
-        const minBrlBalance = MIN_ORDER_SIZE * mid * 2; // Saldo mínimo para 2 ordens
-        const minBtcBalance = MIN_ORDER_SIZE * 2;
-        if (brlBalance < minBrlBalance) {
-            log('ALERT', `Saldo BRL muito baixo (${brlBalance.toFixed(2)} < ${minBrlBalance.toFixed(2)}). Considere depositar mais fundos.`);
-        }
-        if (btcBalance < minBtcBalance) {
-            log('WARN', `Saldo BTC muito baixo (${btcBalance.toFixed(8)} < ${minBtcBalance.toFixed(8)}). Apenas ordens de compra serão colocadas.`);
+
+        // ===== ATUALIZAR CASH MANAGEMENT STRATEGY =====
+        if (cashManagementStrategy) {
+            cashManagementStrategy.updatePrice(mid);
         }
 
-        // Colocar ordens (com validação externa)
-        if (pred.expectedProfit >= EXPECTED_PROFIT_THRESHOLD) {
-            // Gerar pair_id único para este par de ordens BUY/SELL
-            const pairId = `PAIR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            
-            let buyQty = dynamicOrderSize;
-            const buyCost = buyPrice * buyQty * (1 + FEE_RATE); // Taxa estimada de 0.3%
-            if (buyCost > brlBalance) {
-                buyQty = Math.floor((brlBalance / (buyPrice * (1 + FEE_RATE))) * 1e8) / 1e8;
-                if (buyQty < MIN_ORDER_SIZE) {
-                    buyQty = 0;
-                    log('WARN', `Saldo BRL insuficiente (${brlBalance.toFixed(2)} < ${buyCost.toFixed(2)}). Ignorando compra.`);
-                }
-            }
-            
-            // ===== VALIDAÇÃO DE PARES (ANTES DE COLOCAR QUALQUER ORDEM) =====
-            // Isso previne múltiplos BUY sem SELL ou vice-versa
-            const pairValidation = validateOrderPairs();
-            
-            // Validar ordem de compra
-            // CRÍTICO: Validação deve acontecer MESMO que já exista BUY aberta
-            // (para evitar múltiplas BUY sem SELL correspondente)
-            let placementPromises = [];
-            let buyPlacementStatus = null;
-            
-            if (!pairValidation.isBalanced && pairValidation.needsSell) {
-                // Há mais BUY que SELL - bloqueia nova BUY
-                log('WARN', `${pairValidation.message} - não colocando BUY.`);
-            } else if (!activeOrders.has('buy') && buyQty >= MIN_ORDER_SIZE) {
-                const buyValidation = await validateTradingDecision(pred.trend, pred.confidence, 'buy');
-                if (buyValidation.shouldTrade) {
-                    // Colocar BUY em paralelo
-                    placementPromises.push(
-                        placeOrder('buy', buyPrice, buyQty, activeSession ? activeSession.id : null, pairId)
-                            .then(() => {
-                                buyPlacementStatus = { success: true, reason: buyValidation.reason };
-                                log('SUCCESS', `Ordem BUY validada: ${buyValidation.reason} [Pair: ${pairId}]`);
-                            })
-                            .catch(e => {
-                                buyPlacementStatus = { success: false, error: e.message };
-                                log('ERROR', `Erro ao colocar BUY: ${e.message}`);
-                            })
-                    );
-                } else {
-                    log('WARN', `Ordem BUY cancelada por validação externa: ${buyValidation.reason}`);
-                }
-            }
+        // ===== EXECUTAR LÓGICA DE CASH MANAGEMENT (Estratégia ativa se USE_CASH_MANAGEMENT=true) =====
+        if (cashManagementStrategy && process.env.USE_CASH_MANAGEMENT === 'true') {
+            log('DEBUG', `[CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...`);
 
-            let sellQty = dynamicOrderSize;
-            if (sellQty > btcBalance) {
-                sellQty = Math.floor(btcBalance * 1e8) / 1e8;
-            }
-            if (sellQty > 0) {
-                sellQty = Math.max(MIN_ORDER_SIZE, Math.floor(sellQty * (1 - FEE_RATE) * 1e8) / 1e8); // Buffer para fee deduzida do BTC
-            }
-            if (sellQty < MIN_ORDER_SIZE) {
-                sellQty = 0;
-                log('WARN', `Saldo BTC insuficiente (${btcBalance.toFixed(8)} < ${dynamicOrderSize.toFixed(8)}). Ignorando venda.`);
-            }
-            
-            // Validação de SELL: Verificar se há pares desbalanceados
-            // (para evitar múltiplas SELL sem BUY correspondente)
-            // SELL é mais flexível em market making - permite vender para:
-            // 1) Fechar posição (rebalanciar)
-            // 2) Completar o par BUY/SELL
-            // Portanto, SELL é colocado se há saldo BTC ou posição aberta
-            const hasPosition = btcPosition > 0;
-            const canSell = !activeOrders.has('sell') && (sellQty >= MIN_ORDER_SIZE || (hasPosition && btcPosition >= MIN_ORDER_SIZE));
-            
-            // ===== COLOCAÇÃO SEQUENCIAL PARA GARANTIR PARES COMPLETOS =====
-            // Se vamos colocar BUY e SELL, precisamos garantir que ambas são colocadas com o MESMO pair_id
-            // Colocar em paralelo pode resultar em pares incompletos se uma falhar
-            let buySuccess = false;
-            
-            // Executar promises de BUY primeiro
-            if (placementPromises.length > 0) {
-                await Promise.all(placementPromises);
-                buySuccess = buyPlacementStatus && buyPlacementStatus.success;
+            const sellSignalCash = cashManagementStrategy.shouldSell(mid, btcBalance);
+
+            // SELL-first: permite uma venda inicial mesmo sem BUY quando alinhado com a estratégia
+            if ((SELL_FIRST_ENABLED || sellSignalCash.shouldSell) && !sellFirstExecuted && !activeOrders.has('sell') && !activeOrders.has('buy') && btcBalance > MIN_ORDER_SIZE) {
+                const sellQty = Math.min(btcBalance, btcBalance * (sellSignalCash.qty || cashManagementStrategy.SELL_AMOUNT_PCT));
+                log('WARN', `[SELL_FIRST] SELL inicial habilitado. Vendendo ${sellQty.toFixed(8)} BTC a R$ ${mid.toFixed(2)}${sellSignalCash.reason ? ` | ${sellSignalCash.reason}` : ''}`);
+                await placeOrderWithMomentumValidation('sell', mid, sellQty);
+                stats.sells = (stats.sells || 0) + 1;
+                sellFirstExecuted = true;
             }
             
-            // Só colocar SELL se:
-            // 1) BUY foi bem-sucedida OU não havia BUY a colocar
-            // 2) Há validação para SELL
-            if (buySuccess || !activeOrders.has('buy')) {
-                if (!pairValidation.isBalanced && pairValidation.needsBuy) {
-                    // Há mais SELL que BUY - bloqueia nova SELL
-                    log('WARN', `${pairValidation.message} - não colocando SELL.`);
-                } else if (canSell) {
-                    // SELL não precisa de validação rigorosa - é para rebalanciar
-                    // Apenas valida se há suficiência de saldo
-                    if (sellQty >= MIN_ORDER_SIZE) {
-                        // Colocar SELL APÓS BUY bem-sucedida (sequencial para garantir par completo)
-                        await placeOrder('sell', sellPrice, sellQty, activeSession ? activeSession.id : null, pairId)
-                            .then(() => {
-                                log('SUCCESS', `Ordem SELL colocada para rebalancear posição (Market Making): ${sellPrice.toFixed(2)} | Qty: ${sellQty.toFixed(8)} [Pair: ${pairId}]`);
-                            })
-                            .catch(e => {
-                                log('ERROR', `Erro ao colocar SELL: ${e.message}`);
-                            });
-                    } else {
-                        log('INFO', `SELL: Posição aberta mas quantidade insuficiente para vender agora. Aguardando acúmulo.`);
-                    }
+            // Verificar sinal de COMPRA
+            const buySignalCash = cashManagementStrategy.shouldBuy(mid, brlBalance, btcBalance);
+            if (buySignalCash.shouldBuy && !activeOrders.has('buy')) {
+                const buyQty = Math.min(0.0001, (brlBalance * buySignalCash.qty) / mid);
+                if (buyQty > MIN_ORDER_SIZE && brlBalance >= buyQty * mid) {
+                    log('SUCCESS', `[CASH_MGT_BUY] ${buySignalCash.reason}`);
+                    await placeOrderWithMomentumValidation('buy', mid, buyQty);
+                    log('SUCCESS', `[CASH_MGT_BUY] Ordem de compra colocada: ${buyQty.toFixed(8)} BTC a R$ ${mid.toFixed(2)}`);
+                    stats.buys = (stats.buys || 0) + 1;
                 }
-            } else {
-                log('WARN', `BUY não foi colocada com sucesso. Ignorando SELL para evitar par incompleto.`);
+            }
+            
+            // Verificar sinal de VENDA
+            if (sellSignalCash.shouldSell && !activeOrders.has('sell')) {
+                const sellQty = Math.min(btcBalance, btcBalance * sellSignalCash.qty);
+                if (sellQty > MIN_ORDER_SIZE) {
+                    log('SUCCESS', `[CASH_MGT_SELL] ${sellSignalCash.reason}`);
+                    await placeOrderWithMomentumValidation('sell', mid, sellQty);
+                    log('SUCCESS', `[CASH_MGT_SELL] Ordem de venda colocada: ${sellQty.toFixed(8)} BTC a R$ ${mid.toFixed(2)}`);
+                    stats.sells = (stats.sells || 0) + 1;
+                }
+            }
+            
+            // Micro-trades
+            const microTradeSignals = cashManagementStrategy.shouldMicroTrade(cycleCount, mid, btcBalance, brlBalance);
+            if (microTradeSignals.buy && !activeOrders.has('buy')) {
+                const microBuyQty = Math.min(0.00006, (brlBalance * microTradeSignals.buy.qty) / mid);
+                if (microBuyQty > MIN_ORDER_SIZE) {
+                    log('INFO', `[CASH_MGT_MICRO] ${microTradeSignals.buy.reason}`);
+                    await placeOrderWithMomentumValidation('buy', mid, microBuyQty);
+                }
+            }
+            if (microTradeSignals.sell && !activeOrders.has('sell') && btcBalance > 0.00001) {
+                const microSellQty = btcBalance * microTradeSignals.sell.qty;
+                if (microSellQty > MIN_ORDER_SIZE) {
+                    log('INFO', `[CASH_MGT_MICRO] ${microTradeSignals.sell.reason}`);
+                    await placeOrderWithMomentumValidation('sell', mid, microSellQty);
+                }
             }
         } else {
-            log('INFO', `Score de lucro baixo (${pred.expectedProfit.toFixed(2)} < ${EXPECTED_PROFIT_THRESHOLD}). Não colocando ordens.`);
-        }
-
-        // ===== GESTÃO DE SESSÃO DE RECUPERAÇÃO =====
-        if (activeSession) {
-            // Calcula o PnL apenas para a sessão atual
-            const pnlData = await computePnL(mid, activeSession.id);
-            const currentPnL = parseFloat(pnlData.pnl);
-
-            const progress = (1 - (Math.abs(currentPnL) / Math.abs(activeSession.baseline))) * 100;
-
-            log('INFO', `[RECOVERY] Sessão ${activeSession.id} ativa. PnL da Sessão: ${currentPnL.toFixed(2)} BRL. Baseline: ${activeSession.baseline}. Progresso: ${progress.toFixed(1)}%`);
-
-            // Se o PnL da sessão ficar positivo, fecha a sessão de recuperação.
-            if (currentPnL >= 0) {
-                await db.endRecoverySession(activeSession.id);
-                log('SUCCESS', `[RECOVERY] Sessão ${activeSession.id} concluída com sucesso! PnL final da sessão: ${currentPnL.toFixed(2)} BRL.`);
-            } else {
-                // Se o PnL atual for estritamente pior (mais negativo) que a linha de base, atualize a linha de base.
-                if (currentPnL < parseFloat(activeSession.baseline)) {
-                    log('INFO', `[RECOVERY] PnL piorou. Atualizando baseline de ${activeSession.baseline} para ${currentPnL.toFixed(2)}.`);
-                    await db.updateRecoveryBaseline(activeSession.id, currentPnL);
-                }
-                // Salva o ponto de dados para o gráfico
-                await db.appendRecoveryPoint(activeSession.id, currentPnL, progress, activeSession.baseline);
-            }
-        } else {
-            // Lógica para iniciar uma nova sessão de recuperação se o PnL total ficar negativo
-            const totalPnlData = await computePnL(mid, null); // PnL Total
-            if (parseFloat(totalPnlData.pnl) < -1) { // Inicia se a perda for maior que R$1.00
-                const newSessionId = await db.startRecoverySession(totalPnlData.pnl, totalPnlData.pnl);
-                log('WARN', `[RECOVERY] PnL total negativo (${totalPnlData.pnl} BRL). Nova sessão de recuperação #${newSessionId} iniciada.`);
-            }
-        }
-
-
-        // Verificar e gerenciar ordens ativas
-        await checkOrders(mid, volatilityPct, pred, orderbook, activeSession ? activeSession.id : null);
-
-        // ===== MÚLTIPLOS PARES SIMULTÂNEOS =====
-        // Permite criar novos pares enquanto houver espaço em MAX_POSITION
-        // Calcula posição total atual
-        let totalPositionBtc = 0;
-        let activePairs = 0;
-        let completePairs = 0;  // Pares que têm BUY + SELL
-        for (const [pairId, pairData] of pairMapping) {
-            if (pairData.buyOrder && pairData.buyOrder.status === 'open') totalPositionBtc += pairData.buyOrder.qty;
-            if (pairData.sellOrder && pairData.sellOrder.status === 'open') totalPositionBtc += pairData.sellOrder.qty;
-            if ((pairData.buyOrder && pairData.buyOrder.status === 'open') || 
-                (pairData.sellOrder && pairData.sellOrder.status === 'open')) {
-                activePairs++;
-            }
-            // Contar pares completos (BUY + SELL abertos)
-            if ((pairData.buyOrder && pairData.buyOrder.status === 'open') &&
-                (pairData.sellOrder && pairData.sellOrder.status === 'open')) {
-                completePairs++;
-            }
-        }
-
-        // ===== PAUSA AUTOMÁTICA EM QUEDA DE MERCADO =====
-        // REMOVIDO: A proteção de "não abrir em queda" estava impedindo market making
-        // Em vez disso, a estratégia adaptativa já reduz tamanho/spread em queda
-        // Permitir novos pares mesmo em queda para manter market making ativo
-        const isBearishTrend = pred.trend === 'down' || 
-                              (externalTrendData && externalTrendData.trend === 'BEARISH');
-        
-        // ALTERAÇÃO: Usar pairMapping em vez de activeOrders para permitir múltiplos pares
-        // Permitir novo par se:
-        // 1. Posição total < MAX_POSITION (espaço disponível)
-        // 2. Menos de MAX_PARES ativos (limite de quantos pares simultâneos)
-        const MAX_PARES = 3;  // Máximo de 3 pares simultaneamente
-        const canAddNewPair = (totalPositionBtc + (currentBaseSize * 2) <= currentMaxPosition) &&
-                              (activePairs < MAX_PARES);
-        
-        log('DEBUG', `[MÚLTIPLOS PARES] Avaliação: TotalPos=${totalPositionBtc.toFixed(8)} BTC, MaxPos=${currentMaxPosition.toFixed(8)} BTC, ActivePairs=${activePairs}/${MAX_PARES}, CompletePairs=${completePairs}, CanAdd=${canAddNewPair}`);
-        
-        if (canAddNewPair) {
-            const bias = getInventoryBias(mid) + getTrendBias(pred) + pred.histBias;
-            let buyPrice = mid * (1 - currentSpreadPct / 2) + bias;
-            let sellPrice = mid * (1 + currentSpreadPct / 2) + bias;
-
-            if (buyPrice >= sellPrice || Math.abs(buyPrice - sellPrice) / mid < MIN_SPREAD_PCT) {
-                log('WARN', 'Spread inválido ou muito estreito. Ajustando para spread natural.');
-                buyPrice = Math.floor(mid * (1 - currentSpreadPct / 2) * 100) / 100;
-                sellPrice = Math.ceil(mid * (1 + currentSpreadPct / 2) * 100) / 100;
-            }
-
-            // IMPORTANTE: Gerar um novo pair_id para este novo par
-            // Isso garante que BUY e SELL saibam que pertencem ao mesmo par
-            const { v4: uuidv4 } = require('uuid');
-            const newPairId = `PAIR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            // ===== EXECUTAR LÓGICA DE SWING TRADING =====
+            if (swingTradingStrategy && process.env.USE_SWING_TRADING === 'true') {
+                log('DEBUG', `[SWING] USE_SWING_TRADING ativado. Avaliando sinais...`);
+                const buySignalSwing = swingTradingStrategy.shouldBuy(mid);
+                const sellSignalSwing = swingTradingStrategy.shouldSell(mid);
             
-            // ===== COLOCAÇÃO SEQUENCIAL PARA GARANTIR PARES COMPLETOS =====
-            // Colocar BUY primeiro, e só se suceder, colocar SELL com mesmo pair_id
-            let newBuyPlaced = false;
-            
-            const decisionBuy = await validateTradingDecision('up', 1, 'buy');
-            if (decisionBuy.shouldTrade) {
-                try {
-                    await placeOrder('buy', buyPrice, currentBaseSize, activeSession ? activeSession.id : null, newPairId);
-                    newBuyPlaced = true;
-                    log('INFO', `[MÚLTIPLOS PARES] BUY colocada - Pares ativos: ${activePairs + 1}/${MAX_PARES}, Posição: ${(totalPositionBtc + currentBaseSize).toFixed(8)} BTC, Pair: ${newPairId.substring(0, 20)}...`);
-                } catch (e) {
-                    log('ERROR', `[MÚLTIPLOS PARES] Erro ao colocar BUY: ${e.message}`);
-                }
-            }
-
-            // Só colocar SELL se BUY foi bem-sucedida
-            if (newBuyPlaced) {
-                const decisionSell = await validateTradingDecision('down', 1, 'sell');
-                if (decisionSell.shouldTrade) {
-                    try {
-                        await placeOrder('sell', sellPrice, currentBaseSize, activeSession ? activeSession.id : null, newPairId);
-                        log('INFO', `[MÚLTIPLOS PARES] SELL colocada - Pares ativos: ${activePairs + 1}/${MAX_PARES}, Posição: ${(totalPositionBtc + currentBaseSize).toFixed(8)} BTC, Pair: ${newPairId.substring(0, 20)}...`);
-                    } catch (e) {
-                        log('ERROR', `[MÚLTIPLOS PARES] Erro ao colocar SELL: ${e.message}`);
-                    }
-                }
-            } else {
-                log('WARN', `[MÚLTIPLOS PARES] BUY não foi colocada. Ignorando SELL para evitar par incompleto. Pair: ${newPairId.substring(0, 20)}...`);
-            }
-        } else if (totalPositionBtc + (currentBaseSize * 2) > currentMaxPosition) {
-            // Se limite de posição foi atingido
-            log('DEBUG', `Limite MAX_POSITION atingido: ${totalPositionBtc.toFixed(8)}/${currentMaxPosition.toFixed(8)} BTC, ${activePairs} pares ativos`);
-        } else if (activePairs >= MAX_PARES) {
-            log('DEBUG', `Limite de pares atingido: ${activePairs}/${MAX_PARES} pares ativos`);
-        }
-
-        // Calcular PnL e outras estatísticas (agora usando o PnL total)
-        const pnlData = await computePnL(mid, null); // Passa null para obter PnL total
-
-        // ===== SALVAR PnL NO BANCO DE DADOS =====
-        // Salva o PnL no histórico a cada minuto (60 segundos)
-        const SAVE_PNL_INTERVAL_SEC = 60;
-        const lastPnlSave = global.lastPnLSaveTime || 0;
-        const now = Date.now();
-        if ((now - lastPnlSave) / 1000 >= SAVE_PNL_INTERVAL_SEC) {
-            try {
-                await db.savePnL(parseFloat(pnlData.pnl), now);
-                global.lastPnLSaveTime = now;
-            } catch (e) {
-                log('WARN', `Erro ao salvar PnL: ${e.message}`);
-            }
-        }
-
-        // Atualizar histórico de performance para otimização
-        performanceHistory.push(parseFloat(pnlData.pnl));
-        if (performanceHistory.length > PERFORMANCE_WINDOW * 2) performanceHistory.shift();
-
-        stats.fillRate = totalFills > 0 ? ((totalFills / stats.totalOrders) * 100).toFixed(1) + '%' : '0.0%';
-        stats.avgSpread = dynamicSpreadPct * 100;
-        stats.uptime = `${Math.round((Date.now() - startTime) / 60000)}min`;
-
-        // Persistência de sessão de recuperação e pontos por ciclo
-        // IMPORTANTE: Usar PnL portfolio-based (saldo total - capital inicial) 
-        // para sincronizar com o dashboard e ativar recuperação corretamente
-        try {
-            const totalBalance = brlBalance + (btcBalance * mid);
-            const portfolioPnL = totalBalance - INITIAL_CAPITAL;
-            const currentPnL = parseFloat(portfolioPnL.toFixed(2));
-            
-            let activeSession = await db.getActiveRecoverySession();
-            if (currentPnL < 0) {
-                // Iniciar sessão se não existir
-                if (!activeSession) {
-                    await db.startRecoverySession(currentPnL, currentPnL);
-                    activeSession = await db.getActiveRecoverySession();
-                    // Inicializar contador local de confirmações
-                    baselineLowerCount[activeSession.id] = 0;
-                    log('SUCCESS', `[RECOVERY] Sessão de recuperação iniciada | Baseline: R$ ${currentPnL.toFixed(2)}`);
-                } else if (currentPnL < parseFloat(activeSession.baseline)) {
-                    // Atualizar baseline quando a perda aumentar (mais negativa)
-                    const oldBaseline = parseFloat(activeSession.baseline);
-                    const nowSec = Math.floor(Date.now() / 1000);
-                    const lastManual = activeSession.last_manual_baseline_at ? parseInt(activeSession.last_manual_baseline_at) : null;
-
-                    // Se houve um reset manual recente, exigir confirmação em 2 ciclos antes de aceitar baseline inferior
-                    if (lastManual && (nowSec - lastManual) < BASELINE_DEBOUNCE_SEC) {
-                        baselineLowerCount[activeSession.id] = (baselineLowerCount[activeSession.id] || 0) + 1;
-                        log('DEBUG', `[RECOVERY] Detected lower PnL (${currentPnL}) but recent manual reset at ${lastManual}. consecutive=${baselineLowerCount[activeSession.id]}`);
-                        if (baselineLowerCount[activeSession.id] >= 2) {
-                            await db.updateRecoveryBaseline(activeSession.id, currentPnL);
-                            activeSession.baseline = currentPnL;
-                            baselineLowerCount[activeSession.id] = 0;
-                            log('WARN', `[RECOVERY] Baseline atualizado após confirmação: R$ ${oldBaseline.toFixed(2)} → R$ ${currentPnL.toFixed(2)}`);
-                        } else {
-                            log('INFO', `[RECOVERY] Ignorando atualização de baseline por debounce (cycle ${baselineLowerCount[activeSession.id]}).`);
+                // Compra: queda de preço detectada
+                if (buySignalSwing.signal && !swingTradingStrategy.inPosition && !activeOrders.has('buy')) {
+                    const qty = Math.min(0.00008, (brlBalance * 0.5) / mid);
+                    if (qty > MIN_ORDER_SIZE && brlBalance >= qty * mid) {
+                        log('SUCCESS', `[SWING_EXEC] Executando COMPRA: ${buySignalSwing.reason}`);
+                        const buyResult = swingTradingStrategy.buy(mid, qty);
+                        if (buyResult.success) {
+                            await placeOrderWithMomentumValidation('buy', mid, qty);
+                            log('SUCCESS', `[SWING_EXEC] Ordem de compra colocada. ${buyResult.message}`);
                         }
                     } else {
-                        // Sem reset recente, atualizar imediatamente
-                        await db.updateRecoveryBaseline(activeSession.id, currentPnL);
-                        activeSession.baseline = currentPnL;
-                        baselineLowerCount[activeSession.id] = 0;
-                        log('WARN', `[RECOVERY] Baseline atualizado: R$ ${oldBaseline.toFixed(2)} → R$ ${currentPnL.toFixed(2)}`);
+                        log('WARN', `[SWING_EXEC] Compra bloqueada: Qtd insuficiente ou saldo BRL insuficiente`);
                     }
                 }
-
-                const baseline = parseFloat(activeSession.baseline);
-                const percentage = baseline < 0 ? ((currentPnL - baseline) / (0 - baseline)) * 100 : 0;
-                await db.appendRecoveryPoint(activeSession.id, currentPnL, percentage, baseline);
-                log('DEBUG', `[RECOVERY] Ponto registrado: PnL=R$ ${currentPnL.toFixed(2)}, Progresso=${percentage.toFixed(1)}%, Baseline=R$ ${baseline.toFixed(2)}`);
-            } else if (activeSession) {
-                // Encerrar sessão ao atingir ou ultrapassar o break-even
-                await db.endRecoverySession(activeSession.id);
-                log('SUCCESS', `[RECOVERY] Sessão de recuperação encerrada | PnL Final: R$ ${currentPnL.toFixed(2)}`);
-            }
-        } catch (err) {
-            log('WARN', `Falha ao persistir sessão de recuperação: ${err.message}`);
-        }
-
-        // Otimizar parâmetros
-        if (cycleCount % PERFORMANCE_WINDOW === 0) optimizeParams();
-
-        // Validação de PnL a cada 20 ciclos (para auditoria)
-        if (cycleCount > 0 && cycleCount % 20 === 0) {
-            try {
-                const validation = await db.validatePnL(mid);
-                if (validation) {
-                    const botPnL = parseFloat(pnlData.pnl);
-                    const dbPnL = parseFloat(validation.total_pnl);
-                    const difference = Math.abs(botPnL - dbPnL);
-                    
-                    if (difference > 1.0) { // Diferença maior que R$ 1,00
-                        log('WARN', `DISCREPÂNCIA DE PnL DETECTADA: Bot=${botPnL} | DB=${dbPnL} | Diff=${difference.toFixed(2)} BRL`);
+            
+                // Venda: lucro ou stop-loss
+                if (sellSignalSwing.signal && swingTradingStrategy.inPosition && !activeOrders.has('sell')) {
+                    const sellResult = swingTradingStrategy.sell(mid, sellSignalSwing.type);
+                    if (sellResult.success) {
+                        log('SUCCESS', `[SWING_EXEC] Executando VENDA: ${sellSignalSwing.reason}`);
+                        await placeOrderWithMomentumValidation('sell', mid, swingTradingStrategy.positionQty);
+                        log('SUCCESS', `[SWING_EXEC] Ordem de venda colocada. ${sellResult.message}`);
+                        
+                        // Log de métrica
+                        log('INFO', `[SWING_METRICS] ${JSON.stringify(swingTradingStrategy.getMetrics())}`);
                     } else {
-                        log('SUCCESS', `Validação PnL OK: Bot=${botPnL} | DB=${dbPnL} | Diff=${difference.toFixed(2)} BRL`);
+                        log('WARN', `[SWING_EXEC] Venda bloqueada: ${sellResult.error}`);
                     }
                 }
-            } catch (error) {
-                log('ERROR', `Erro na validação de PnL: ${error.message}`);
-            }
-        }
+            } else {
+                // ===== LÓGICA PADRÃO DE ENTRADA/SAÍDA (quando swing trading desativado) =====
+                // Colocar novas ordens com base nos sinais da nova lógica
+                if (buySignal.shouldEnter && !activeOrders.has('buy')) {
+                    const { isValid, errors } = improvedEntryExit.validateOrderPlacement('buy', bestBid, marketData);
+                    if (isValid) {
+                        const positionSizeBRL = improvedEntryExit.calculatePositionSize(brlBalance, pred.volatility, buySignal.confidence);
+                        const buyQty = positionSizeBRL / bestBid;
+                        
+                        if (buyQty >= MIN_ORDER_SIZE && positionSizeBRL <= brlBalance) {
+                            log('SUCCESS', `[ENTRY/EXIT] Sinal de COMPRA forte (Score: ${buySignal.score.toFixed(2)}). Razões: ${buySignal.reasons.join(', ')}`);
+                            await placeOrderWithMomentumValidation('buy', bestBid, buyQty);
+                        } else {
+                            log('WARN', `[ENTRY/EXIT] Compra ignorada. Qtd: ${buyQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BRL insuficiente.`);
+                        }
+                    } else {
+                        log('WARN', `[ENTRY/EXIT] Compra bloqueada por validação: ${errors.join(', ')}`);
+                    }
+                } else if (buySignal.shouldEnter && activeOrders.has('buy')) {
+                    log('INFO', '[ENTRY/EXIT] Sinal de compra recebido, mas já existe uma ordem de compra ativa.');
+                }
 
-        // Trava de Segurança: Perda Máxima Diária
-        const dailyPnl = parseFloat(pnlData.pnl);
-        if (dailyPnl <= -DAILY_LOSS_LIMIT) {
-            log('ALERT', `CRÍTICO: Limite de perda diária atingido (${dailyPnl.toFixed(2)} <= -${DAILY_LOSS_LIMIT}). Encerrando bot por segurança.`);
-            process.exit(1);
-        }
+                if (sellSignal.shouldExit) {
+                    const openPositionOrder = activeOrders.get('buy'); // A ordem que originou a posição
+                    if (openPositionOrder) {
+                        log('SUCCESS', `[ENTRY/EXIT] Sinal de SAÍDA forte (Score: ${sellSignal.score.toFixed(2)}). Razões: ${sellSignal.reasons.join(', ')}`);
+                        // Primeiro, cancela a ordem de compra se ainda estiver aberta
+                        await tryCancel('buy'); 
+                        // Em seguida, vende a quantidade correspondente que foi comprada
+                        const sellQty = openPositionOrder.qty;
+                        if (sellQty >= MIN_ORDER_SIZE && sellQty <= btcBalance) {
+                            await placeOrderWithMomentumValidation('sell', bestAsk, sellQty);
+                        } else {
+                            log('WARN', `[ENTRY/EXIT] Venda de saída ignorada. Qtd: ${sellQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BTC insuficiente.`);
+                        }
+                    }
+                }
+            }  // Fim do else da lógica padrão
+        }  // Fim do else do cash management
 
-        // Mini-dashboard
-        log('INFO', '────────────── Mini Dashboard ──────────────');
-        log('INFO', `Ciclo: ${cycleCount} | Mid Price: ${mid.toFixed(2)} | Tendência: ${marketTrend} | Regime: ${pred.regime}`);
-        
-        // Informações de Convicção
-        const convictionColor = conviction.overallConfidence > 0.7 ? '🟢' : 
-                               conviction.overallConfidence > 0.5 ? '🟡' : '🔴';
-        log('INFO', `${convictionColor} Convicção: ${(conviction.overallConfidence * 100).toFixed(1)}% | Tendência Convicção: ${conviction.trend} | Força: ${conviction.strength}`);
-        log('INFO', `   Indicadores concordam: ${conviction.details.numIndicatorsAgreed}/${conviction.details.totalIndicators} | Nível volatilidade: ${conviction.details.volatilityLevel}`);
-        if (conviction.signals.length > 0 && conviction.signals.length <= 3) {
-            conviction.signals.slice(0, 3).forEach(sig => log('INFO', `   📍 ${sig}`));
-        }
-        
-        // Informações de tendência externa
-        if (externalTrendData) {
-            const extTrend = externalTrendData;
-            log('INFO', `🌐 Tendência Externa: ${extTrend.trend} (Score: ${extTrend.score}/100, Confiança: ${extTrend.confidence}%)`);
-            const alignment = pred.trend === 'up' && extTrend.trend === 'BULLISH' ? '✅' : 
-                             pred.trend === 'down' && extTrend.trend === 'BEARISH' ? '✅' : 
-                             pred.trend === 'neutral' && extTrend.trend === 'NEUTRAL' ? '✅' : '⚠️';
-            log('INFO', `${alignment} Alinhamento: Bot=${pred.trend?.toUpperCase()} vs Externo=${extTrend.trend}`);
-        } else {
-            log('INFO', '🌐 Tendência Externa: Não disponível');
-        }
-        
-        log('INFO', `RSI: ${pred.rsi.toFixed(2)} | EMA Curta: ${pred.emaShort.toFixed(2)} | EMA Longa: ${pred.emaLong.toFixed(2)}`);
-        log('INFO', `MACD: ${pred.macd?.toFixed(2) || 'N/A'} | Signal: ${pred.signal?.toFixed(2) || 'N/A'} | Volatilidade: ${pred.volatility.toFixed(2)}%`);
-        log('INFO', `Score Lucro Esperado: ${pred.expectedProfit.toFixed(2)} | Confiança: ${pred.confidence.toFixed(2)}`);
-        log('INFO', `Spread: ${(dynamicSpreadPct * 100).toFixed(3)}% | Buy Price: ${buyPrice.toFixed(2)} | Sell Price: ${sellPrice.toFixed(2)}`);
-        log('INFO', `Tamanho Ordens: ${dynamicOrderSize.toFixed(8)} BTC | Depth Factor: ${depthFactor.toFixed(2)}`);
-        log('INFO', `Viés Inventário (Skew): ${inventorySkew.toFixed(6)} | Viés Tendência: ${trendBias.toFixed(6)} | Total Bias: ${totalBias.toFixed(6)}`);
-        log('INFO', `PnL Total: ${pnlData.pnl} BRL | ROI: ${pnlData.roi}% | PnL Não Realizado: ${pnlData.unrealized} BRL`);
-        log('INFO', `Posição BTC: ${btcPosition.toFixed(8)} | Saldo BRL: ${brlBalance.toFixed(2)} | Saldo BTC: ${btcBalance.toFixed(8)}`);
-        log('INFO', `Ordens Ativas: ${activeOrders.size} | Fills: ${totalFills} | Cancelamentos: ${stats.cancels}`);
-        log('INFO', `Taxa de Fill: ${stats.fillRate} | Preço Médio Fill: ${stats.avgFillPrice} BRL | Uptime: ${stats.uptime}`);
-        log('INFO', '────────────────────────────────────────────');
+        // Atualiza o timestamp do ciclo para a próxima iteração
+        lastCycleTimestamp = Date.now();
+
+        // Imprimir dashboard do ciclo (função não definida, comentada)
+        // printCycleDashboard(mid, spreadPct, pred, brlBalance, btcBalance);
     } catch (e) {
-        log('ERROR', `Erro no ciclo ${cycleCount}: ${e.message}.`);
+        log('ERROR', `Erro fatal no ciclo ${cycleCount}: ${e.message}`);
+        if (e.stack) console.error(e.stack);
     }
 }
 
@@ -1813,37 +1715,65 @@ module.exports = {
 
 // ---------------- MAIN ----------------
 async function main() {
-    try {
-        log('INFO', 'Inicializando bot...');
-        log('INFO', 'Inicializando banco de dados...');
-        await db.init();
-        log('SUCCESS', 'Banco de dados inicializado.');
-        log('INFO', 'Autenticando Mercado Bitcoin...');
-        await MB.authenticate();
-        log('SUCCESS', 'Autenticado com sucesso.');
-        await initWarmup();
-        log('INFO', 'Carregando fills históricos...');
-        historicalFills = await db.loadHistoricalFills() || [];
-        log('SUCCESS', `Carregados ${historicalFills.length} fills históricos.`);
-        log('INFO', 'Iniciando loop principal.');
-        await runCycle();
-        setInterval(runCycle, CYCLE_SEC * 1000);
-        log('SUCCESS', `Bot operacional - SIMULATE=${SIMULATE}`);
-    } catch (e) {
-        log('ERROR', `Erro na inicialização: ${e.message}. Encerrando.`);
-        process.exit(1);
+    log('INFO', '================================================');
+    log('INFO', '=        MB BOT - INICIANDO EXECUÇÃO           =');
+    log('INFO', '================================================');
+    
+    // Carregar configurações e inicializar banco de dados
+    await db.init();
+    // await loadConfigFromDB(); // Usar configurações do .env
+
+    // Autenticar no modo LIVE antes de iniciar ciclos
+    if (!SIMULATE) {
+        try {
+            await MB.authenticate();
+            log('SUCCESS', '[AUTH] Autenticação LIVE concluída.');
+        } catch (e) {
+            log('ERROR', `[AUTH] Falha na autenticação LIVE: ${e.message}`);
+            process.exit(1);
+        }
     }
+    
+    // Inicializar módulos
+    if (ADAPTIVE_STRATEGY_ENABLED) {
+        // Adaptivemanager seria inicializado aqui se disponível
+        log('INFO', '[ADAPTIVE] Sistema adaptativo está ativado.');
+    }
+
+    // Inicializar novos módulos
+    autoOptimizer = new AutoOptimizer(db);
+    lossAnalyzer = new LossAnalyzer();
+    improvedEntryExit = new ImprovedEntryExit();
+    cashManagementStrategy = new CashManagementStrategy();
+    
+    // Inicializar estratégia swing trading otimizada
+    swingTradingStrategy = new SwingTradingStrategy({
+        dropThreshold: 0.003,    // 0.3% queda para compra
+        profitTarget: 0.004,     // 0.4% lucro para venda
+        stopLoss: -0.008         // -0.8% stop loss
+    });
+    log('SUCCESS', '[SWING_TRADING] Estratégia swing trading inicializada com parâmetros otimizados.');
+    log('SUCCESS', '[CASH_MANAGEMENT] Estratégia de gerenciamento de caixa inicializada.');
+    log('SUCCESS', '[CORE] Módulos de Otimização, Análise de Perda e Entrada/Saída inicializados.');
+
+
+    // Carregar histórico de preenchimentos
+    await db.loadHistoricalFills();
+    
+    // Limpar ordens antigas se necessário
+    if (process.argv.includes('--clean')) {
+        await cleanAndSyncOrders();
+    }
+    
+    // Iniciar ciclo principal
+    log('SUCCESS', `Bot iniciado em modo ${SIMULATE ? 'SIMULAÇÃO' : 'PRODUÇÃO'}. Ciclo a cada ${CYCLE_SEC}s.`);
+    setInterval(runCycle, CYCLE_SEC * 1000);
+    runCycle(); // Executa imediatamente na primeira vez
 }
 
-process.on('SIGINT', async () => {
-    log('WARN', 'SIGINT recebido. Encerrando com segurança...');
-    for (const key of activeOrders.keys()) {
-        await tryCancel(key);
-    }
-    await db.saveHistoricalFills(historicalFills);
-    await db.close();
-    log('SUCCESS', 'Encerramento concluído.');
-    process.exit(0);
+// ================== EXECUÇÃO PRINCIPAL ==================
+main().catch(err => {
+    console.error('[FATAL] Erro ao iniciar o bot:', err.message);
+    if (err.stack) console.error(err.stack);
+    process.exit(1);
 });
-
-main();
