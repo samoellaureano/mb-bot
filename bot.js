@@ -50,13 +50,13 @@ const SIMULATE = process.env.SIMULATE === 'true'; // Modo simulação
 const REST_BASE = process.env.REST_BASE || 'https://api.mercadobitcoin.net/api/v4'; // Padrão API v4
 const PAIR = process.env.PAIR || 'BTC-BRL'; // Par padrão BTC-BRL
 const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15')); // Mínimo 1s
-const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.0006'); // Atualizado para 0.06%
-const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.05'); // Atualizado para 5%
+let SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.0006'); // Atualizado para 0.06%
+let ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.05'); // Atualizado para 5%
 const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003'); // Atualizado para 0.03%
 const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0'); // Desativado por padrão
 const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005'); // Atualizado para 0.05%
 const MAX_SPREAD_PCT = parseFloat(process.env.MAX_SPREAD_PCT || '0.040'); // Máximo 4.0%
-const STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '0.008'); // Atualizado para 0.8%
+let STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '0.008'); // Atualizado para 0.8%
 const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.001'); // Atualizado para 0.1%
 const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // Limitado a 0.00005 BTC
 const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.000005'); // Permitir micro-ordens

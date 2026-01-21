@@ -8,7 +8,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const fs = require('fs').promises;
+const fs = require('fs');
 const mbClient = require('./mb_client');
 const axios = require('axios');
 const db = require('./db');

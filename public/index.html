@@ -702,7 +702,7 @@
     async function loadData() {
         try {
             console.log('[Dashboard] Fetching data from API...');
-            const res = await fetch(`http://localhost:3001/api/data?t=${Date.now()}`);
+            const res = await fetch(`/api/data?t=${Date.now()}`);
             
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
