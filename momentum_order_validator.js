@@ -15,9 +15,9 @@ class MomentumOrderValidator {
         this.logger = logger;
         this.simulatedOrders = new Map(); // { orderId: { side, price, createdAt, createdPrice, peaks/valleys } }
         this.priceHistory = []; // Histórico de preços para cálculo de momentum
-        this.confirmationWaitCycles = 3; // Esperar 3 ciclos antes de confirmar
-        this.peakThreshold = 0.001; // 0.1% para ser considerado pico/vale
-        this.momentumThreshold = -0.0005; // -0.05% mudança de momentum para confirmar reversão
+        this.confirmationWaitCycles = 2; // Esperar 2 ciclos antes de confirmar (reduzido de 3)
+        this.peakThreshold = 0.0003; // 0.03% para ser considerado pico/vale (reduzido de 0.1%)
+        this.momentumThreshold = -0.0001; // -0.01% mudança de momentum para confirmar reversão
     }
 
     /**
@@ -190,27 +190,32 @@ class MomentumOrderValidator {
 
         if (order.side === 'sell') {
             // SELL confirmará quando:
-            // 1) Preço estava subindo quando criou a ordem
-            // 2) Atingiu o pico 
-            // 3) Agora está abaixo do pico (começou a cair ou parou de subir)
+            // 1) Momentum atual não é 'up' (parou de subir ou está caindo/neutro)
+            // 2) Ou preço completou movimento: subiu pelo menos 0.03% e agora está caindo
 
-            const priceMoved = priceMovedUp; // Preço subiu pelo menos peakThreshold
-            const priceFalling = currentPrice < order.peakPrice * (1 - this.peakThreshold/2); // Caiu do pico
-            const momentumReversed = currentMomentum !== 'up' && order.createdMomentum === 'up';
-
-            if (priceMoved && (priceFalling || momentumReversed)) {
+            const createdWhileUp = order.createdMomentum === 'up';
+            const momentumNotUp = currentMomentum !== 'up'; // Parou ou virou
+            
+            // Checar se preço atingiu movimento esperado
+            const priceRoseThenFell = currentPrice > order.createdPrice * (1 + this.peakThreshold) 
+                                     && currentPrice < order.peakPrice * (1 - this.peakThreshold/2);
+            
+            // Confirmação se:
+            // - Criada durante uptrend E momentum mudou
+            // - OU preço completou ciclo de subida+descida
+            if ((createdWhileUp && momentumNotUp) || priceRoseThenFell) {
                 return {
                     shouldConfirm: true,
-                    reason: `SELL confirmado: Preço subiu de R$${order.createdPrice.toFixed(2)} → Pico R$${order.peakPrice.toFixed(2)} → Agora R$${currentPrice.toFixed(2)} (reversão ${order.createdMomentum} → ${currentMomentum})`,
+                    reason: `SELL confirmado: Preço em R$${currentPrice.toFixed(2)}, Pico R$${order.peakPrice.toFixed(2)}, Momentum: ${order.createdMomentum} → ${currentMomentum}`,
                     status: 'confirmed',
-                    priceMovement: `+${(priceChange * 100).toFixed(2)}%`,
+                    priceMovement: `${((currentPrice - order.createdPrice) / order.createdPrice * 100).toFixed(2)}%`,
                     peakPrice: order.peakPrice
                 };
-            } else if (currentPrice < order.createdPrice * (1 - this.peakThreshold * 2)) {
-                // Preço foi pra baixo demais (caiu MUITO) = má decisão
+            } else if (currentPrice < order.createdPrice * (1 - this.peakThreshold * 5)) {
+                // Preço caiu MUITO abaixo da entrada = má decisão
                 return {
                     shouldConfirm: false,
-                    reason: `SELL rejeitado: Preço caiu muito abaixo do ponto de entrada R$${order.createdPrice.toFixed(2)} → R$${currentPrice.toFixed(2)} (${(priceChange * 100).toFixed(2)}%)`,
+                    reason: `SELL rejeitado: Preço caiu muito abaixo do ponto de entrada R$${order.createdPrice.toFixed(2)} → R$${currentPrice.toFixed(2)}`,
                     status: 'rejected',
                     rejectionType: 'wrong_direction'
                 };
@@ -225,27 +230,32 @@ class MomentumOrderValidator {
 
         } else if (order.side === 'buy') {
             // BUY confirmará quando:
-            // 1) Preço estava caindo quando criou a ordem
-            // 2) Atingiu o vale
-            // 3) Agora está acima do vale (começou a subir ou parou de cair)
+            // 1) Momentum atual não é 'down' (parou de cair ou está subindo/neutro)
+            // 2) Ou preço completou movimento: caiu pelo menos 0.03% e agora está subindo
 
-            const priceMoved = priceMovedDown; // Preço desceu pelo menos peakThreshold
-            const priceRising = currentPrice > order.valleyPrice * (1 + this.peakThreshold/2); // Subiu do vale
-            const momentumReversed = currentMomentum !== 'down' && order.createdMomentum === 'down';
-
-            if (priceMoved && (priceRising || momentumReversed)) {
+            const createdWhileDown = order.createdMomentum === 'down';
+            const momentumNotDown = currentMomentum !== 'down'; // Parou ou virou
+            
+            // Checar se preço atingiu movimento esperado
+            const priceFellThenRose = currentPrice < order.createdPrice * (1 - this.peakThreshold)
+                                     && currentPrice > order.valleyPrice * (1 + this.peakThreshold/2);
+            
+            // Confirmação se:
+            // - Criada durante downtrend E momentum mudou
+            // - OU preço completou ciclo de descida+subida
+            if ((createdWhileDown && momentumNotDown) || priceFellThenRose) {
                 return {
                     shouldConfirm: true,
-                    reason: `BUY confirmado: Preço desceu de R$${order.createdPrice.toFixed(2)} → Vale R$${order.valleyPrice.toFixed(2)} → Agora R$${currentPrice.toFixed(2)} (reversão ${order.createdMomentum} → ${currentMomentum})`,
+                    reason: `BUY confirmado: Preço em R$${currentPrice.toFixed(2)}, Vale R$${order.valleyPrice.toFixed(2)}, Momentum: ${order.createdMomentum} → ${currentMomentum}`,
                     status: 'confirmed',
-                    priceMovement: `${(priceChange * 100).toFixed(2)}%`,
+                    priceMovement: `${((currentPrice - order.createdPrice) / order.createdPrice * 100).toFixed(2)}%`,
                     valleyPrice: order.valleyPrice
                 };
-            } else if (currentPrice > order.createdPrice * (1 + this.peakThreshold * 2)) {
-                // Preço foi pra cima demais (subiu MUITO) = má decisão
+            } else if (currentPrice > order.createdPrice * (1 + this.peakThreshold * 5)) {
+                // Preço subiu MUITO acima da entrada = má decisão
                 return {
                     shouldConfirm: false,
-                    reason: `BUY rejeitado: Preço subiu muito acima do ponto de entrada R$${order.createdPrice.toFixed(2)} → R$${currentPrice.toFixed(2)} (+${(priceChange * 100).toFixed(2)}%) - bounce falso`,
+                    reason: `BUY rejeitado: Preço subiu muito acima do ponto de entrada R$${order.createdPrice.toFixed(2)} → R$${currentPrice.toFixed(2)} - bounce falso`,
                     status: 'rejected',
                     rejectionType: 'wrong_direction'
                 };

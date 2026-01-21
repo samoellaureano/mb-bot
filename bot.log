@@ -39803,3 +39803,256 @@ nohup: ignoring input
 03:12:49.490 [INFO]   [Bot] ADX calculado: 39.94.
 03:12:50.105 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
 03:12:50.462 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:18:25.376 [INFO]   [Bot] ================================================
+11:18:25.605 [INFO]   [Bot] =        MB BOT - INICIANDO EXECUÇÃO           =
+11:18:25.834 [INFO]   [Bot] ================================================
+11:18:27.559 [SUCCESS] [Bot] [AUTH] Autenticação LIVE concluída.
+11:18:27.562 [INFO]   [Bot] [ADAPTIVE] Sistema adaptativo está ativado.
+11:18:27.774 [SUCCESS] [Bot] [SWING_TRADING] Estratégia swing trading inicializada com parâmetros otimizados.
+11:18:28.036 [SUCCESS] [Bot] [CASH_MANAGEMENT] Estratégia de gerenciamento de caixa inicializada.
+11:18:28.327 [SUCCESS] [Bot] [CORE] Módulos de Otimização, Análise de Perda e Entrada/Saída inicializados.
+11:18:28.595 [SUCCESS] [Bot] Bot iniciado em modo PRODUÇÃO. Ciclo a cada 30s.
+11:18:28.892 [INFO]   [Bot] Iniciando ciclo 1.
+11:18:29.198 [INFO]   [Bot] Consultando tendências externas do Bitcoin...
+11:18:30.088 [SUCCESS] [Bot] Tendência Externa: BEARISH (Score: 28/100, Confiança: 100%)
+11:18:30.279 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479589.00, Best Ask=479704.00.
+11:18:30.308 [WARN]   [Bot] Histórico insuficiente para RSI (2/13). Retornando neutro (50).
+11:18:30.516 [WARN]   [Bot] Histórico insuficiente para EMA (2/8). Usando último preço.
+11:18:30.731 [WARN]   [Bot] Histórico insuficiente para EMA (2/20). Usando último preço.
+11:18:30.922 [WARN]   [Bot] Histórico insuficiente para EMA (2/12). Usando último preço.
+11:18:31.101 [WARN]   [Bot] Histórico insuficiente para EMA (2/26). Usando último preço.
+11:18:31.323 [WARN]   [Bot] Histórico insuficiente para EMA (2/9). Usando último preço.
+11:18:31.766 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=479646.50.
+11:18:31.973 [WARN]   [Bot] Nenhum retorno válido para calcular volatilidade. Retornando 0.1%.
+11:18:32.158 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:18:32.323 [WARN]   [Bot] Histórico insuficiente para ADX (2/28). Retornando força neutra (20).
+11:18:32.537 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.25","expectedProfit":"0.04","rsi":"50.00","emaShort":"479646.50","emaLong":"479646.50","volatility":"0.00","macd":"0.00","signal":"479646.50"}
+11:18:32.762 [WARN]   [Bot] Histórico insuficiente para ADX (2/28). Retornando força neutra (20).
+11:18:33.246 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:18:33.266 [WARN]   [Bot] [SELL_FIRST] SELL inicial habilitado. Vendendo 0.00042937 BTC a R$ 479646.50 | Sem sinal de venda
+11:18:35.084 [INFO]   [Bot] 📊 Ordem SELL criada em modo SIMULADO (sell_PENDING_1768994315084_y01zpxo0v): R$479646.50, Qty: 0.00042937 | Lógica: Confirmará quando preço parar de subir ou começar a descer
+11:18:58.907 [INFO]   [Bot] Iniciando ciclo 2.
+11:18:59.230 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479589.00, Best Ask=479704.00.
+11:18:59.330 [WARN]   [Bot] Histórico insuficiente para RSI (4/13). Retornando neutro (50).
+11:18:59.601 [WARN]   [Bot] Histórico insuficiente para EMA (4/8). Usando último preço.
+11:18:59.873 [WARN]   [Bot] Histórico insuficiente para EMA (4/20). Usando último preço.
+11:19:00.270 [WARN]   [Bot] Histórico insuficiente para EMA (4/12). Usando último preço.
+11:19:00.577 [WARN]   [Bot] Histórico insuficiente para EMA (4/26). Usando último preço.
+11:19:00.806 [WARN]   [Bot] Histórico insuficiente para EMA (4/9). Usando último preço.
+11:19:01.024 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=479646.50.
+11:19:01.307 [WARN]   [Bot] Nenhum retorno válido para calcular volatilidade. Retornando 0.1%.
+11:19:01.537 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:19:01.765 [WARN]   [Bot] Histórico insuficiente para ADX (4/28). Retornando força neutra (20).
+11:19:01.997 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.25","expectedProfit":"0.04","rsi":"50.00","emaShort":"479646.50","emaLong":"479646.50","volatility":"0.00","macd":"0.00","signal":"479646.50"}
+11:19:02.364 [WARN]   [Bot] Histórico insuficiente para ADX (4/28). Retornando força neutra (20).
+11:19:03.131 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:19:28.922 [INFO]   [Bot] Iniciando ciclo 3.
+11:19:29.263 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479703.00, Best Ask=479704.00.
+11:19:29.410 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: Aguardando 1 ciclo(s) mais
+11:19:29.707 [WARN]   [Bot] Histórico insuficiente para RSI (6/13). Retornando neutro (50).
+11:19:30.179 [WARN]   [Bot] Histórico insuficiente para EMA (6/8). Usando último preço.
+11:19:31.011 [WARN]   [Bot] Histórico insuficiente para EMA (6/20). Usando último preço.
+11:19:31.437 [WARN]   [Bot] Histórico insuficiente para EMA (6/12). Usando último preço.
+11:19:31.827 [WARN]   [Bot] Histórico insuficiente para EMA (6/26). Usando último preço.
+11:19:33.079 [WARN]   [Bot] Histórico insuficiente para EMA (6/9). Usando último preço.
+11:19:34.153 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=479703.50.
+11:19:34.645 [INFO]   [Bot] Volatilidade calculada: 0.00%.
+11:19:35.038 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:19:35.796 [WARN]   [Bot] Histórico insuficiente para ADX (6/28). Retornando força neutra (20).
+11:19:37.927 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.25","expectedProfit":"0.04","rsi":"50.00","emaShort":"479703.50","emaLong":"479703.50","volatility":"0.00","macd":"0.00","signal":"479703.50"}
+11:19:40.762 [WARN]   [Bot] Histórico insuficiente para ADX (6/28). Retornando força neutra (20).
+11:19:42.316 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:19:58.930 [INFO]   [Bot] Iniciando ciclo 4.
+11:19:59.208 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479857.00, Best Ask=480200.00.
+11:19:59.251 [WARN]   [Bot] Histórico insuficiente para RSI (8/13). Retornando neutro (50).
+11:19:59.585 [INFO]   [Bot] EMA(8) calculada: 479811.04.
+11:19:59.924 [WARN]   [Bot] Histórico insuficiente para EMA (8/20). Usando último preço.
+11:20:00.274 [WARN]   [Bot] Histórico insuficiente para EMA (8/12). Usando último preço.
+11:20:00.840 [WARN]   [Bot] Histórico insuficiente para EMA (8/26). Usando último preço.
+11:20:01.632 [WARN]   [Bot] Histórico insuficiente para EMA (8/9). Usando último preço.
+11:20:01.943 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=480028.50.
+11:20:02.313 [INFO]   [Bot] Volatilidade calculada: 1.06%.
+11:20:02.729 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:20:03.096 [WARN]   [Bot] Histórico insuficiente para ADX (8/28). Retornando força neutra (20).
+11:20:03.493 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.28","expectedProfit":"0.04","rsi":"50.00","emaShort":"479811.04","emaLong":"480028.50","volatility":"1.06","macd":"0.00","signal":"480028.50"}
+11:20:03.853 [WARN]   [Bot] Histórico insuficiente para ADX (8/28). Retornando força neutra (20).
+11:20:04.400 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:20:04.655 [SUCCESS] [Bot] [CASH_MGT_SELL] Alta de 0.080% - VENDA TOTAL
+11:20:04.936 [INFO]   [Bot] 📊 Ordem SELL criada em modo SIMULADO (sell_PENDING_1768994404936_98asdv1co): R$480028.50, Qty: 0.00042937 | Lógica: Confirmará quando preço parar de subir ou começar a descer
+11:20:05.215 [SUCCESS] [Bot] [CASH_MGT_SELL] Ordem de venda colocada: 0.00042937 BTC a R$ 480028.50
+11:20:28.945 [INFO]   [Bot] Iniciando ciclo 5.
+11:20:29.289 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479950.00, Best Ask=480268.00.
+11:20:29.293 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480109.00, Pico: R$480109.00, Momentum: neutral
+11:20:29.622 [WARN]   [Bot] Histórico insuficiente para RSI (10/13). Retornando neutro (50).
+11:20:29.900 [INFO]   [Bot] EMA(8) calculada: 479928.75.
+11:20:30.210 [WARN]   [Bot] Histórico insuficiente para EMA (10/20). Usando último preço.
+11:20:30.525 [WARN]   [Bot] Histórico insuficiente para EMA (10/12). Usando último preço.
+11:20:30.735 [WARN]   [Bot] Histórico insuficiente para EMA (10/26). Usando último preço.
+11:20:30.950 [INFO]   [Bot] EMA(9) calculada: 479909.42.
+11:20:31.183 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=479909.42.
+11:20:31.481 [INFO]   [Bot] Volatilidade calculada: 0.96%.
+11:20:31.726 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:20:32.003 [WARN]   [Bot] Histórico insuficiente para ADX (10/28). Retornando força neutra (20).
+11:20:32.243 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.28","expectedProfit":"0.04","rsi":"50.00","emaShort":"479928.75","emaLong":"480109.00","volatility":"0.96","macd":"0.00","signal":"479909.42"}
+11:20:32.516 [WARN]   [Bot] Histórico insuficiente para ADX (10/28). Retornando força neutra (20).
+11:20:33.009 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:20:58.961 [INFO]   [Bot] Iniciando ciclo 6.
+11:20:59.245 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479901.00, Best Ask=480268.00.
+11:20:59.248 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: Aguardando 1 ciclo(s) mais
+11:20:59.501 [WARN]   [Bot] Histórico insuficiente para RSI (12/13). Retornando neutro (50).
+11:20:59.671 [INFO]   [Bot] EMA(8) calculada: 479997.91.
+11:20:59.781 [WARN]   [Bot] Histórico insuficiente para EMA (12/20). Usando último preço.
+11:20:59.935 [INFO]   [Bot] EMA(12) calculada: 479926.51.
+11:21:00.187 [WARN]   [Bot] Histórico insuficiente para EMA (12/26). Usando último preço.
+11:21:00.430 [INFO]   [Bot] EMA(9) calculada: 479972.45.
+11:21:00.668 [INFO]   [Bot] MACD calculado: MACD=-157.99, Signal=479972.45.
+11:21:00.833 [INFO]   [Bot] Volatilidade calculada: 1.03%.
+11:21:01.103 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:21:01.405 [WARN]   [Bot] Histórico insuficiente para ADX (12/28). Retornando força neutra (20).
+11:21:01.635 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.28","expectedProfit":"0.04","rsi":"50.00","emaShort":"479997.91","emaLong":"480084.50","volatility":"1.03","macd":"-157.99","signal":"479972.45"}
+11:21:01.832 [WARN]   [Bot] Histórico insuficiente para ADX (12/28). Retornando força neutra (20).
+11:21:02.394 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:21:28.969 [INFO]   [Bot] Iniciando ciclo 7.
+11:21:29.247 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479917.00, Best Ask=480274.00.
+11:21:29.251 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480095.50, Pico: R$480109.00, Momentum: neutral
+11:21:29.517 [INFO]   [Bot] RSI calculado: 95.08.
+11:21:29.733 [INFO]   [Bot] EMA(8) calculada: 480079.99.
+11:21:29.985 [WARN]   [Bot] Histórico insuficiente para EMA (14/20). Usando último preço.
+11:21:30.229 [INFO]   [Bot] EMA(12) calculada: 479974.51.
+11:21:30.499 [WARN]   [Bot] Histórico insuficiente para EMA (14/26). Usando último preço.
+11:21:30.732 [INFO]   [Bot] EMA(9) calculada: 480022.87.
+11:21:30.906 [INFO]   [Bot] MACD calculado: MACD=-120.99, Signal=480022.87.
+11:21:31.124 [INFO]   [Bot] Volatilidade calculada: 0.97%.
+11:21:31.379 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:21:31.629 [WARN]   [Bot] Histórico insuficiente para ADX (14/28). Retornando força neutra (20).
+11:21:31.856 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.55","expectedProfit":"0.06","rsi":"95.08","emaShort":"480079.99","emaLong":"480095.50","volatility":"0.97","macd":"-120.99","signal":"480022.87"}
+11:21:32.067 [WARN]   [Bot] Histórico insuficiente para ADX (14/28). Retornando força neutra (20).
+11:21:32.566 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:21:58.976 [INFO]   [Bot] Iniciando ciclo 8.
+11:21:59.224 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=480013.00, Best Ask=480276.00.
+11:21:59.458 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480144.50, Pico: R$480144.50, Momentum: neutral
+11:21:59.704 [INFO]   [Bot] RSI calculado: 95.52.
+11:21:59.947 [INFO]   [Bot] EMA(8) calculada: 480116.26.
+11:22:00.174 [WARN]   [Bot] Histórico insuficiente para EMA (16/20). Usando último preço.
+11:22:00.415 [INFO]   [Bot] EMA(12) calculada: 480030.47.
+11:22:00.647 [WARN]   [Bot] Histórico insuficiente para EMA (16/26). Usando último preço.
+11:22:00.891 [INFO]   [Bot] EMA(9) calculada: 480101.55.
+11:22:01.142 [INFO]   [Bot] MACD calculado: MACD=-114.03, Signal=480101.55.
+11:22:01.400 [INFO]   [Bot] Volatilidade calculada: 0.90%.
+11:22:01.611 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:22:01.836 [WARN]   [Bot] Histórico insuficiente para ADX (16/28). Retornando força neutra (20).
+11:22:02.069 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.55","expectedProfit":"0.06","rsi":"95.52","emaShort":"480116.26","emaLong":"480144.50","volatility":"0.90","macd":"-114.03","signal":"480101.55"}
+11:22:02.303 [WARN]   [Bot] Histórico insuficiente para ADX (16/28). Retornando força neutra (20).
+11:22:02.788 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:22:28.991 [INFO]   [Bot] Iniciando ciclo 9.
+11:22:29.252 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479971.00, Best Ask=480276.00.
+11:22:29.255 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480123.50, Pico: R$480144.50, Momentum: neutral
+11:22:29.539 [INFO]   [Bot] RSI calculado: 91.10.
+11:22:29.813 [INFO]   [Bot] EMA(8) calculada: 480115.84.
+11:22:30.069 [WARN]   [Bot] Histórico insuficiente para EMA (18/20). Usando último preço.
+11:22:30.310 [INFO]   [Bot] EMA(12) calculada: 480100.67.
+11:22:30.553 [WARN]   [Bot] Histórico insuficiente para EMA (18/26). Usando último preço.
+11:22:30.762 [INFO]   [Bot] EMA(9) calculada: 480118.10.
+11:22:30.987 [INFO]   [Bot] MACD calculado: MACD=-22.83, Signal=480118.10.
+11:22:31.199 [INFO]   [Bot] Volatilidade calculada: 0.88%.
+11:22:31.433 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:22:31.688 [WARN]   [Bot] Histórico insuficiente para ADX (18/28). Retornando força neutra (20).
+11:22:31.944 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.52","expectedProfit":"0.06","rsi":"91.10","emaShort":"480115.84","emaLong":"480123.50","volatility":"0.88","macd":"-22.83","signal":"480118.10"}
+11:22:32.205 [WARN]   [Bot] Histórico insuficiente para ADX (18/28). Retornando força neutra (20).
+11:22:32.660 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:22:59.006 [INFO]   [Bot] Iniciando ciclo 10.
+11:22:59.319 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=480002.00, Best Ask=480276.00.
+11:22:59.396 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480139.00, Pico: R$480144.50, Momentum: neutral
+11:22:59.709 [INFO]   [Bot] RSI calculado: 77.42.
+11:23:00.147 [INFO]   [Bot] EMA(8) calculada: 480126.46.
+11:23:00.423 [INFO]   [Bot] EMA(20) calculada: 480001.81.
+11:23:00.719 [INFO]   [Bot] EMA(12) calculada: 480122.40.
+11:23:01.089 [WARN]   [Bot] Histórico insuficiente para EMA (20/26). Usando último preço.
+11:23:01.332 [INFO]   [Bot] EMA(9) calculada: 480122.99.
+11:23:01.554 [INFO]   [Bot] MACD calculado: MACD=-16.60, Signal=480122.99.
+11:23:01.763 [INFO]   [Bot] Volatilidade calculada: 0.83%.
+11:23:01.989 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:23:02.211 [WARN]   [Bot] Histórico insuficiente para ADX (20/28). Retornando força neutra (20).
+11:23:02.436 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.44","expectedProfit":"0.08","rsi":"77.42","emaShort":"480126.46","emaLong":"480001.81","volatility":"0.83","macd":"-16.60","signal":"480122.99"}
+11:23:02.650 [WARN]   [Bot] Histórico insuficiente para ADX (20/28). Retornando força neutra (20).
+11:23:03.448 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:23:29.022 [INFO]   [Bot] Iniciando ciclo 11.
+11:23:29.367 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=480001.00, Best Ask=480276.00.
+11:23:29.449 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480138.50, Pico: R$480144.50, Momentum: neutral
+11:23:29.800 [INFO]   [Bot] RSI calculado: 62.14.
+11:23:30.110 [INFO]   [Bot] EMA(8) calculada: 480137.78.
+11:23:30.494 [INFO]   [Bot] EMA(20) calculada: 480026.60.
+11:23:30.859 [INFO]   [Bot] EMA(12) calculada: 480123.67.
+11:23:31.316 [WARN]   [Bot] Histórico insuficiente para EMA (22/26). Usando último preço.
+11:23:31.606 [INFO]   [Bot] EMA(9) calculada: 480129.76.
+11:23:31.933 [INFO]   [Bot] MACD calculado: MACD=-14.83, Signal=480129.76.
+11:23:32.166 [INFO]   [Bot] Volatilidade calculada: 0.80%.
+11:23:32.510 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:23:32.829 [WARN]   [Bot] Histórico insuficiente para ADX (22/28). Retornando força neutra (20).
+11:23:33.169 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.35","expectedProfit":"0.08","rsi":"62.14","emaShort":"480137.78","emaLong":"480026.60","volatility":"0.80","macd":"-14.83","signal":"480129.76"}
+11:23:33.603 [WARN]   [Bot] Histórico insuficiente para ADX (22/28). Retornando força neutra (20).
+11:23:34.396 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:23:59.025 [INFO]   [Bot] Iniciando ciclo 12.
+11:23:59.259 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=480002.00, Best Ask=480275.00.
+11:23:59.265 [WARN]   [Bot] 1 ordem(ns) simulada(s) expirada(s) após 5min. Removidas sem confirmação.
+11:23:59.529 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480138.50, Pico: R$480144.50, Momentum: down
+11:23:59.778 [INFO]   [Bot] RSI calculado: 77.84.
+11:24:00.014 [INFO]   [Bot] EMA(8) calculada: 480135.25.
+11:24:00.286 [INFO]   [Bot] EMA(20) calculada: 480054.60.
+11:24:00.564 [INFO]   [Bot] EMA(12) calculada: 480129.37.
+11:24:00.821 [WARN]   [Bot] Histórico insuficiente para EMA (24/26). Usando último preço.
+11:24:01.050 [INFO]   [Bot] EMA(9) calculada: 480138.16.
+11:24:01.298 [INFO]   [Bot] MACD calculado: MACD=-9.13, Signal=480138.16.
+11:24:01.577 [INFO]   [Bot] Volatilidade calculada: 0.80%.
+11:24:01.838 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:24:02.070 [WARN]   [Bot] Histórico insuficiente para ADX (24/28). Retornando força neutra (20).
+11:24:02.296 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.44","expectedProfit":"0.06","rsi":"77.84","emaShort":"480135.25","emaLong":"480054.60","volatility":"0.80","macd":"-9.13","signal":"480138.16"}
+11:24:02.573 [WARN]   [Bot] Histórico insuficiente para ADX (24/28). Retornando força neutra (20).
+11:24:03.066 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:24:29.040 [INFO]   [Bot] Iniciando ciclo 13.
+11:24:29.278 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=480002.00, Best Ask=480276.00.
+11:24:29.334 [INFO]   [Bot] RSI calculado: 75.14.
+11:24:29.624 [INFO]   [Bot] EMA(8) calculada: 480138.81.
+11:24:29.929 [INFO]   [Bot] EMA(20) calculada: 480113.82.
+11:24:30.200 [INFO]   [Bot] EMA(12) calculada: 480138.70.
+11:24:30.471 [INFO]   [Bot] EMA(26) calculada: 480023.83.
+11:24:30.796 [INFO]   [Bot] EMA(9) calculada: 480136.21.
+11:24:31.085 [INFO]   [Bot] MACD calculado: MACD=114.87, Signal=480136.21.
+11:24:31.374 [INFO]   [Bot] Volatilidade calculada: 0.77%.
+11:24:31.647 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:24:31.947 [WARN]   [Bot] Histórico insuficiente para ADX (26/28). Retornando força neutra (20).
+11:24:32.227 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.42","expectedProfit":"0.08","rsi":"75.14","emaShort":"480138.81","emaLong":"480113.82","volatility":"0.77","macd":"114.87","signal":"480136.21"}
+11:24:32.510 [WARN]   [Bot] Histórico insuficiente para ADX (26/28). Retornando força neutra (20).
+11:24:33.003 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:24:59.056 [INFO]   [Bot] Iniciando ciclo 14.
+11:24:59.310 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=480003.00, Best Ask=480276.00.
+11:24:59.316 [DEBUG]  [Bot] 📍 Validação SELL [sell_PENDING_1768994...]: SELL aguardando confirmação: Preço em R$480139.50, Pico: R$480144.50, Momentum: neutral
+11:24:59.556 [INFO]   [Bot] RSI calculado: 43.42.
+11:24:59.789 [INFO]   [Bot] EMA(8) calculada: 480139.01.
+11:25:00.059 [INFO]   [Bot] EMA(20) calculada: 480129.36.
+11:25:00.319 [INFO]   [Bot] EMA(12) calculada: 480136.10.
+11:25:00.566 [INFO]   [Bot] EMA(26) calculada: 480040.33.
+11:25:00.784 [INFO]   [Bot] EMA(9) calculada: 480139.06.
+11:25:01.055 [INFO]   [Bot] MACD calculado: MACD=95.77, Signal=480139.06.
+11:25:01.315 [INFO]   [Bot] Volatilidade calculada: 0.74%.
+11:25:01.546 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:25:01.798 [INFO]   [Bot] ADX calculado: 84.37.
+11:25:02.020 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.31","expectedProfit":"0.06","rsi":"43.42","emaShort":"480139.01","emaLong":"480129.36","volatility":"0.74","macd":"95.77","signal":"480139.06"}
+11:25:02.265 [INFO]   [Bot] ADX calculado: 84.37.
+11:25:02.815 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+11:25:29.058 [INFO]   [Bot] Iniciando ciclo 15.
+11:25:29.299 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=480003.00, Best Ask=480276.00.
+11:25:29.304 [WARN]   [Bot] 1 ordem(ns) simulada(s) expirada(s) após 5min. Removidas sem confirmação.
+11:25:29.561 [INFO]   [Bot] RSI calculado: 97.06.
+11:25:29.770 [INFO]   [Bot] EMA(8) calculada: 480139.21.
+11:25:30.044 [INFO]   [Bot] EMA(20) calculada: 480127.89.
+11:25:30.337 [INFO]   [Bot] EMA(12) calculada: 480139.15.
+11:25:30.566 [INFO]   [Bot] EMA(26) calculada: 480062.18.
+11:25:30.775 [INFO]   [Bot] EMA(9) calculada: 480139.16.
+11:25:31.064 [INFO]   [Bot] MACD calculado: MACD=76.97, Signal=480139.16.
+11:25:31.416 [INFO]   [Bot] Volatilidade calculada: 0.74%.
+11:25:31.697 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+11:25:31.897 [INFO]   [Bot] ADX calculado: 84.23.
+11:25:32.191 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.55","expectedProfit":"0.08","rsi":"97.06","emaShort":"480139.21","emaLong":"480127.89","volatility":"0.74","macd":"76.97","signal":"480139.16"}
+11:25:32.384 [INFO]   [Bot] ADX calculado: 84.23.
+11:25:32.873 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
