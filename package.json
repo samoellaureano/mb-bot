@@ -6,7 +6,8 @@
   "scripts": {
     "start": "concurrently --kill-others \"npm:live\" \"npm:dashboard\"",
     "simulate": "SIMULATE=true node bot.js",
-    "live": "SIMULATE=false node bot.js",
+    "live": "concurrently --kill-others \"npm:live:bot\" \"npm:dashboard\"",
+    "live:bot": "SIMULATE=false node bot.js",
     "live:log": "SIMULATE=false node bot.js >> exec-live.log 2>&1",
     "dashboard": "node dashboard.js",
     "dashboard:log": "node dashboard.js >> exec-dashboard.log 2>&1",

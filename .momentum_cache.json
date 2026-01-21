@@ -1,51 +1,139 @@
 {
   "simulatedOrders": [
     {
-      "id": "sell_PENDING_1768965033958_lui7kg9y0",
+      "id": "sell_PENDING_1768964868056_yw7efhh2s",
       "side": "sell",
-      "createdPrice": 480331.5,
-      "currentPrice": 479844,
+      "createdPrice": 480138.5,
+      "currentPrice": 479799.5,
       "status": "simulated",
       "qty": 0.0001502795,
       "peaks": [
-        480331.5
+        480138.5,
+        480145,
+        480145.5,
+        480472
       ],
       "valleys": [
-        480331.5,
-        480157,
-        479853.5,
-        479844
+        480138.5,
+        479981,
+        479852.5,
+        479751.5
       ],
-      "createdAt": 1768965033958,
+      "createdAt": 1768964868056,
       "reason": null,
       "reversalThreshold": 0.001,
       "confirmationReversals": 0,
       "priceHistory": [
-        480331.5,
-        480157,
-        479853.5,
-        479844
+        480138.5,
+        480145,
+        480145.5,
+        480145,
+        480145,
+        480472,
+        480304.5,
+        479981,
+        479852.5,
+        479751.5,
+        479799.5
+      ]
+    },
+    {
+      "id": "sell_PENDING_1768964958638_dujusjqa3",
+      "side": "sell",
+      "createdPrice": 480145,
+      "currentPrice": 479799.5,
+      "status": "simulated",
+      "qty": 0.0001502795,
+      "peaks": [
+        480145,
+        480472
+      ],
+      "valleys": [
+        480145,
+        479981,
+        479852.5,
+        479751.5
+      ],
+      "createdAt": 1768964958638,
+      "reason": null,
+      "reversalThreshold": 0.001,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        480145,
+        480145,
+        480472,
+        480304.5,
+        479981,
+        479852.5,
+        479751.5,
+        479799.5
+      ]
+    },
+    {
+      "id": "sell_PENDING_1768965018641_gpsd8h1tg",
+      "side": "sell",
+      "createdPrice": 480472,
+      "currentPrice": 479799.5,
+      "status": "simulated",
+      "qty": 0.00042937,
+      "peaks": [
+        480472
+      ],
+      "valleys": [
+        480472,
+        480304.5,
+        479981,
+        479852.5,
+        479751.5
+      ],
+      "createdAt": 1768965018641,
+      "reason": null,
+      "reversalThreshold": 0.001,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        480472,
+        480304.5,
+        479981,
+        479852.5,
+        479751.5,
+        479799.5
       ]
     }
   ],
   "status": {
-    "total": 1,
+    "total": 3,
     "byStatus": {
-      "simulated": 1,
+      "simulated": 3,
       "pending": 0,
       "confirmed": 0,
       "rejected": 0
     },
     "orders": [
       {
-        "id": "sell_PENDING_1768965033958_lui7kg9y0",
+        "id": "sell_PENDING_1768964868056_yw7efhh2s",
         "side": "sell",
-        "createdPrice": 480331.5,
-        "currentRange": "479844.00 - 480331.50",
+        "createdPrice": 480138.5,
+        "currentRange": "479751.50 - 480472.00",
         "status": "simulated",
-        "cycles": 3
+        "cycles": 10
+      },
+      {
+        "id": "sell_PENDING_1768964958638_dujusjqa3",
+        "side": "sell",
+        "createdPrice": 480145,
+        "currentRange": "479751.50 - 480472.00",
+        "status": "simulated",
+        "cycles": 7
+      },
+      {
+        "id": "sell_PENDING_1768965018641_gpsd8h1tg",
+        "side": "sell",
+        "createdPrice": 480472,
+        "currentRange": "479751.50 - 480472.00",
+        "status": "simulated",
+        "cycles": 5
       }
     ]
   },
-  "lastUpdate": "2026-01-21T03:12:01.030Z"
+  "lastUpdate": "2026-01-21T03:12:45.600Z"
 }
