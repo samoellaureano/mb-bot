@@ -1,14 +1,60 @@
 {
-  "simulatedOrders": [],
+  "simulatedOrders": [
+    {
+      "id": "sell_PENDING_1768996077747_b2jkuvl37",
+      "side": "sell",
+      "createdPrice": 479368,
+      "currentPrice": 478850,
+      "status": "simulated",
+      "qty": 0.00042937,
+      "peaks": [
+        479368,
+        479417.5
+      ],
+      "valleys": [
+        479046.5,
+        479031.5,
+        479020,
+        478868,
+        478849
+      ],
+      "createdAt": 1768996077747,
+      "reason": null,
+      "reversalThreshold": 0.0003,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        479368,
+        479417.5,
+        479403,
+        479046.5,
+        479085.5,
+        479031.5,
+        479020,
+        479068,
+        478868,
+        478849,
+        478850
+      ]
+    }
+  ],
   "status": {
-    "total": 0,
+    "total": 1,
     "byStatus": {
-      "simulated": 0,
+      "simulated": 1,
       "pending": 0,
       "confirmed": 0,
       "rejected": 0
     },
-    "orders": []
+    "orders": [
+      {
+        "id": "sell_PENDING_1768996077747_b2jkuvl37",
+        "side": "sell",
+        "createdPrice": 479368,
+        "currentRange": "478849.00 - 479417.50",
+        "status": "simulated",
+        "cycles": 10
+      }
+    ]
   },
-  "lastUpdate": "2026-01-21T11:25:29.557Z"
+  "lastUpdate": "2026-01-21T11:52:50.698Z"
 }

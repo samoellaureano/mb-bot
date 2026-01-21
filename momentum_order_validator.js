@@ -259,11 +259,6 @@ class MomentumOrderValidator {
                 status: 'pending',
                 priceRange: `Vale: ${order.valleyPrice.toFixed(2)} | Pico: ${order.peakPrice.toFixed(2)}`
             };
-                shouldConfirm: false,
-                reason: `BUY aguardando confirmação: Preço em R$${currentPrice.toFixed(2)}, Vale: R$${order.valleyPrice.toFixed(2)}, Momentum: ${currentMomentum}`,
-                status: 'pending',
-                priceRange: `${order.valleyPrice.toFixed(2)} - ${order.peakPrice.toFixed(2)}`
-            };
         }
 
         return { shouldConfirm: false, reason: 'Tipo de ordem desconhecido', status: 'error' };

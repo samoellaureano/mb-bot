@@ -25,6 +25,8 @@
     "test-client": "node test-client.js",
     "test-pnl": "node test_pnl_validation.js",
     "test-trading": "node test_trading_validation.js",
+    "test:24h": "node run_24h_test_cli.js",
+    "test:watch": "node test_watch.js",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint src/**/*.js --fix",
     "migrate": "node migrate.js",

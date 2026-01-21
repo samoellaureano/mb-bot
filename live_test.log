@@ -319,3 +319,7 @@
 [dashboard] npm run dashboard exited with code SIGTERM
 --> Sending SIGTERM to other processes..
 [live] npm run live exited with code SIGTERM
+
+> mb-bot@1.0.0 dev
+> concurrently --kill-others "npm:simulate" "npm:dashboard"
+

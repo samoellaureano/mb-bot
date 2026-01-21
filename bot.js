@@ -33,7 +33,6 @@ const MomentumSync = require('./momentum_sync');
 const AutoOptimizer = require('./auto_optimizer');
 const LossAnalyzer = require('./loss_analyzer');
 const ImprovedEntryExit = require('./improved_entry_exit');
-const SwingTradingStrategy = require('./swing_trading_strategy');
 const CashManagementStrategy = require('./cash_management_strategy');
 
 
@@ -42,8 +41,7 @@ const momentumSync = new MomentumSync();
 let autoOptimizer = null;
 let lossAnalyzer = null;
 let improvedEntryExit = null;
-let swingTradingStrategy = null; // Estratégia swing trading otimizada
-let cashManagementStrategy = null; // Estratégia de gerenciamento de caixa
+let cashManagementStrategy = null; // Estratégia de gerenciamento de caixa - PRIMÁRIA
 
 // ---------------- CONFIGURAÇÃO ----------------
 const SIMULATE = process.env.SIMULATE === 'true'; // Modo simulação
@@ -1405,22 +1403,7 @@ async function runCycle() {
             updateSimulatedOrdersWithPrice(mid);
         }
 
-        // ===== ESTRATÉGIA SWING TRADING OTIMIZADA =====
-        if (swingTradingStrategy) {
-            swingTradingStrategy.updatePriceHistory(mid);
-            
-            // Avaliar sinais de compra e venda
-            const buySignalSwing = swingTradingStrategy.shouldBuy(mid);
-            const sellSignalSwing = swingTradingStrategy.shouldSell(mid);
-            
-            // Log dos sinais
-            if (buySignalSwing.signal) {
-                log('SUCCESS', `[SWING] Sinal de COMPRA: ${buySignalSwing.reason} (Força: ${(buySignalSwing.strength || 1).toFixed(2)}x)`);
-            }
-            if (sellSignalSwing.signal) {
-                log('SUCCESS', `[SWING] Sinal de VENDA: ${sellSignalSwing.reason}`);
-            }
-        }
+        // NOTA: Swing trading removido (desativado por redundância com CashManagement)
 
         // Calcular indicadores básicos
         const pred = fetchPricePrediction(mid, orderbook);
@@ -1569,80 +1552,38 @@ async function runCycle() {
                 }
             }
         } else {
-            // ===== EXECUTAR LÓGICA DE SWING TRADING =====
-            if (swingTradingStrategy && process.env.USE_SWING_TRADING === 'true') {
-                log('DEBUG', `[SWING] USE_SWING_TRADING ativado. Avaliando sinais...`);
-                const buySignalSwing = swingTradingStrategy.shouldBuy(mid);
-                const sellSignalSwing = swingTradingStrategy.shouldSell(mid);
-            
-                // Compra: queda de preço detectada
-                if (buySignalSwing.signal && !swingTradingStrategy.inPosition && !activeOrders.has('buy')) {
-                    const qty = Math.min(0.00008, (brlBalance * 0.5) / mid);
-                    if (qty > MIN_ORDER_SIZE && brlBalance >= qty * mid) {
-                        log('SUCCESS', `[SWING_EXEC] Executando COMPRA: ${buySignalSwing.reason}`);
-                        const buyResult = swingTradingStrategy.buy(mid, qty);
-                        if (buyResult.success) {
-                            await placeOrderWithMomentumValidation('buy', mid, qty);
-                            log('SUCCESS', `[SWING_EXEC] Ordem de compra colocada. ${buyResult.message}`);
-                        }
+            // ===== LÓGICA PADRÃO DE ENTRADA/SAÍDA (FALLBACK quando cash management desativado) =====
+            if (buySignal.shouldEnter && !activeOrders.has('buy')) {
+                const { isValid, errors } = improvedEntryExit.validateOrderPlacement('buy', bestBid, marketData);
+                if (isValid) {
+                    const positionSizeBRL = improvedEntryExit.calculatePositionSize(brlBalance, pred.volatility, buySignal.confidence);
+                    const buyQty = positionSizeBRL / bestBid;
+                    
+                    if (buyQty >= MIN_ORDER_SIZE && positionSizeBRL <= brlBalance) {
+                        log('SUCCESS', `[ENTRY/EXIT] Sinal de COMPRA forte (Score: ${buySignal.score.toFixed(2)}). Razões: ${buySignal.reasons.join(', ')}`);
+                        await placeOrderWithMomentumValidation('buy', bestBid, buyQty);
                     } else {
-                        log('WARN', `[SWING_EXEC] Compra bloqueada: Qtd insuficiente ou saldo BRL insuficiente`);
+                        log('WARN', `[ENTRY/EXIT] Compra ignorada. Qtd: ${buyQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BRL insuficiente.`);
                     }
+                } else {
+                    log('WARN', `[ENTRY/EXIT] Compra bloqueada por validação: ${errors.join(', ')}`);
                 }
-            
-                // Venda: lucro ou stop-loss
-                if (sellSignalSwing.signal && swingTradingStrategy.inPosition && !activeOrders.has('sell')) {
-                    const sellResult = swingTradingStrategy.sell(mid, sellSignalSwing.type);
-                    if (sellResult.success) {
-                        log('SUCCESS', `[SWING_EXEC] Executando VENDA: ${sellSignalSwing.reason}`);
-                        await placeOrderWithMomentumValidation('sell', mid, swingTradingStrategy.positionQty);
-                        log('SUCCESS', `[SWING_EXEC] Ordem de venda colocada. ${sellResult.message}`);
-                        
-                        // Log de métrica
-                        log('INFO', `[SWING_METRICS] ${JSON.stringify(swingTradingStrategy.getMetrics())}`);
-                    } else {
-                        log('WARN', `[SWING_EXEC] Venda bloqueada: ${sellResult.error}`);
-                    }
-                }
-            } else {
-                // ===== LÓGICA PADRÃO DE ENTRADA/SAÍDA (quando swing trading desativado) =====
-                // Colocar novas ordens com base nos sinais da nova lógica
-                if (buySignal.shouldEnter && !activeOrders.has('buy')) {
-                    const { isValid, errors } = improvedEntryExit.validateOrderPlacement('buy', bestBid, marketData);
-                    if (isValid) {
-                        const positionSizeBRL = improvedEntryExit.calculatePositionSize(brlBalance, pred.volatility, buySignal.confidence);
-                        const buyQty = positionSizeBRL / bestBid;
-                        
-                        if (buyQty >= MIN_ORDER_SIZE && positionSizeBRL <= brlBalance) {
-                            log('SUCCESS', `[ENTRY/EXIT] Sinal de COMPRA forte (Score: ${buySignal.score.toFixed(2)}). Razões: ${buySignal.reasons.join(', ')}`);
-                            await placeOrderWithMomentumValidation('buy', bestBid, buyQty);
-                        } else {
-                            log('WARN', `[ENTRY/EXIT] Compra ignorada. Qtd: ${buyQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BRL insuficiente.`);
-                        }
-                    } else {
-                        log('WARN', `[ENTRY/EXIT] Compra bloqueada por validação: ${errors.join(', ')}`);
-                    }
-                } else if (buySignal.shouldEnter && activeOrders.has('buy')) {
-                    log('INFO', '[ENTRY/EXIT] Sinal de compra recebido, mas já existe uma ordem de compra ativa.');
-                }
+            }
 
-                if (sellSignal.shouldExit) {
-                    const openPositionOrder = activeOrders.get('buy'); // A ordem que originou a posição
-                    if (openPositionOrder) {
-                        log('SUCCESS', `[ENTRY/EXIT] Sinal de SAÍDA forte (Score: ${sellSignal.score.toFixed(2)}). Razões: ${sellSignal.reasons.join(', ')}`);
-                        // Primeiro, cancela a ordem de compra se ainda estiver aberta
-                        await tryCancel('buy'); 
-                        // Em seguida, vende a quantidade correspondente que foi comprada
-                        const sellQty = openPositionOrder.qty;
-                        if (sellQty >= MIN_ORDER_SIZE && sellQty <= btcBalance) {
-                            await placeOrderWithMomentumValidation('sell', bestAsk, sellQty);
-                        } else {
-                            log('WARN', `[ENTRY/EXIT] Venda de saída ignorada. Qtd: ${sellQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BTC insuficiente.`);
-                        }
+            if (sellSignal.shouldExit) {
+                const openPositionOrder = activeOrders.get('buy');
+                if (openPositionOrder) {
+                    log('SUCCESS', `[ENTRY/EXIT] Sinal de SAÍDA forte (Score: ${sellSignal.score.toFixed(2)}). Razões: ${sellSignal.reasons.join(', ')}`);
+                    await tryCancel('buy');
+                    const sellQty = openPositionOrder.qty;
+                    if (sellQty >= MIN_ORDER_SIZE && sellQty <= btcBalance) {
+                        await placeOrderWithMomentumValidation('sell', bestAsk, sellQty);
+                    } else {
+                        log('WARN', `[ENTRY/EXIT] Venda de saída ignorada. Qtd: ${sellQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BTC insuficiente.`);
                     }
                 }
-            }  // Fim do else da lógica padrão
-        }  // Fim do else do cash management
+            }
+        }  // Fim do else (lógica fallback quando cash management desativado)
 
         // Atualiza o timestamp do ciclo para a próxima iteração
         lastCycleTimestamp = Date.now();
@@ -1746,14 +1687,7 @@ async function main() {
     improvedEntryExit = new ImprovedEntryExit();
     cashManagementStrategy = new CashManagementStrategy();
     
-    // Inicializar estratégia swing trading otimizada
-    swingTradingStrategy = new SwingTradingStrategy({
-        dropThreshold: 0.003,    // 0.3% queda para compra
-        profitTarget: 0.004,     // 0.4% lucro para venda
-        stopLoss: -0.008         // -0.8% stop loss
-    });
-    log('SUCCESS', '[SWING_TRADING] Estratégia swing trading inicializada com parâmetros otimizados.');
-    log('SUCCESS', '[CASH_MANAGEMENT] Estratégia de gerenciamento de caixa inicializada.');
+    log('SUCCESS', '[CASH_MANAGEMENT] Estratégia de gerenciamento de caixa inicializada (PRIMÁRIA).');
     log('SUCCESS', '[CORE] Módulos de Otimização, Análise de Perda e Entrada/Saída inicializados.');
 
 
