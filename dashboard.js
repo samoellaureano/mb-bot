@@ -13,9 +13,18 @@ const mbClient = require('./mb_client');
 const axios = require('axios');
 const db = require('./db');
 const ExternalTrendValidator = require('./external_trend_validator');
+const MomentumSync = require('./momentum_sync');
+const AutomatedTestRunner = require('./automated_test_runner');
 
 // Instância do validador externo
 const trendValidator = new ExternalTrendValidator();
+
+// Cache de resultados de testes automatizados
+let automatedTestResults = null;
+let automatedTestRunning = false;
+
+// Instância de sincronização de momentum (carrega dados do bot)
+const momentumSync = new MomentumSync();
 
 // Config
 const SIMULATE = process.env.SIMULATE === 'true';
@@ -336,13 +345,17 @@ async function getLiveData() {
 
         // Buscar ordens do banco de dados SEMPRE para ter acesso ao pair_id
         const localOrders = await db.getOrders({limit: 100}) || [];
+        const localOpenOrders = await db.getOrders({status: 'open', limit: 1000}) || [];
+        const mergedLocalOrders = new Map();
+        [...localOrders, ...localOpenOrders].forEach(o => mergedLocalOrders.set(o.id, o));
+        const mergedOrdersArray = Array.from(mergedLocalOrders.values());
         const localOrderMap = new Map(localOrders.filter(o => o.external_id).map(o => [o.external_id, o])); // Map para busca rápida por external_id
 
         if (SIMULATE) {
             // Em modo simulação, usar ordens locais
             ticker = await mbClient.getTicker();
             balances = await mbClient.getBalances();
-            orders = localOrders;
+            orders = mergedOrdersArray;
             
             // Adicionar campos exchange para modo simulação
             orders = orders.map(order => ({
@@ -386,14 +399,46 @@ async function getLiveData() {
                 exchangeStatus: order.id
             }));
 
+            // Sincronizar status no DB quando a exchange diverge do local
+            for (const order of orders) {
+                const local = localOrderMap.get(order.id);
+                if (local && local.status !== order.status) {
+                    const normalizedStatus = order.status === 'working' ? 'open' : order.status;
+                    if (local.status === 'open' && normalizedStatus !== 'open') {
+                        try {
+                            await new Promise((res, rej) => db.db.run(
+                                'UPDATE orders SET status = ? WHERE id = ?',
+                                [normalizedStatus, order.id],
+                                err => err ? rej(err) : res()
+                            ));
+                        } catch (e) {
+                            log('DEBUG', `Falha ao sincronizar status da ordem ${order.id}: ${e.message}`);
+                        }
+                    }
+                }
+            }
+
             // Adicionar ordens locais aguardando colocação
             const exchangeOrderIds = new Set(orders.map(o => o.id));
-            const awaitingOrders = localOrders.filter(o => o.status === 'open' && (!o.external_id || o.external_id === '') && !exchangeOrderIds.has(o.external_id));
+            const awaitingOrders = mergedOrdersArray.filter(o => o.status === 'open' && (!o.external_id || o.external_id === '') && !exchangeOrderIds.has(o.external_id));
             orders = [...orders, ...awaitingOrders.map(o => ({
                 ...o,
                 exchangeId: null,
                 exchangeStatus: '⏳ Aguardando colocação na exchange'
             }))];
+
+            // Adicionar ordens locais OPEN com external_id que não aparecem na exchange
+            // (ex.: inconsistência temporária entre DB e exchange)
+            const localOpenWithExternal = mergedOrdersArray.filter(o =>
+                o.status === 'open' && o.external_id && o.external_id !== '' && !exchangeOrderIds.has(o.external_id)
+            );
+            if (localOpenWithExternal.length > 0) {
+                orders = [...orders, ...localOpenWithExternal.map(o => ({
+                    ...o,
+                    exchangeId: o.external_id,
+                    exchangeStatus: o.external_id
+                }))];
+            }
 
             try {
                 // Usar API pública para orderbook para evitar problemas de autenticação/rate limit no dashboard
@@ -453,9 +498,9 @@ async function getLiveData() {
         let totalInvested = 0; // Capital total investido
         const newPnlHistoryWithTimestamps = [];
 
-        // Carregar PnL realizado do banco de dados (sem valores hardcoded)
-        const dbStats = await db.getStats({hours: 24});
-        realizedPnL = dbStats.total_pnl || 0;
+        // Não usar PnL do banco - calcular corretamente usando FIFO como no bot
+        // const dbStats = await db.getStats({hours: 24});
+        // realizedPnL = dbStats.total_pnl || 0; // REMOVIDO - estava somando incorretamente
         
         // IMPORTANTE: Capital inicial FIXO de R$ 220,00 para cálculo de ROI
         const INITIAL_CAPITAL = 220.00; // Capital inicial fixo para cálculo de performance
@@ -466,31 +511,35 @@ async function getLiveData() {
         
         log('DEBUG', `Database PnL: ${realizedPnL}, Capital Base: R$ ${INITIAL_CAPITAL.toFixed(2)}, Saldo Atual: R$ ${currentBalance.toFixed(2)}`);
 
-        // Re-calcular posição e custo médio usando FIFO para PnL não realizado
-        let filledOrders = orders
-            .filter(o => o.status === 'filled')
-            .map(o => ({
-                side: o.side,
-                qty: parseFloat(o.qty),
-                price: parseFloat(o.limitPrice || o.price),
-                feeRate: o.feeRate || (o.isTaker ? FEE_RATE_TAKER : FEE_RATE_MAKER),
-                timestamp: o.created_at ? new Date(o.created_at * 1000).toISOString() : new Date().toISOString()
-            }))
-            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Ordenar por timestamp para FIFO
+        // Usar dados do banco em vez da API da exchange para consistência com bot.js
+        const sessionFills = await db.loadHistoricalFills({ sessionId: null });
+        
+        // Converter formato do banco para formato compatível
+        const filledOrders = sessionFills.map(f => ({
+            side: f.side,
+            qty: parseFloat(f.qty),
+            price: parseFloat(f.limitPrice || f.price),
+            feeRate: f.feeRate || FEE_RATE_MAKER,
+            timestamp: f.timestamp
+        })).sort((a, b) => a.timestamp - b.timestamp); // Ordenar por timestamp para FIFO
 
-        // Calcular posição atual e custo base usando FIFO
+        // Calcular PnL realizado e posição usando FIFO (mesma lógica do bot.js)
         filledOrders.forEach(o => {
-            const fee = o.qty * o.price * o.feeRate;
+            const qty = o.qty;
+            const price = o.price;
+            const fee = qty * price * o.feeRate;
+            
             if (o.side === 'buy') {
-                btcPosition += o.qty;
-                const cost = o.qty * o.price + fee;
+                btcPosition += qty;
+                const cost = qty * price + fee;
                 totalCost += cost;
-                totalInvested += cost; // Capital total que entrou na estratégia
+                totalInvested += cost;
             } else if (o.side === 'sell' && btcPosition > 0) {
-                const sellAmount = Math.min(o.qty, btcPosition);
-                const avgPrice = totalCost / btcPosition;
+                const avgBuyPrice = totalCost / btcPosition;
+                const sellAmount = Math.min(qty, btcPosition);
+                realizedPnL += (price * sellAmount) - (avgBuyPrice * sellAmount) - fee;
                 btcPosition -= sellAmount;
-                totalCost -= avgPrice * sellAmount;
+                totalCost -= avgBuyPrice * sellAmount;
                 
                 // Garantir que não fique negativo
                 if (btcPosition <= 0) {
@@ -510,10 +559,10 @@ async function getLiveData() {
         const unrealizedPnL = btcPosition > 0 && totalCost > 0 ? 
             (btcPosition * mid) - totalCost : 0;
         
-        // PnL CORRETO = Variação do Patrimônio Total (Saldo Atual - Capital Inicial)
-        const totalPnL = currentBalance - INITIAL_CAPITAL;
+        // PnL total = realizado + não realizado (mesma lógica do bot.js)
+        const totalPnL = realizedPnL + unrealizedPnL;
         
-        log('DEBUG', `PnL Real: Saldo Atual=${currentBalance.toFixed(2)} - Capital Inicial=${INITIAL_CAPITAL.toFixed(2)} = ${totalPnL.toFixed(2)} | DB PnL=${realizedPnL.toFixed(2)} | Unrealized=${unrealizedPnL.toFixed(2)} | Position=${btcPosition.toFixed(8)} BTC`);
+        log('DEBUG', `PnL Correto: Realizado=${realizedPnL.toFixed(2)} + Não Realizado=${unrealizedPnL.toFixed(2)} = Total=${totalPnL.toFixed(2)} | Position=${btcPosition.toFixed(8)} BTC | Cost Basis=${totalCost.toFixed(2)} BRL`);
 
         const lastTimestamp = pnlTimestamps.length > 0 ? new Date(pnlTimestamps[pnlTimestamps.length - 1]) : null;
         const currentTime = new Date(now);
@@ -564,7 +613,8 @@ async function getLiveData() {
         const canBuy = balances.find(b => b.symbol === 'BRL')?.available >= buyCost;
         const marketInterest = orderbook.bids[0][1] > ORDER_SIZE * 5 || orderbook.asks[0][1] > ORDER_SIZE * 5;
 
-        filledOrders = correctedOrders.filter(o => o.status === 'filled');
+        // filledOrders já foi definido acima com dados do banco
+        // filledOrders = correctedOrders.filter(o => o.status === 'filled'); // REMOVIDO - causava erro de reatribuição
         const avgFillPrice = filledOrders.length
             ? filledOrders.reduce((sum, o) => sum + parseFloat(o.price), 0) / filledOrders.length
             : SIMULATE ? 654259.13 : 0; // ALTERADO: valor padrão do bot.js
@@ -668,8 +718,6 @@ async function getLiveData() {
                 spreadPct: SPREAD_PCT,
                 orderSize: ORDER_SIZE,
                 cycleSec: parseInt(process.env.CYCLE_SEC || '15'),
-                isRecovering: totalPnL < 0,
-                pnlResidualHistory: pnlHistory.filter(p => p < 0),
                 maxOrderAgeSecMinHour: (() => {
                     const ageSec = MAX_ORDER_AGE;
                     const ageMin = Math.floor(ageSec / 60);
@@ -688,8 +736,7 @@ async function getLiveData() {
                 minVolume: MIN_VOLUME,
                 volatilityLimit: parseFloat(process.env.VOLATILITY_LIMIT || 0.05),
                 feeRateMaker: FEE_RATE_MAKER, // ADICIONADO
-                feeRateTaker: FEE_RATE_TAKER, // ADICIONADO
-                recoveryBufferDynamic: totalPnL < 0 ? (pred.volatility * 100 * 0.0025).toFixed(4) : '0.0000' // Buffer dinâmico baseado em volatilidade
+                feeRateTaker: FEE_RATE_TAKER // ADICIONADO
             },
             debug: {
                 marketInterest,
@@ -770,57 +817,41 @@ app.get('/api/data', async (req, res) => {
     res.json(cache.data);
 });
 
-// ===== API: Sessões de Recuperação =====
-app.get('/api/recovery', async (req, res) => {
+// ========== ENDPOINT DE MOMENTUM ORDERS ==========
+app.get('/api/momentum', async (req, res) => {
     try {
-        const active = await db.getActiveRecoverySession();
-        const points = active ? await db.getRecoveryPoints(active.id, {limit: 500}) : [];
-        const sessions = await db.getRecoverySessions({limit: 10});
-        res.json({activeSession: active || null, points, sessions});
+        const limit = parseInt(req.query.limit || '100');
+        const status = req.query.status || undefined;
+        
+        // Carregar momentum orders do banco de dados
+        const orders = await db.getMomentumOrders({ 
+            status: status,
+            limit: limit
+        });
+        
+        // Calcular estatísticas
+        const stats = await db.getMomentumStats(24);
+        
+        return res.json({
+            simulatedOrders: orders,
+            status: {
+                simulated: stats.simulated || 0,
+                pending: stats.pending || 0,
+                confirmed: stats.confirmed || 0,
+                rejected: stats.rejected || 0,
+                expired: stats.expired || 0,
+                total: stats.total || 0
+            },
+            stats: {
+                avgReversals: stats.avg_reversals || 0,
+                buyCount: stats.buy_count || 0,
+                sellCount: stats.sell_count || 0
+            },
+            lastUpdate: new Date().toISOString()
+        });
     } catch (err) {
-        log('ERROR', 'Erro ao consultar recuperação:', err.message);
-        res.status(500).json({error: err.message});
-    }
-});
-
-// Reset manual de sessão de recuperação (atualiza baseline para PnL atual do portfólio, mantém sessão ativa)
-app.post('/api/recovery/reset', async (req, res) => {
-    try {
-        const active = await db.getActiveRecoverySession();
-        if (active) {
-            // Preferir PnL atual calculado pela função getLiveData (totalPnL)
-            let newBaseline = null;
-            try {
-                const live = await getLiveData();
-                log('DEBUG', 'Live data for reset', {liveStats: live && live.stats ? live.stats.totalPnL : null});
-                if (live && live.stats && typeof live.stats.totalPnL === 'number') {
-                    newBaseline = parseFloat(live.stats.totalPnL.toFixed(2));
-                }
-            } catch (e) {
-                log('WARN', 'Não foi possível obter PnL ao vivo:', e.message);
-            }
-
-            // Se não conseguimos o PnL ao vivo, fallback para último ponto
-            if (newBaseline === null) {
-                const lastPoint = await db.getLastRecoveryPoint(active.id);
-                newBaseline = lastPoint ? parseFloat(lastPoint.pnl) : (active.initial_pnl !== undefined ? parseFloat(active.initial_pnl) : parseFloat(active.baseline));
-            }
-
-            // Atualizar baseline da sessão ativa para o novo valor (não encerrar)
-            await db.updateRecoveryBaseline(active.id, newBaseline);
-            // Registrar timestamp do reset manual para evitar reversões imediatas
-            const now = Math.floor(Date.now() / 1000);
-            await db.updateManualBaselineTimestamp(active.id, now);
-
-            log('INFO', `[API] Baseline da sessão ${active.id} atualizado para: R$ ${newBaseline.toFixed(2)}`);
-            log('INFO', `[API] Sessão permanece ativa com novo baseline`);
-            res.json({success: true, message: 'Baseline atualizado para o PnL atual (ou último ponto se indisponível). Sessão permanece ativa.', baseline: newBaseline});
-            return;
-        }
-        res.json({success: false, message: 'Nenhuma sessão ativa encontrada.'});
-    } catch (err) {
-        log('ERROR', 'Erro ao resetar baseline:', err.message);
-        res.status(500).json({error: err.message});
+        log('ERROR', 'Failed to fetch momentum orders:', err.message);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -940,6 +971,15 @@ app.get('/api/pairs', async (req, res) => {
                     };
                 }
                 processedOrders.add(order.id);
+            }
+        }
+
+        // Remover pares completos sem ordens abertas
+        for (const [pairId, pair] of Object.entries(pairMap)) {
+            const hasOpenBuy = pair.buyOrder && pair.buyOrder.status === 'open';
+            const hasOpenSell = pair.sellOrder && pair.sellOrder.status === 'open';
+            if (!hasOpenBuy && !hasOpenSell) {
+                delete pairMap[pairId];
             }
         }
         
@@ -1121,6 +1161,74 @@ app.get('/api/pairs', async (req, res) => {
     }
 });
 
+// ========== ENDPOINTS DE TESTES AUTOMATIZADOS ==========
+
+// GET /api/tests - Obter resultados dos últimos testes
+app.get('/api/tests', async (req, res) => {
+    try {
+        const cached = AutomatedTestRunner.getLastTestResults();
+        
+        res.json({
+            hasResults: cached.results !== null,
+            isRunning: automatedTestRunning,
+            results: cached.results,
+            lastRunTime: cached.lastRunTime,
+            cacheAgeSeconds: cached.cacheAge,
+            canRerun: !automatedTestRunning
+        });
+    } catch (err) {
+        log('ERROR', 'Erro ao obter resultados de testes:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/tests/run - Executar nova bateria de testes
+app.post('/api/tests/run', async (req, res) => {
+    try {
+        if (automatedTestRunning) {
+            return res.status(409).json({ 
+                error: 'Testes já em execução',
+                message: 'Aguarde a conclusão dos testes atuais'
+            });
+        }
+        
+        automatedTestRunning = true;
+        const hours = parseInt(req.body?.hours) || 24;
+        
+        log('INFO', `Iniciando bateria de testes automatizados (${hours}h)...`);
+        
+        // Executar testes assincronamente
+        AutomatedTestRunner.runTestBattery(hours)
+            .then(results => {
+                automatedTestResults = results;
+                automatedTestRunning = false;
+                log('INFO', `Testes automatizados concluídos: ${results.summary.passed}/${results.summary.total} passaram`);
+            })
+            .catch(err => {
+                automatedTestRunning = false;
+                log('ERROR', 'Erro nos testes automatizados:', err.message);
+            });
+        
+        res.json({ 
+            message: 'Testes iniciados',
+            hours,
+            status: 'running'
+        });
+    } catch (err) {
+        automatedTestRunning = false;
+        log('ERROR', 'Erro ao iniciar testes:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/tests/status - Status dos testes em execução
+app.get('/api/tests/status', (req, res) => {
+    res.json({
+        isRunning: automatedTestRunning,
+        lastResults: AutomatedTestRunner.getLastTestResults()
+    });
+});
+
 // Health check
 app.get('/health', (req, res) => {
     const now = Date.now();
@@ -1210,7 +1318,23 @@ process.on('SIGTERM', () => {
 // Start server and load history
 db.init().then(() => {
     Promise.all([loadPnlHistory(), loadHistoricalFills(), loadPriceHistoryFromDB()]).then(() => {
-        app.listen(PORT, '0.0.0.0', () => log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`));
+        app.listen(PORT, '0.0.0.0', () => {
+            log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`);
+            
+            // Executar testes automatizados na inicialização
+            log('INFO', 'Iniciando testes automatizados na inicialização...');
+            automatedTestRunning = true;
+            AutomatedTestRunner.runTestBattery(24)
+                .then(results => {
+                    automatedTestResults = results;
+                    automatedTestRunning = false;
+                    log('INFO', `✅ Testes de inicialização concluídos: ${results.summary.passed}/${results.summary.total} passaram (${results.summary.passRate}%)`);
+                })
+                .catch(err => {
+                    automatedTestRunning = false;
+                    log('WARN', `⚠️ Testes de inicialização falharam: ${err.message}`);
+                });
+        });
     });
 });
 

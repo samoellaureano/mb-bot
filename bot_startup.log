@@ -1,0 +1,9 @@
+00:04:48.446 [INFO]   [Bot] ================================================ 
+00:04:48.450 [INFO]   [Bot] =        MB BOT - INICIANDO EXECUÇÃO           = 
+00:04:48.673 [INFO]   [Bot] ================================================ 
+20/01/2026, 21:04:49 [INFO] [DB] WAL mode ativado
+20/01/2026, 21:04:49 [SUCCESS] [DB] Banco de dados inicializado com sucesso.
+[FATAL] Erro ao iniciar o bot: loadConfigFromDB is not defined
+ReferenceError: loadConfigFromDB is not defined
+    at main (/mnt/c/PROJETOS_PESSOAIS/mb-bot/bot.js:1581:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)

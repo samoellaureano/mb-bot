@@ -13,11 +13,15 @@ const ARGV = process.argv.slice(2);
 if (ARGV.length < 1) { console.error('Uso: node backtester_tuning.js path/to/csv'); process.exit(1); }
 const INPUT = ARGV[0];
 
-// parâmetros a testar
+// parâmetros a testar - Focados na nova lógica do ImprovedEntryExit
 const grid = {
-    MIN_PROFIT_BASE: [0.0005, 0.0007, 0.001], // mais agressivo, menor lucro mínimo
-    SPREAD_BASE: [0.0004, 0.0005, 0.0006],    // spread menor para execução mais fácil
-    ORDER_QUOTE_FRACTION: [0.05, 0.1, 0.2]   // aumenta chance de criar ordens
+    RSI_LOW: [25, 30, 35],
+    RSI_HIGH: [65, 70, 75],
+    ADX_THRESHOLD: [20, 25],
+    MACD_FAST: [12],
+    MACD_SLOW: [26],
+    MACD_SIGNAL: [9],
+    VOLATILITY_THRESHOLD: [0.01, 0.015] // 1% e 1.5%
 };
 
 function readCSV(filePath) {

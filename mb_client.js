@@ -178,10 +178,33 @@ function simulateResponse(endpoint, method, params, body) {
     ep = ep.replace(/\{symbol\}/g, PAIR);
     ep = ep.replace(/\{orderId\}/g, params?.orderId || 'SIM_ORDER_001');
 
+    // Slippage dinâmico: mais alto em mercados "voláteis"
+    const volatility = 0.002 + Math.abs(Math.sin(now / 100000)) * 0.01;
     const genAvgPrice = (side, basePrice) => {
-        const slippage = (Math.random() - 0.5) * 0.002;
-        return side === 'buy' ? (basePrice * (1 + slippage)) : (basePrice * (1 + slippage));
+        // Slippage pode ser positivo ou negativo, mais intenso em "alta volatilidade"
+        const slippage = (Math.random() - 0.5) * volatility * 2;
+        return basePrice * (1 + slippage);
     };
+
+    // Simula delays e falhas de API (5% das vezes)
+    if (Math.random() < 0.05) {
+        throw new Error('[SIMULATE] Falha temporária de API simulada');
+    }
+
+    // Para simular execuções parciais e delays
+    const simulatePartialFill = (qty) => {
+        if (Math.random() < 0.15) {
+            // 15% das vezes, só parte da ordem é executada
+            return (qty * (0.3 + Math.random() * 0.6)).toFixed(8);
+        }
+        return qty.toFixed(8);
+    };
+
+    // Histórico de ordens simuladas
+    if (!global.simulatedOrderHistory) global.simulatedOrderHistory = [];
+
+    const FEE_MAKER = 0.003;
+    const FEE_TAKER = 0.007;
 
     const simulations = {
         '/tickers': {
@@ -221,43 +244,52 @@ function simulateResponse(endpoint, method, params, body) {
                 const price = parseFloat(body.limitPrice) || marketPrice;
                 const side = (body.side || 'buy').toLowerCase();
                 const avgPrice = genAvgPrice(side, price);
+                // Simula execução parcial
+                const filledQty = parseFloat(simulatePartialFill(qty));
+                // Simula delay de execução (até 1s)
+                const delayMs = Math.random() < 0.2 ? Math.random() * 1000 : 0;
+                // Taxa explícita
+                const fee = filledQty * avgPrice * FEE_MAKER;
                 if (side === 'buy') {
-                    simulatedBalances.BRL = Math.max(0, simulatedBalances.BRL - avgPrice * qty);
-                    simulatedBalances.BTC += qty;
+                    simulatedBalances.BRL = Math.max(0, simulatedBalances.BRL - avgPrice * filledQty - fee);
+                    simulatedBalances.BTC += filledQty;
                 } else {
-                    simulatedBalances.BRL += avgPrice * qty;
-                    simulatedBalances.BTC = Math.max(0, simulatedBalances.BTC - qty);
+                    simulatedBalances.BRL += avgPrice * filledQty - fee;
+                    simulatedBalances.BTC = Math.max(0, simulatedBalances.BTC - filledQty);
                 }
                 const orderId = `SIM_${Date.now()}_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-                log('INFO', `[SIMULATE] Order executed - balances updated`, simulatedBalances);
+                log('INFO', `[SIMULATE] Order executada (simulação) - saldo atualizado`, simulatedBalances);
+                // Salva no histórico
+                global.simulatedOrderHistory.push({
+                    id: orderId,
+                    side,
+                    status: filledQty < qty ? 'partial' : 'filled',
+                    qty: qty.toFixed(8),
+                    filledQty: filledQty.toString(),
+                    limitPrice: price.toFixed(2),
+                    avgPrice: avgPrice.toFixed(2),
+                    fee: fee.toFixed(2),
+                    updated_at: Math.floor(now / 1000),
+                    created_at: Math.floor(now / 1000),
+                });
+                if (delayMs > 0) {
+                    const start = Date.now();
+                    while (Date.now() - start < delayMs) {}
+                }
                 return {
                     orderId,
-                    status: 'filled',
+                    status: filledQty < qty ? 'partial' : 'filled',
                     side,
                     qty: qty.toString(),
                     limitPrice: price.toFixed(2),
-                    filledQty: qty.toString(),
-                    avgPrice: avgPrice.toFixed(2)
+                    filledQty: filledQty.toString(),
+                    avgPrice: avgPrice.toFixed(2),
+                    fee: fee.toFixed(2)
                 };
             },
             GET: () => {
-                const numOrders = Math.floor(Math.random() * 3);
-                const orders = [];
-                for (let i = 0; i < numOrders; i++) {
-                    const side = Math.random() > 0.5 ? 'buy' : 'sell';
-                    const price = side === 'buy' ? (marketPrice - spread).toFixed(2) : (marketPrice + spread).toFixed(2);
-                    orders.push({
-                        id: `SIM_OPEN_${Date.now() - i * 60000}`,
-                        side,
-                        type: 'limit',
-                        status: 'working',
-                        qty: ORDER_SIZE.toString(),
-                        limitPrice: price,
-                        created_at: Math.floor((now - i * 60000) / 1000),
-                        updated_at: Math.floor(now / 1000)
-                    });
-                }
-                return orders;
+                // Retorna ordens "abertas" do histórico
+                return global.simulatedOrderHistory.filter(o => o.status === 'partial' || o.status === 'working');
             }
         },
 
@@ -389,18 +421,10 @@ async function getOrderStatus(orderId) {
 
 async function getOrderHistory(limit = 10, status = 'filled') {
     if (SIMULATE) {
-        // Histórico simulado → sempre retorna uma venda finalizada
-        return [
-            {
-                id: `SIM_HIST_${Date.now()}`,
-                side: 'sell',
-                status: 'filled',
-                qty: ORDER_SIZE.toString(),
-                limitPrice: (300000 + Math.random() * 1000).toFixed(2),
-                avgPrice: (300000 + Math.random() * 1000).toFixed(2),
-                updated_at: Math.floor(Date.now() / 1000)
-            }
-        ];
+        // Retorna histórico realista das ordens simuladas
+        let hist = global.simulatedOrderHistory || [];
+        if (status) hist = hist.filter(o => o.status === status);
+        return hist.slice(-limit);
     }
 
     if (!accountId) throw new Error('Account ID not set. Call authenticate() first.');

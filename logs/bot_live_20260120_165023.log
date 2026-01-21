@@ -1,0 +1,238 @@
+
+> mb-bot@1.0.0 live
+> SIMULATE=false node bot.js
+
+19:50:24.836 [INFO]   [Bot] Inicializando bot... 
+19:50:24.844 [INFO]   [Bot] Inicializando banco de dados... 
+20/01/2026, 16:50:25 [INFO] [DB] WAL mode ativado
+20/01/2026, 16:50:25 [SUCCESS] [DB] Banco de dados inicializado com sucesso.
+19:50:25.183 [SUCCESS] [Bot] Banco de dados inicializado. 
+19:50:25.199 [INFO]   [Bot] Autenticando Mercado Bitcoin... 
+2026-01-20T19:50:25.410Z [INFO]   API_KEY: bdb29a91...
+2026-01-20T19:50:25.413Z [INFO]   API_SECRET: e14075f1...
+2026-01-20T19:50:26.909Z [INFO]   Account ID: f02d1506...
+2026-01-20T19:50:26.913Z [INFO]   Access Token: eyJhbGci...
+2026-01-20T19:50:26.913Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+19:50:26.914 [SUCCESS] [Bot] Autenticado com sucesso. 
+19:50:26.919 [INFO]   [Bot] Inicializando sistema adaptativo... 
+19:50:27.147 [SUCCESS] [Bot] Sistema adaptativo inicializado. 
+19:50:27.435 [INFO]   [Bot] Iniciando warmup com velas históricas para evitar decisões ruins iniciais. 
+19:50:27.772 [INFO]   [Bot] Buscadas 99 velas históricas válidas. 
+19:50:27.806 [SUCCESS] [Bot] Warmup completo com 60 velas históricas. 
+19:50:27.943 [INFO]   [Bot] Carregando fills históricos... 
+19:50:28.148 [SUCCESS] [Bot] Carregados 30 fills históricos. 
+19:50:28.253 [INFO]   [Bot] Iniciando loop principal. 
+19:50:28.404 [INFO]   [Bot] Iniciando ciclo 1. 
+19:50:28.560 [DEBUG]  [Bot] Sincronização: Carregadas 4 ordens da BD (BUY: 0✓, SELL: 4✓). Pares no mapa: 4 
+19:50:28.683 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+19:50:28 [TREND INFO] Iniciando análise de tendência externa... 
+19:50:29 [TREND INFO] CoinGecko Score: 37
+19:50:29 [TREND INFO] Binance Score: 20
+19:50:29 [TREND INFO] Fear & Greed Score: 32
+19:50:29 [TREND SUCCESS] Análise externa concluída: {"trend":"BEARISH","score":29,"confidence":100}
+19:50:29.480 [SUCCESS] [Bot] Tendência Externa: BEARISH (Score: 29/100, Confiança: 100%) 
+19:50:29.683 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=481163.00, Best Ask=481265.00. 
+19:50:29.827 [INFO]   [Bot] Volatilidade calculada: 2.96%. 
+19:50:29.867 [DEBUG]  [Bot] Volatilidade no ciclo 1: 2.96% 
+19:50:30.006 [INFO]   [Bot] RSI calculado: 61.43. 
+19:50:30.618 [INFO]   [Bot] EMA(8) calculada: 481087.99. 
+19:50:30.749 [INFO]   [Bot] EMA(20) calculada: 481084.96. 
+19:50:30.898 [INFO]   [Bot] EMA(12) calculada: 481184.61. 
+19:50:31.028 [INFO]   [Bot] EMA(26) calculada: 481091.33. 
+19:50:31.164 [INFO]   [Bot] EMA(9) calculada: 481138.45. 
+19:50:31.290 [INFO]   [Bot] MACD calculado: MACD=93.28, Signal=481138.45. 
+19:50:31.385 [INFO]   [Bot] Volatilidade calculada: 2.96%. 
+19:50:31.523 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=0.00%, PnL médio=0.00. 
+19:50:31.636 [INFO]   [Bot] ADX calculado: 10.42. 
+19:50:31.723 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.36","expectedProfit":"0.11","rsi":"61.43","emaShort":"481087.99","emaLong":"481084.96","vo...
+19:50:31.833 [INFO]   [Bot] 
+═════════════════════════════════════════════════════════════════
+📊 ESTRATÉGIA ADAPTATIVA ATIVADA: 📈 ACUMULAÇÃO: Comprando BTC em alta
+═════════════════════════════════════════════════════════════════
+
+🎯 TENDÊNCIA: UP
+   • Spread: 1.0%
+   • Order Size: 5 µBTC (micro-ordens)
+   • Viés: +0.00010 (COMPRA)
+   • Max Position: 0.000500 BTC
+   • Stop Loss: 0.12%
+
+📋 PROPORÇÃO DE ORDENS:
+   • BUY: 70% | SELL: 30%
+   • Colocando mais BUY (+70%) do que SELL
+
+═════════════════════════════════════════════════════════════════
+ 
+19:50:31.960 [DEBUG]  [Bot] Convicção calculada: 62.6% | Tendência: UP | Força: MODERATE 
+19:50:32.088 [DEBUG]  [Bot] [SPREAD_ADAPT] vol=2.96% regime=BULLISH rsi=61 conviction=0.63 => spread=3.50% 
+19:50:32.196 [INFO]   [Bot] [CICLO 1] Spread adaptativo: 3.50% | Vol: 2.96% | Regime: BULLISH | Confiança: 62.6% 
+19:50:32.300 [WARN]   [Bot] Preço de venda 487344.19 muito acima do mercado (481214.00). Ajustando para 483620.07. 
+19:50:32.411 [WARN]   [Bot] Spread inválido ou muito estreito. Ajustando para spread natural. 
+2026-01-20T19:50:32.555Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders/01KFE8DH87MAGHQGVDFS0Q8VXB' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTQyMjI2LCJleHQiOnt9LCJpYXQiOjE3Njg5Mzg2MjYsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiM2MyMjlhZjYtOGRlZC00ZjUyLThjN2MtNWI0ZTJkYjIyMzYwIiwibmJmIjoxNzY4OTM4NjI2LCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.E1A1gmJ4i35sOiMWwcQ6stl0cbWbZDSRTFfAkRx8ZIciiIwFqzCua2MNpuWQoGmI6JvefSdhn6NTu24dlUuRmjOq25bB7Fa0SSdD2zYwL5wxSIuvxxiwDAVOH6G0tLgOOc7Nyf1UbEky_WJkJAiMhWrGO9FRgBPoyCIBWBwR7qOGnaTbPyVt1AUm_PHPKSRtyvB5HSQi8G6gIs3sDXZbos89hrFBHQt47d49U6FFIillSis7SMePFniRaUhvoAyKLOndBOmMwp8dfRROFqhuqy06RABsehv3inOJRBjXY2es373kJGeN-moGkvXr6bOZK6dJcn1xufAwDqcGt-DBKpbjffCIKe0xPfje_AgDNHOjYLusY7s4AU8YoBxYkFGSzzkJOXSjgt7vV6122OvrXAycoq8N90Fi3RQ5pJV-kfLeCR_GTCRmFBtD6AVRiLP-zMtNT0r3X5vuamWkS3lz4UTiVkVL6FO4KEMWDjIuX1LFOWb13gz4kMGWrK6S64t-t7afk8CF1TjFK2J0tTR9jv5C2kZzRslTYkcgVakO2xxiyX4TkOkq0n7qe3CZaH76srLdRgk13ENYeTtO6zsi8mCarOKMIZH2ob8KMjCTJQvT8vb1gjOS5nCMtrCYrlF__vDRP4e6GmwDP9lPmvd6FaF4HqQYBoPIDnYisrHwcAM' -H 'User-Agent: MB-Bot/1.2.1'
+19:50:32.780 [DEBUG]  [Bot] Status ordem 01KFE8DH87MAGHQGVDFS0Q8VXB: working, Filled: 0.00000000. 
+2026-01-20T19:50:32.785Z [DEBUG]  Rate limit: waiting 103ms
+2026-01-20T19:50:32.889Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/balances' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTQyMjI2LCJleHQiOnt9LCJpYXQiOjE3Njg5Mzg2MjYsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiM2MyMjlhZjYtOGRlZC00ZjUyLThjN2MtNWI0ZTJkYjIyMzYwIiwibmJmIjoxNzY4OTM4NjI2LCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.E1A1gmJ4i35sOiMWwcQ6stl0cbWbZDSRTFfAkRx8ZIciiIwFqzCua2MNpuWQoGmI6JvefSdhn6NTu24dlUuRmjOq25bB7Fa0SSdD2zYwL5wxSIuvxxiwDAVOH6G0tLgOOc7Nyf1UbEky_WJkJAiMhWrGO9FRgBPoyCIBWBwR7qOGnaTbPyVt1AUm_PHPKSRtyvB5HSQi8G6gIs3sDXZbos89hrFBHQt47d49U6FFIillSis7SMePFniRaUhvoAyKLOndBOmMwp8dfRROFqhuqy06RABsehv3inOJRBjXY2es373kJGeN-moGkvXr6bOZK6dJcn1xufAwDqcGt-DBKpbjffCIKe0xPfje_AgDNHOjYLusY7s4AU8YoBxYkFGSzzkJOXSjgt7vV6122OvrXAycoq8N90Fi3RQ5pJV-kfLeCR_GTCRmFBtD6AVRiLP-zMtNT0r3X5vuamWkS3lz4UTiVkVL6FO4KEMWDjIuX1LFOWb13gz4kMGWrK6S64t-t7afk8CF1TjFK2J0tTR9jv5C2kZzRslTYkcgVakO2xxiyX4TkOkq0n7qe3CZaH76srLdRgk13ENYeTtO6zsi8mCarOKMIZH2ob8KMjCTJQvT8vb1gjOS5nCMtrCYrlF__vDRP4e6GmwDP9lPmvd6FaF4HqQYBoPIDnYisrHwcAM' -H 'User-Agent: MB-Bot/1.2.1'
+19:50:33.483 [ALERT]  [Bot] Saldo BRL muito baixo (0.01 < 19.25). Considere depositar mais fundos. 
+📊 [ADAPTIVE] Análise: {"trend":"neutral","strength":"0.50","indicators":4,"confidence":"medium"}
+⏳ [ADAPTIVE] Aguardando confirmação de tendência (1/3)
+19:50:33.503 [WARN]   [Bot] Saldo BRL insuficiente (0.01 < 10.11). Ignorando compra. 
+19:50:33.605 [WARN]   [Bot] Aguardando BUY para completar par SELL (4 SELL vs 0 BUY) - não colocando SELL. 
+19:50:33.706 [DEBUG]  [Bot] [MÚLTIPLOS PARES] Avaliação: TotalPos=0.00002016 BTC, MaxPos=0.00050000 BTC, ActivePairs=4/3, CompletePairs=0, CanAdd=false 
+19:50:33.806 [DEBUG]  [Bot] Limite de pares atingido: 4/3 pares ativos 
+19:50:33.926 [DEBUG]  [Bot] PnL Calculation: Realized=0.19 | Unrealized=-2.43 | Total=-2.24 | Position=0.00006148 BTC | Cost Basis=32.02 BRL 
+19:50:34.023 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+19:50:34.120 [INFO]   [Bot] Ciclo: 1 | Mid Price: 481214.00 | Tendência: up | Regime: BULLISH 
+19:50:34.200 [INFO]   [Bot] 🟡 Convicção: 62.6% | Tendência Convicção: UP | Força: MODERATE 
+19:50:34.316 [INFO]   [Bot]    Indicadores concordam: 4/6 | Nível volatilidade: VERY_LOW 
+19:50:34.396 [INFO]   [Bot] 🌐 Tendência Externa: BEARISH (Score: 29/100, Confiança: 100%) 
+19:50:34.494 [INFO]   [Bot] ⚠️ Alinhamento: Bot=UP vs Externo=BEARISH 
+19:50:34.565 [INFO]   [Bot] RSI: 61.43 | EMA Curta: 481087.99 | EMA Longa: 481084.96 
+19:50:34.625 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 2.96% 
+19:50:34.689 [INFO]   [Bot] Score Lucro Esperado: 0.11 | Confiança: 0.36 
+19:50:34.768 [INFO]   [Bot] Spread: 1.500% | Buy Price: 477604.89 | Sell Price: 484823.11 
+19:50:34.859 [INFO]   [Bot] Tamanho Ordens: 0.00002111 BTC | Volatilidade: 2.96% 
+19:50:34.926 [INFO]   [Bot] Viés Inventário (Skew): 0.005000 | Viés Tendência: 0.000200 | Total Bias: 0.005200 
+19:50:34.996 [INFO]   [Bot] PnL Total: -2.24 BRL | ROI: -3.68% | PnL Não Realizado: -2.43 BRL 
+19:50:35.065 [INFO]   [Bot] Posição BTC: 0.00006148 | Saldo BRL: 0.01 | Saldo BTC: 0.00040420 
+19:50:35.134 [INFO]   [Bot] Ordens Ativas: 1 | Fills: 0 | Cancelamentos: 0 
+19:50:35.201 [INFO]   [Bot] Taxa de Fill: 0.0% | Preço Médio Fill: 520787.07 BRL | Uptime: 0min 
+19:50:35.276 [INFO]   [Bot] ──────────────────────────────────────────── 
+19:50:35.353 [SUCCESS] [Bot] Bot operacional - SIMULATE=false 
+19:51:06.730 [INFO]   [Bot] Iniciando ciclo 2. 
+19:51:06.742 [DEBUG]  [Bot] Sincronização: Carregadas 4 ordens da BD (BUY: 0✓, SELL: 4✓). Pares no mapa: 4 
+19:51:07.080 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=481166.00, Best Ask=481420.00. 
+19:51:07.099 [INFO]   [Bot] Volatilidade calculada: 2.93%. 
+19:51:07.174 [DEBUG]  [Bot] Volatilidade no ciclo 2: 2.93% 
+19:51:07.246 [INFO]   [Bot] RSI calculado: 44.56. 
+19:51:07.314 [INFO]   [Bot] EMA(8) calculada: 481136.32. 
+19:51:07.382 [INFO]   [Bot] EMA(20) calculada: 480993.52. 
+19:51:07.459 [INFO]   [Bot] EMA(12) calculada: 481191.33. 
+19:51:07.521 [INFO]   [Bot] EMA(26) calculada: 481041.66. 
+19:51:07.580 [INFO]   [Bot] EMA(9) calculada: 481082.63. 
+19:51:07.641 [INFO]   [Bot] MACD calculado: MACD=149.67, Signal=481082.63. 
+19:51:07.697 [INFO]   [Bot] Volatilidade calculada: 2.93%. 
+19:51:07.779 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=0.00%, PnL médio=0.00. 
+19:51:07.843 [INFO]   [Bot] ADX calculado: 9.45. 
+19:51:07.922 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.32","expectedProfit":"0.08","rsi":"44.56","emaShort":"481136.32","emaLong":"480993.52...
+19:51:07.999 [INFO]   [Bot] 
+═════════════════════════════════════════════════════════════════
+📊 ESTRATÉGIA ADAPTATIVA ATIVADA: ⚪ NEUTRAL: Market making equilibrado
+═════════════════════════════════════════════════════════════════
+
+🎯 TENDÊNCIA: NEUTRAL
+   • Spread: 1.2%
+   • Order Size: 5 µBTC (micro-ordens)
+   • Viés: 0.00000 (NEUTRAL)
+   • Max Position: 0.000300 BTC
+   • Stop Loss: 0.12%
+
+📋 PROPORÇÃO DE ORDENS:
+   • BUY: 50% | SELL: 50%
+   • Colocando BUY e SELL equilibrados
+
+═════════════════════════════════════════════════════════════════
+ 
+19:51:08.081 [DEBUG]  [Bot] Convicção calculada: 54.8% | Tendência: UP | Força: WEAK 
+19:51:08.143 [DEBUG]  [Bot] [SPREAD_ADAPT] vol=2.93% regime=NEUTRAL rsi=45 conviction=0.55 => spread=3.50% 
+19:51:08.202 [INFO]   [Bot] [CICLO 2] Spread adaptativo: 3.50% | Vol: 2.93% | Regime: NEUTRAL | Confiança: 54.8% 
+19:51:08.250 [WARN]   [Bot] Preço de venda 488758.07 muito acima do mercado (481293.00). Ajustando para 483699.46. 
+19:51:08.300 [WARN]   [Bot] Spread inválido ou muito estreito. Ajustando para spread natural. 
+2026-01-20T19:51:08.351Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders/01KFE8DH87MAGHQGVDFS0Q8VXB' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTQyMjI2LCJleHQiOnt9LCJpYXQiOjE3Njg5Mzg2MjYsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiM2MyMjlhZjYtOGRlZC00ZjUyLThjN2MtNWI0ZTJkYjIyMzYwIiwibmJmIjoxNzY4OTM4NjI2LCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.E1A1gmJ4i35sOiMWwcQ6stl0cbWbZDSRTFfAkRx8ZIciiIwFqzCua2MNpuWQoGmI6JvefSdhn6NTu24dlUuRmjOq25bB7Fa0SSdD2zYwL5wxSIuvxxiwDAVOH6G0tLgOOc7Nyf1UbEky_WJkJAiMhWrGO9FRgBPoyCIBWBwR7qOGnaTbPyVt1AUm_PHPKSRtyvB5HSQi8G6gIs3sDXZbos89hrFBHQt47d49U6FFIillSis7SMePFniRaUhvoAyKLOndBOmMwp8dfRROFqhuqy06RABsehv3inOJRBjXY2es373kJGeN-moGkvXr6bOZK6dJcn1xufAwDqcGt-DBKpbjffCIKe0xPfje_AgDNHOjYLusY7s4AU8YoBxYkFGSzzkJOXSjgt7vV6122OvrXAycoq8N90Fi3RQ5pJV-kfLeCR_GTCRmFBtD6AVRiLP-zMtNT0r3X5vuamWkS3lz4UTiVkVL6FO4KEMWDjIuX1LFOWb13gz4kMGWrK6S64t-t7afk8CF1TjFK2J0tTR9jv5C2kZzRslTYkcgVakO2xxiyX4TkOkq0n7qe3CZaH76srLdRgk13ENYeTtO6zsi8mCarOKMIZH2ob8KMjCTJQvT8vb1gjOS5nCMtrCYrlF__vDRP4e6GmwDP9lPmvd6FaF4HqQYBoPIDnYisrHwcAM' -H 'User-Agent: MB-Bot/1.2.1'
+19:51:08.627 [DEBUG]  [Bot] Status ordem 01KFE8DH87MAGHQGVDFS0Q8VXB: working, Filled: 0.00000000. 
+2026-01-20T19:51:08.631Z [DEBUG]  Rate limit: waiting 53ms
+2026-01-20T19:51:08.685Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/balances' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTQyMjI2LCJleHQiOnt9LCJpYXQiOjE3Njg5Mzg2MjYsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiM2MyMjlhZjYtOGRlZC00ZjUyLThjN2MtNWI0ZTJkYjIyMzYwIiwibmJmIjoxNzY4OTM4NjI2LCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.E1A1gmJ4i35sOiMWwcQ6stl0cbWbZDSRTFfAkRx8ZIciiIwFqzCua2MNpuWQoGmI6JvefSdhn6NTu24dlUuRmjOq25bB7Fa0SSdD2zYwL5wxSIuvxxiwDAVOH6G0tLgOOc7Nyf1UbEky_WJkJAiMhWrGO9FRgBPoyCIBWBwR7qOGnaTbPyVt1AUm_PHPKSRtyvB5HSQi8G6gIs3sDXZbos89hrFBHQt47d49U6FFIillSis7SMePFniRaUhvoAyKLOndBOmMwp8dfRROFqhuqy06RABsehv3inOJRBjXY2es373kJGeN-moGkvXr6bOZK6dJcn1xufAwDqcGt-DBKpbjffCIKe0xPfje_AgDNHOjYLusY7s4AU8YoBxYkFGSzzkJOXSjgt7vV6122OvrXAycoq8N90Fi3RQ5pJV-kfLeCR_GTCRmFBtD6AVRiLP-zMtNT0r3X5vuamWkS3lz4UTiVkVL6FO4KEMWDjIuX1LFOWb13gz4kMGWrK6S64t-t7afk8CF1TjFK2J0tTR9jv5C2kZzRslTYkcgVakO2xxiyX4TkOkq0n7qe3CZaH76srLdRgk13ENYeTtO6zsi8mCarOKMIZH2ob8KMjCTJQvT8vb1gjOS5nCMtrCYrlF__vDRP4e6GmwDP9lPmvd6FaF4HqQYBoPIDnYisrHwcAM' -H 'User-Agent: MB-Bot/1.2.1'
+19:51:09.180 [ALERT]  [Bot] Saldo BRL muito baixo (0.01 < 19.25). Considere depositar mais fundos. 
+📊 [ADAPTIVE] Análise: {"trend":"neutral","strength":"0.00","indicators":4,"confidence":"low"}
+⏳ [ADAPTIVE] Aguardando confirmação de tendência (2/3)
+19:51:09.186 [WARN]   [Bot] Saldo BRL insuficiente (0.01 < 9.98). Ignorando compra. 
+19:51:09.242 [WARN]   [Bot] Aguardando BUY para completar par SELL (4 SELL vs 0 BUY) - não colocando SELL. 
+19:51:09.309 [DEBUG]  [Bot] [MÚLTIPLOS PARES] Avaliação: TotalPos=0.00002016 BTC, MaxPos=0.00030000 BTC, ActivePairs=4/3, CompletePairs=0, CanAdd=false 
+19:51:09.365 [DEBUG]  [Bot] Limite de pares atingido: 4/3 pares ativos 
+19:51:09.426 [DEBUG]  [Bot] PnL Calculation: Realized=0.19 | Unrealized=-2.43 | Total=-2.23 | Position=0.00006148 BTC | Cost Basis=32.02 BRL 
+19:51:09.481 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+19:51:09.555 [INFO]   [Bot] Ciclo: 2 | Mid Price: 481293.00 | Tendência: neutral | Regime: NEUTRAL 
+19:51:09.633 [INFO]   [Bot] 🟡 Convicção: 54.8% | Tendência Convicção: UP | Força: WEAK 
+19:51:09.703 [INFO]   [Bot]    Indicadores concordam: 3/6 | Nível volatilidade: VERY_LOW 
+19:51:09.766 [INFO]   [Bot] 🌐 Tendência Externa: BEARISH (Score: 29/100, Confiança: 100%) 
+19:51:09.843 [INFO]   [Bot] ⚠️ Alinhamento: Bot=NEUTRAL vs Externo=BEARISH 
+19:51:09.911 [INFO]   [Bot] RSI: 44.56 | EMA Curta: 481136.32 | EMA Longa: 480993.52 
+19:51:09.978 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 2.93% 
+19:51:10.043 [INFO]   [Bot] Score Lucro Esperado: 0.08 | Confiança: 0.32 
+19:51:10.102 [INFO]   [Bot] Spread: 1.500% | Buy Price: 477683.30 | Sell Price: 484902.70 
+19:51:10.168 [INFO]   [Bot] Tamanho Ordens: 0.00002083 BTC | Volatilidade: 2.93% 
+19:51:10.220 [INFO]   [Bot] Viés Inventário (Skew): 0.002951 | Viés Tendência: 0.000000 | Total Bias: 0.007951 
+19:51:10.280 [INFO]   [Bot] PnL Total: -2.23 BRL | ROI: -3.67% | PnL Não Realizado: -2.43 BRL 
+19:51:10.335 [INFO]   [Bot] Posição BTC: 0.00006148 | Saldo BRL: 0.01 | Saldo BTC: 0.00040420 
+19:51:10.406 [INFO]   [Bot] Ordens Ativas: 1 | Fills: 0 | Cancelamentos: 0 
+19:51:10.478 [INFO]   [Bot] Taxa de Fill: 0.0% | Preço Médio Fill: 520787.07 BRL | Uptime: 1min 
+19:51:10.564 [INFO]   [Bot] ──────────────────────────────────────────── 
+19:51:38.103 [INFO]   [Bot] Iniciando ciclo 3. 
+19:51:38.110 [DEBUG]  [Bot] Sincronização: Carregadas 4 ordens da BD (BUY: 0✓, SELL: 4✓). Pares no mapa: 4 
+19:51:38.510 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=481166.00, Best Ask=481397.00. 
+19:51:38.524 [INFO]   [Bot] Volatilidade calculada: 2.91%. 
+19:51:38.580 [DEBUG]  [Bot] Volatilidade no ciclo 3: 2.91% 
+19:51:38.653 [INFO]   [Bot] RSI calculado: 46.47. 
+19:51:38.718 [INFO]   [Bot] EMA(8) calculada: 481232.59. 
+19:51:38.770 [INFO]   [Bot] EMA(20) calculada: 481069.39. 
+19:51:38.828 [INFO]   [Bot] EMA(12) calculada: 481180.38. 
+19:51:38.881 [INFO]   [Bot] EMA(26) calculada: 480978.12. 
+19:51:39.017 [INFO]   [Bot] EMA(9) calculada: 481242.51. 
+19:51:39.099 [INFO]   [Bot] MACD calculado: MACD=202.27, Signal=481242.51. 
+19:51:39.185 [INFO]   [Bot] Volatilidade calculada: 2.91%. 
+19:51:39.248 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=0.00%, PnL médio=0.00. 
+19:51:39.315 [INFO]   [Bot] ADX calculado: 8.57. 
+19:51:39.390 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.31","expectedProfit":"0.08","rsi":"46.47","emaShort":"481232.59","emaLong":"481069.39...
+19:51:39.460 [INFO]   [Bot] 
+═════════════════════════════════════════════════════════════════
+📊 ESTRATÉGIA ADAPTATIVA ATIVADA: ⚪ NEUTRAL: Market making equilibrado
+═════════════════════════════════════════════════════════════════
+
+🎯 TENDÊNCIA: NEUTRAL
+   • Spread: 1.2%
+   • Order Size: 5 µBTC (micro-ordens)
+   • Viés: 0.00000 (NEUTRAL)
+   • Max Position: 0.000300 BTC
+   • Stop Loss: 0.12%
+
+📋 PROPORÇÃO DE ORDENS:
+   • BUY: 50% | SELL: 50%
+   • Colocando BUY e SELL equilibrados
+
+═════════════════════════════════════════════════════════════════
+ 
+19:51:39.528 [DEBUG]  [Bot] Convicção calculada: 54.8% | Tendência: UP | Força: WEAK 
+19:51:39.603 [DEBUG]  [Bot] [SPREAD_ADAPT] vol=2.91% regime=NEUTRAL rsi=46 conviction=0.55 => spread=3.50% 
+19:51:39.691 [INFO]   [Bot] [CICLO 3] Spread adaptativo: 3.50% | Vol: 2.91% | Regime: NEUTRAL | Confiança: 54.8% 
+19:51:39.771 [WARN]   [Bot] Preço de venda 488746.39 muito acima do mercado (481281.50). Ajustando para 483687.91. 
+19:51:39.868 [WARN]   [Bot] Spread inválido ou muito estreito. Ajustando para spread natural. 
+2026-01-20T19:51:39.960Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/BTC-BRL/orders/01KFE8DH87MAGHQGVDFS0Q8VXB' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTQyMjI2LCJleHQiOnt9LCJpYXQiOjE3Njg5Mzg2MjYsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiM2MyMjlhZjYtOGRlZC00ZjUyLThjN2MtNWI0ZTJkYjIyMzYwIiwibmJmIjoxNzY4OTM4NjI2LCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.E1A1gmJ4i35sOiMWwcQ6stl0cbWbZDSRTFfAkRx8ZIciiIwFqzCua2MNpuWQoGmI6JvefSdhn6NTu24dlUuRmjOq25bB7Fa0SSdD2zYwL5wxSIuvxxiwDAVOH6G0tLgOOc7Nyf1UbEky_WJkJAiMhWrGO9FRgBPoyCIBWBwR7qOGnaTbPyVt1AUm_PHPKSRtyvB5HSQi8G6gIs3sDXZbos89hrFBHQt47d49U6FFIillSis7SMePFniRaUhvoAyKLOndBOmMwp8dfRROFqhuqy06RABsehv3inOJRBjXY2es373kJGeN-moGkvXr6bOZK6dJcn1xufAwDqcGt-DBKpbjffCIKe0xPfje_AgDNHOjYLusY7s4AU8YoBxYkFGSzzkJOXSjgt7vV6122OvrXAycoq8N90Fi3RQ5pJV-kfLeCR_GTCRmFBtD6AVRiLP-zMtNT0r3X5vuamWkS3lz4UTiVkVL6FO4KEMWDjIuX1LFOWb13gz4kMGWrK6S64t-t7afk8CF1TjFK2J0tTR9jv5C2kZzRslTYkcgVakO2xxiyX4TkOkq0n7qe3CZaH76srLdRgk13ENYeTtO6zsi8mCarOKMIZH2ob8KMjCTJQvT8vb1gjOS5nCMtrCYrlF__vDRP4e6GmwDP9lPmvd6FaF4HqQYBoPIDnYisrHwcAM' -H 'User-Agent: MB-Bot/1.2.1'
+19:51:40.206 [DEBUG]  [Bot] Status ordem 01KFE8DH87MAGHQGVDFS0Q8VXB: working, Filled: 0.00000000. 
+2026-01-20T19:51:40.213Z [DEBUG]  Rate limit: waiting 80ms
+2026-01-20T19:51:40.294Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/balances' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTQyMjI2LCJleHQiOnt9LCJpYXQiOjE3Njg5Mzg2MjYsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiM2MyMjlhZjYtOGRlZC00ZjUyLThjN2MtNWI0ZTJkYjIyMzYwIiwibmJmIjoxNzY4OTM4NjI2LCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.E1A1gmJ4i35sOiMWwcQ6stl0cbWbZDSRTFfAkRx8ZIciiIwFqzCua2MNpuWQoGmI6JvefSdhn6NTu24dlUuRmjOq25bB7Fa0SSdD2zYwL5wxSIuvxxiwDAVOH6G0tLgOOc7Nyf1UbEky_WJkJAiMhWrGO9FRgBPoyCIBWBwR7qOGnaTbPyVt1AUm_PHPKSRtyvB5HSQi8G6gIs3sDXZbos89hrFBHQt47d49U6FFIillSis7SMePFniRaUhvoAyKLOndBOmMwp8dfRROFqhuqy06RABsehv3inOJRBjXY2es373kJGeN-moGkvXr6bOZK6dJcn1xufAwDqcGt-DBKpbjffCIKe0xPfje_AgDNHOjYLusY7s4AU8YoBxYkFGSzzkJOXSjgt7vV6122OvrXAycoq8N90Fi3RQ5pJV-kfLeCR_GTCRmFBtD6AVRiLP-zMtNT0r3X5vuamWkS3lz4UTiVkVL6FO4KEMWDjIuX1LFOWb13gz4kMGWrK6S64t-t7afk8CF1TjFK2J0tTR9jv5C2kZzRslTYkcgVakO2xxiyX4TkOkq0n7qe3CZaH76srLdRgk13ENYeTtO6zsi8mCarOKMIZH2ob8KMjCTJQvT8vb1gjOS5nCMtrCYrlF__vDRP4e6GmwDP9lPmvd6FaF4HqQYBoPIDnYisrHwcAM' -H 'User-Agent: MB-Bot/1.2.1'
+19:51:40.946 [ALERT]  [Bot] Saldo BRL muito baixo (0.01 < 19.25). Considere depositar mais fundos. 
+📊 [ADAPTIVE] Análise: {"trend":"neutral","strength":"0.00","indicators":4,"confidence":"low"}
+🎯 [ADAPTIVE] Adaptando para tendência: NEUTRAL
+💡 [ADAPTIVE] Estratégia: balanced
+🎯 [POSITION] Trend: neutral | BTC: 0.00006148 | BRL: R$ 0.01
+19:51:40.957 [SUCCESS] [Bot] [ADAPTIVE] Adapted to neutral trend with low confidence 
+19:51:41.087 [INFO]   [Bot] [ADAPTIVE] Config atualizada - Spread: 1.20% | Size: 0.000006 | MaxPos: 0.0002 
+19:51:41.189 [WARN]   [Bot] Saldo BRL insuficiente (0.01 < 9.98). Ignorando compra. 
+19:51:41.289 [WARN]   [Bot] Aguardando BUY para completar par SELL (4 SELL vs 0 BUY) - não colocando SELL. 
+19:51:41.380 [DEBUG]  [Bot] [MÚLTIPLOS PARES] Avaliação: TotalPos=0.00002016 BTC, MaxPos=0.00020000 BTC, ActivePairs=4/3, CompletePairs=0, CanAdd=false 
+19:51:41.479 [DEBUG]  [Bot] Limite de pares atingido: 4/3 pares ativos 
+19:51:41.558 [DEBUG]  [Bot] PnL Calculation: Realized=0.19 | Unrealized=-2.43 | Total=-2.24 | Position=0.00006148 BTC | Cost Basis=32.02 BRL 
+19:51:41.640 [INFO]   [Bot] ────────────── Mini Dashboard ────────────── 
+19:51:41.705 [INFO]   [Bot] Ciclo: 3 | Mid Price: 481281.50 | Tendência: neutral | Regime: NEUTRAL 
+19:51:41.789 [INFO]   [Bot] 🟡 Convicção: 54.8% | Tendência Convicção: UP | Força: WEAK 
+19:51:41.881 [INFO]   [Bot]    Indicadores concordam: 3/6 | Nível volatilidade: VERY_LOW 
+19:51:41.967 [INFO]   [Bot] 🌐 Tendência Externa: BEARISH (Score: 29/100, Confiança: 100%) 
+19:51:42.065 [INFO]   [Bot] ⚠️ Alinhamento: Bot=NEUTRAL vs Externo=BEARISH 
+19:51:42.147 [INFO]   [Bot] RSI: 46.47 | EMA Curta: 481232.59 | EMA Longa: 481069.39 
+19:51:42.233 [INFO]   [Bot] MACD: N/A | Signal: N/A | Volatilidade: 2.91% 
+19:51:42.305 [INFO]   [Bot] Score Lucro Esperado: 0.08 | Confiança: 0.31 
+19:51:42.377 [INFO]   [Bot] Spread: 1.500% | Buy Price: 477671.88 | Sell Price: 484891.12 
+19:51:42.442 [INFO]   [Bot] Tamanho Ordens: 0.00002083 BTC | Volatilidade: 2.91% 
+19:51:42.521 [INFO]   [Bot] Viés Inventário (Skew): 0.002951 | Viés Tendência: 0.000000 | Total Bias: 0.007951 
+19:51:42.593 [INFO]   [Bot] PnL Total: -2.24 BRL | ROI: -3.67% | PnL Não Realizado: -2.43 BRL 
+19:51:42.662 [INFO]   [Bot] Posição BTC: 0.00006148 | Saldo BRL: 0.01 | Saldo BTC: 0.00040420 
+19:51:42.774 [INFO]   [Bot] Ordens Ativas: 1 | Fills: 0 | Cancelamentos: 0 

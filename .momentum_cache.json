@@ -1,0 +1,51 @@
+{
+  "simulatedOrders": [
+    {
+      "id": "sell_PENDING_1768965033958_lui7kg9y0",
+      "side": "sell",
+      "createdPrice": 480331.5,
+      "currentPrice": 479844,
+      "status": "simulated",
+      "qty": 0.0001502795,
+      "peaks": [
+        480331.5
+      ],
+      "valleys": [
+        480331.5,
+        480157,
+        479853.5,
+        479844
+      ],
+      "createdAt": 1768965033958,
+      "reason": null,
+      "reversalThreshold": 0.001,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        480331.5,
+        480157,
+        479853.5,
+        479844
+      ]
+    }
+  ],
+  "status": {
+    "total": 1,
+    "byStatus": {
+      "simulated": 1,
+      "pending": 0,
+      "confirmed": 0,
+      "rejected": 0
+    },
+    "orders": [
+      {
+        "id": "sell_PENDING_1768965033958_lui7kg9y0",
+        "side": "sell",
+        "createdPrice": 480331.5,
+        "currentRange": "479844.00 - 480331.50",
+        "status": "simulated",
+        "cycles": 3
+      }
+    ]
+  },
+  "lastUpdate": "2026-01-21T03:12:01.030Z"
+}

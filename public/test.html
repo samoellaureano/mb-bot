@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <pre id="output">Loading...</pre>
+    
+    <script>
+        async function test() {
+            try {
+                console.log('Starting fetch...');
+                const res = await fetch('http://localhost:3001/api/data?t=' + Date.now());
+                console.log('Got response:', res.status);
+                const data = await res.json();
+                console.log('Parsed JSON:', data);
+                
+                // Test formatting
+                const price = parseFloat(data.market?.last);
+                console.log('Price:', price, 'Type:', typeof price, 'isFinite:', isFinite(price));
+                
+                let formatted = '';
+                try {
+                    formatted = price.toLocaleString('pt-BR');
+                    console.log('✅ Formatted:', formatted);
+                } catch (e) {
+                    console.error('❌ Format error:', e.message);
+                    formatted = 'ERROR: ' + e.message;
+                }
+                
+                const output = `
+Mode: ${data.mode}
+Price: ${price} -> ${formatted}
+PnL: ${data.stats?.totalPnL}
+Spread: ${data.market?.spread}
+Volatility: ${data.market?.volatility}
+                `.trim();
+                
+                document.getElementById('output').textContent = output;
+                console.log('✅ Test complete');
+            } catch (error) {
+                console.error('❌ Error:', error);
+                document.getElementById('output').textContent = 'ERROR: ' + error.message + '\n\nStack:\n' + error.stack;
+            }
+        }
+        
+        // Run on load
+        test();
+    </script>
+</body>
+</html>

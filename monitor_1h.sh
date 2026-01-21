@@ -1,13 +1,113 @@
 #!/bin/bash
 
-# Script de monitoramento e validação 1 hora
+# Monitor de 1 hora - Acompanhar evolução dos ciclos do bot
 # Execução: ./monitor_1h.sh
 
 cd /mnt/c/PROJETOS_PESSOAIS/mb-bot
 
-echo "🇧🇷 MONITORAMENTO 1 HORA - BOT TRADING REAL"
-echo "⏰ Início: $(TZ='America/Sao_Paulo' date)"
-echo "⏰ Fim previsto: $(TZ='America/Sao_Paulo' date -d '+1 hour')"
+echo "🚀 INICIANDO MONITORAMENTO DE 1 HORA"
+echo "⏰ Início: $(date)"
+echo "📊 Intervalo: 30 segundos entre verificações"
+echo "🎯 Duração: 1 hora (120 verificações)"
+echo "════════════════════════════════════════════"
+
+# Variáveis
+COUNTER=0
+MAX_CHECKS=120  # 1 hora = 3600 segundos / 30 segundos = 120 checks
+START_TIME=$(date +%s)
+
+while [ $COUNTER -lt $MAX_CHECKS ]; do
+    CURRENT_TIME=$(date +%s)
+    ELAPSED=$((CURRENT_TIME - START_TIME))
+    MINUTES=$((ELAPSED / 60))
+    REMAINING=$((60 - MINUTES))
+    
+    echo ""
+    echo "⏱️ [$((COUNTER + 1))/120] - ${MINUTES}m decorridos | ${REMAINING}m restantes"
+    echo "🔍 $(date '+%H:%M:%S')"
+    
+    # Extrair informações dos logs do bot
+    if [ -f bot.log ]; then
+        # Último ciclo
+        LAST_CYCLE=$(tail -100 bot.log | grep -o "Ciclo: [0-9]*" | tail -1)
+        
+        # PnL atual
+        CURRENT_PNL=$(tail -50 bot.log | grep "PnL Total:" | tail -1 | grep -o "PnL Total: [^|]*" | tail -1)
+        
+        # Preço mid atual
+        MID_PRICE=$(tail -50 bot.log | grep "Mid Price:" | tail -1 | grep -o "Mid Price: [0-9]*\.[0-9]*" | tail -1)
+        
+        # Tendência atual
+        TREND=$(tail -50 bot.log | grep "Tendência:" | tail -1 | grep -o "Tendência: [^|]*" | tail -1)
+        
+        # Ordens ativas
+        ACTIVE_ORDERS=$(tail -50 bot.log | grep "Ordens Ativas:" | tail -1 | grep -o "Ordens Ativas: [0-9]*" | tail -1)
+        
+        # Taxa de fill
+        FILL_RATE=$(tail -50 bot.log | grep "Taxa de Fill:" | tail -1 | grep -o "Taxa de Fill: [^|]*" | tail -1)
+        
+        # Convicção
+        CONVICTION=$(tail -50 bot.log | grep "Convicção:" | tail -1 | grep -o "Convicção: [0-9]*\.[0-9]*%" | tail -1)
+        
+        echo "📈 ${LAST_CYCLE:-Aguardando...}"
+        echo "💰 ${CURRENT_PNL:-Aguardando PnL...}"
+        echo "🏷️ ${MID_PRICE:-Aguardando preço...}"
+        echo "📊 ${TREND:-Aguardando tendência...}"
+        echo "📋 ${ACTIVE_ORDERS:-Aguardando ordens...}"
+        echo "🎯 ${FILL_RATE:-Aguardando taxa...}"
+        echo "🔥 ${CONVICTION:-Aguardando convicção...}"
+        
+        # Verificar se houve fills
+        NEW_FILLS=$(tail -20 bot.log | grep -c "EXECUTADO\|executada\|FILL")
+        if [ "$NEW_FILLS" -gt 0 ]; then
+            echo "🚨 $NEW_FILLS FILLS detectados nos últimos logs!"
+            tail -10 bot.log | grep -E "EXECUTADO|executada|FILL" | tail -3
+        fi
+        
+        # Verificar erros recentes
+        RECENT_ERRORS=$(tail -50 bot.log | grep -c "ERROR\|ERRO")
+        if [ "$RECENT_ERRORS" -gt 0 ]; then
+            echo "⚠️ $RECENT_ERRORS erros detectados nos últimos logs!"
+        fi
+        
+    else
+        echo "❌ Arquivo bot.log não encontrado"
+    fi
+    
+    echo "────────────────────────────────────────────"
+    
+    # Incrementar contador
+    COUNTER=$((COUNTER + 1))
+    
+    # Aguardar 30 segundos antes da próxima verificação
+    if [ $COUNTER -lt $MAX_CHECKS ]; then
+        sleep 30
+    fi
+done
+
+echo ""
+echo "🏁 MONITORAMENTO CONCLUÍDO!"
+echo "⏰ Fim: $(date)"
+echo "📊 Total de verificações: 120"
+echo "⏱️ Duração: 1 hora"
+echo "════════════════════════════════════════════"
+
+# Resumo final
+echo ""
+echo "📋 RESUMO FINAL:"
+if [ -f bot.log ]; then
+    echo "🔄 Total de ciclos executados:"
+    grep -o "Ciclo: [0-9]*" bot.log | tail -1
+    
+    echo "💰 PnL final:"
+    grep "PnL Total:" bot.log | tail -1 | grep -o "PnL Total: [^|]*"
+    
+    echo "📈 Fills totais:"
+    grep -c "EXECUTADO\|executada\|FILL" bot.log || echo "0 fills"
+    
+    echo "⚠️ Erros totais:"
+    grep -c "ERROR\|ERRO" bot.log || echo "0 erros"
+fi
 echo "📊 Dashboard: http://localhost:3001"
 echo "💰 TRADING REAL ATIVO!"
 echo "============================================"

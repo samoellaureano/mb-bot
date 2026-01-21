@@ -1,0 +1,30 @@
+15:13:15 [INFO] [Test] Iniciando testes...
+15:13:15 [DEBUG] [Test] debug
+15:13:15 [INFO] [Test] info
+15:13:15 [SUCCESS] [Test] success
+15:13:15 [WARN] [Test] warn
+15:13:15 [ERROR] [Test] error
+15:13:15 [SUCCESS] [Test] ✓ Logger deve registrar em todos os níveis
+15:13:15 [SUCCESS] [Test] ✓ Logger deve filtrar por nível mínimo
+15:13:15 [SUCCESS] [Test] ✓ Circuit Breaker deve começar em CLOSED
+15:13:15 [SUCCESS] [Test] ✓ Circuit Breaker deve abrir após falhas consecutivas
+15:13:15 [SUCCESS] [Test] ✓ Circuit Breaker deve rejeitar em estado OPEN
+15:13:15 [SUCCESS] [Test] ✓ Circuit Breaker deve resetar após sucessos
+15:13:15 [SUCCESS] [Test] ✓ Health Check deve registrar checks
+15:13:15 [SUCCESS] [Test] ✓ Health Check deve rodar todos os checks
+15:13:15 [SUCCESS] [Test] ✓ Health Check deve marcar como UNHEALTHY em erro crítico
+15:13:15 [SUCCESS] [Test] ✓ ValidationError deve ter código correto
+15:13:15 [SUCCESS] [Test] ✓ APIError deve ser retryable para status 500
+15:13:15 [WARN] [Test] ⚠️ ValidationError: Error 1 | {"field":"field1"}
+15:13:16 [WARN] [Test] ⚠️ ValidationError: Error 2 | {"field":"field2"}
+15:13:16 [ERROR] [Test] ❌ APIError: Error 3 | {"apiName":"API"}
+15:13:16 [SUCCESS] [Test] ✓ ErrorHandler deve contar erros
+15:13:16 [SUCCESS] [Test] ✓ retryAsync deve retentar em caso de falha
+15:13:16 [SUCCESS] [Test] ✓ retryAsync deve lançar após max retries
+15:13:16 [SUCCESS] [Test] ✓ retryAsync não deve retentar se not retryable
+15:13:16 [INFO] [Test] 
+═══════════════════════════════════
+15:13:16 [SUCCESS] [Test] ✓ Testes passaram: 15
+15:13:16 [SUCCESS] [Test] 🎉 Todos os testes passaram!
+15:13:16 [INFO] [Test] ═══════════════════════════════════
+

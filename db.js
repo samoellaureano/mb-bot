@@ -116,6 +116,29 @@ class Database {
                         )`,
                         // Índice para recovery_points
                         `CREATE INDEX IF NOT EXISTS idx_recovery_points_session ON recovery_points(session_id)`,
+                        // Tabela momentum_orders - Registros de validação de momentum
+                        `CREATE TABLE IF NOT EXISTS momentum_orders (
+                            id TEXT PRIMARY KEY,
+                            side TEXT NOT NULL CHECK (side IN ('buy', 'sell')),
+                            created_price REAL NOT NULL CHECK (created_price > 0),
+                            current_price REAL NOT NULL CHECK (current_price > 0),
+                            status TEXT NOT NULL CHECK (status IN ('simulated', 'pending', 'confirmed', 'rejected', 'expired')) DEFAULT 'simulated',
+                            qty REAL NOT NULL CHECK (qty > 0),
+                            peaks TEXT,
+                            valleys TEXT,
+                            confirmation_reversals INTEGER DEFAULT 0,
+                            reason TEXT,
+                            reversal_threshold REAL DEFAULT 0.01,
+                            created_at INTEGER NOT NULL,
+                            updated_at INTEGER NOT NULL,
+                            confirmed_at INTEGER,
+                            rejected_at INTEGER,
+                            price_history TEXT
+                        )`,
+                        // Índice para momentum_orders
+                        `CREATE INDEX IF NOT EXISTS idx_momentum_status ON momentum_orders(status)`,
+                        `CREATE INDEX IF NOT EXISTS idx_momentum_created_at ON momentum_orders(created_at DESC)`,
+                        `CREATE INDEX IF NOT EXISTS idx_momentum_side ON momentum_orders(side)`,
                         // Inicializar stats
                         `INSERT OR IGNORE INTO stats (key, value) VALUES ('cycles', 0)`
                     ];
@@ -645,6 +668,169 @@ class Database {
                     resolve({updated, totalLegacy: rows.length});
                 });
             });
+        });
+    }
+
+    /**
+     * Salvar ordem de momentum no banco de dados
+     */
+    async saveMomentumOrder(order) {
+        return new Promise((resolve, reject) => {
+            const peaks = JSON.stringify(order.peaks || []);
+            const valleys = JSON.stringify(order.valleys || []);
+            const priceHistory = JSON.stringify((order.priceHistory || []).slice(-20));
+            const now = Math.floor(Date.now() / 1000);
+
+            this.db.run(
+                `INSERT OR REPLACE INTO momentum_orders 
+                (id, side, created_price, current_price, status, qty, peaks, valleys, 
+                 confirmation_reversals, reason, reversal_threshold, created_at, updated_at, 
+                 confirmed_at, rejected_at, price_history)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    order.id,
+                    order.side,
+                    order.createdPrice,
+                    order.currentPrice,
+                    order.status,
+                    order.qty,
+                    peaks,
+                    valleys,
+                    order.confirmationReversals || 0,
+                    order.reason || null,
+                    order.reversalThreshold || 0.01,
+                    order.createdAt || now,
+                    now,
+                    order.status === 'confirmed' ? now : null,
+                    order.status === 'rejected' ? now : null,
+                    priceHistory
+                ],
+                (err) => {
+                    if (err) {
+                        this.log('ERROR', `Erro ao salvar momentum order: ${err.message}`);
+                        return reject(err);
+                    }
+                    resolve(order);
+                }
+            );
+        });
+    }
+
+    /**
+     * Carregar ordens de momentum do banco de dados
+     */
+    async getMomentumOrders(filters = {}) {
+        return new Promise((resolve, reject) => {
+            let query = `SELECT * FROM momentum_orders WHERE 1=1`;
+            const params = [];
+
+            if (filters.status) {
+                query += ` AND status = ?`;
+                params.push(filters.status);
+            }
+
+            if (filters.side) {
+                query += ` AND side = ?`;
+                params.push(filters.side);
+            }
+
+            if (filters.limit) {
+                query += ` ORDER BY updated_at DESC LIMIT ?`;
+                params.push(filters.limit);
+            } else {
+                query += ` ORDER BY updated_at DESC`;
+            }
+
+            this.db.all(query, params, (err, rows) => {
+                if (err) {
+                    this.log('ERROR', `Erro ao carregar momentum orders: ${err.message}`);
+                    return reject(err);
+                }
+
+                // Parse JSON fields
+                const parsed = (rows || []).map(row => ({
+                    ...row,
+                    peaks: row.peaks ? JSON.parse(row.peaks) : [],
+                    valleys: row.valleys ? JSON.parse(row.valleys) : [],
+                    priceHistory: row.price_history ? JSON.parse(row.price_history) : []
+                }));
+
+                resolve(parsed);
+            });
+        });
+    }
+
+    /**
+     * Deletar ordem de momentum expirada
+     */
+    async deleteMomentumOrder(id) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                `DELETE FROM momentum_orders WHERE id = ?`,
+                [id],
+                (err) => {
+                    if (err) {
+                        this.log('ERROR', `Erro ao deletar momentum order: ${err.message}`);
+                        return reject(err);
+                    }
+                    resolve();
+                }
+            );
+        });
+    }
+
+    /**
+     * Limpar momentum orders expiradas (> 5 minutos)
+     */
+    async cleanupExpiredMomentumOrders(maxAgeSeconds = 300) {
+        return new Promise((resolve, reject) => {
+            const cutoffTime = Math.floor(Date.now() / 1000) - maxAgeSeconds;
+
+            this.db.run(
+                `DELETE FROM momentum_orders 
+                 WHERE status IN ('simulated', 'pending', 'rejected', 'expired') 
+                 AND created_at < ?`,
+                [cutoffTime],
+                function(err) {
+                    if (err) {
+                        this.log('ERROR', `Erro ao limpar momentum orders: ${err.message}`);
+                        return reject(err);
+                    }
+                    resolve(this.changes);
+                }
+            );
+        });
+    }
+
+    /**
+     * Obter estatísticas de momentum
+     */
+    async getMomentumStats(hours = 24) {
+        return new Promise((resolve, reject) => {
+            const cutoffTime = Math.floor(Date.now() / 1000) - (hours * 3600);
+
+            this.db.get(
+                `SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
+                    SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status = 'simulated' THEN 1 ELSE 0 END) as simulated,
+                    SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END) as expired,
+                    AVG(confirmation_reversals) as avg_reversals,
+                    SUM(CASE WHEN side = 'buy' THEN 1 ELSE 0 END) as buy_count,
+                    SUM(CASE WHEN side = 'sell' THEN 1 ELSE 0 END) as sell_count
+                 FROM momentum_orders
+                 WHERE created_at > ?`,
+                [cutoffTime],
+                (err, row) => {
+                    if (err) {
+                        this.log('ERROR', `Erro ao obter momentum stats: ${err.message}`);
+                        return reject(err);
+                    }
+                    resolve(row || {total: 0});
+                }
+            );
         });
     }
 }

@@ -1,0 +1,77 @@
+20/01/2026, 15:49:09 [INFO] [DB] WAL mode ativado
+20/01/2026, 15:49:09 [SUCCESS] [DB] Banco de dados inicializado com sucesso.
+[18:49:09] [DASHBOARD INFO] Carregando histórico de PnL do banco de dados... 
+[18:49:09] [DASHBOARD INFO] Iniciando carregamento de histórico de preços... 
+[18:49:09] [DASHBOARD INFO] Carregados 172 pontos de PnL do banco de dados 
+[18:49:09] [DASHBOARD INFO] Carregados 30 fills históricos do banco de dados. 
+[18:49:09] [DASHBOARD INFO] Carregados 397 preços históricos do banco de dados. 
+[18:49:09] [DASHBOARD INFO] Dashboard ready at http://localhost:3001 - Mode: LIVE 
+2026-01-20T18:49:10.159Z [WARN]   Token expired/near expiry, reauthenticating...
+2026-01-20T18:49:10.160Z [INFO]   API_KEY: bdb29a91...
+2026-01-20T18:49:10.160Z [INFO]   API_SECRET: e14075f1...
+2026-01-20T18:49:11.161Z [INFO]   Account ID: f02d1506...
+2026-01-20T18:49:11.162Z [INFO]   Access Token: eyJhbGci...
+2026-01-20T18:49:11.162Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+2026-01-20T18:49:11.171Z [DEBUG]  Rate limit: waiting 333ms
+2026-01-20T18:49:11.172Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/tickers?symbols=BTC-BRL' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTM4NTUxLCJleHQiOnt9LCJpYXQiOjE3Njg5MzQ5NTEsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiOWU4NzJkYmYtZWZhMy00NTQ2LWEyZjMtOTAzYTdmNmU2ODc2IiwibmJmIjoxNzY4OTM0OTUxLCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.WAdqi9RXODHwyI_yxROpQ6Ar51jqwbbKP9wFHudUR32jpB_RC7SYqNa14MIPcr6hobOqILHI79umc5amqSze-lgJIrO2n2pKDnB2-ZDEyOyZfGLwbHHGJYUc92w_2dOivZeW6lmUfMv8CqgVwvhbwOShgF2FBY_If7ChlLGUpox4-nUVBxJ2lOoMdfYxZTQeBy_SmN_9st50_fwed0sHzD8c_9X_lfJACUnjlvhOuRl7veMzQSS6dIM67Z18yCdcEA_X_L1A9iXLSn4aLxj2G2FSNSLZNsRLoaYxHN_PRzQaDnLzXwcz3ivViwqWJZKpUodfOeGh7XQcVp1Db_kAYn8OfuzyBtJeBym0aQJjxpuyff9Yna9tpFA48RJ9pfRQWMNTXv5dXHx7QIMzrQPHUXDgAGEdOI3hLf8se8RlR41_h6fDhN2R7BqN0pc0jLGSLHg0qbvPhwfg6ye2z8uYWE-Qw1owyglO8JvUG97dYY4Y0s714jrascm22kwpSXqA2LdLROg1ok4jGQpF_Wkwd2MymephmevxPDwsSa5cSimiNngrL1kusqDUUy6zvXwQVaSiJi79qcmvIf561urtX94ewn0g4-4_0AGzuo1UnLLyu8v5sfTAsrH7DdUGVJX5WlCAjc4v1dLjbj7zLsj2oPHcOrDEBpmJn-bEqWYwv-E' -H 'User-Agent: MB-Bot/1.2.1'
+2026-01-20T18:49:11.505Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/balances' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTM4NTUxLCJleHQiOnt9LCJpYXQiOjE3Njg5MzQ5NTEsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiOWU4NzJkYmYtZWZhMy00NTQ2LWEyZjMtOTAzYTdmNmU2ODc2IiwibmJmIjoxNzY4OTM0OTUxLCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.WAdqi9RXODHwyI_yxROpQ6Ar51jqwbbKP9wFHudUR32jpB_RC7SYqNa14MIPcr6hobOqILHI79umc5amqSze-lgJIrO2n2pKDnB2-ZDEyOyZfGLwbHHGJYUc92w_2dOivZeW6lmUfMv8CqgVwvhbwOShgF2FBY_If7ChlLGUpox4-nUVBxJ2lOoMdfYxZTQeBy_SmN_9st50_fwed0sHzD8c_9X_lfJACUnjlvhOuRl7veMzQSS6dIM67Z18yCdcEA_X_L1A9iXLSn4aLxj2G2FSNSLZNsRLoaYxHN_PRzQaDnLzXwcz3ivViwqWJZKpUodfOeGh7XQcVp1Db_kAYn8OfuzyBtJeBym0aQJjxpuyff9Yna9tpFA48RJ9pfRQWMNTXv5dXHx7QIMzrQPHUXDgAGEdOI3hLf8se8RlR41_h6fDhN2R7BqN0pc0jLGSLHg0qbvPhwfg6ye2z8uYWE-Qw1owyglO8JvUG97dYY4Y0s714jrascm22kwpSXqA2LdLROg1ok4jGQpF_Wkwd2MymephmevxPDwsSa5cSimiNngrL1kusqDUUy6zvXwQVaSiJi79qcmvIf561urtX94ewn0g4-4_0AGzuo1UnLLyu8v5sfTAsrH7DdUGVJX5WlCAjc4v1dLjbj7zLsj2oPHcOrDEBpmJn-bEqWYwv-E' -H 'User-Agent: MB-Bot/1.2.1'
+[18:49:12] [DASHBOARD DEBUG] Database PnL: 0, Capital Base: R$ 220.00, Saldo Atual: R$ 206.92 
+[18:49:12] [DASHBOARD DEBUG] PnL Correto: Realizado=0.19 + Não Realizado=-2.39 = Total=-2.20 | Position=0.00006148 BTC | Cost Basis=32.02 BRL 
+[18:49:12] [DASHBOARD INFO] RSI calculado: 46.32. 
+[18:49:12] [DASHBOARD INFO] EMA(8) calculada: 481510.18. 
+[18:49:12] [DASHBOARD INFO] EMA(20) calculada: 481662.67. 
+[18:49:12] [DASHBOARD INFO] EMA(12) calculada: 481486.67. 
+[18:49:12] [DASHBOARD INFO] EMA(26) calculada: 481744.46. 
+[18:49:12] [DASHBOARD INFO] EMA(9) calculada: 481497.90. 
+[18:49:12] [DASHBOARD INFO] MACD calculado: MACD=-257.79, Signal=481497.90. 
+[18:49:12] [DASHBOARD INFO] Volatilidade calculada: 2.00%. 
+[18:49:12] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[18:49:12] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.00',
+  rsi: '46.32',
+  emaShort: '481510.18',
+  emaLong: '481662.67',
+  volatility: '2.00',
+  macd: '-257.79',
+  signal: '481497.90'
+}
+18:49:12 [TREND INFO] Iniciando análise de tendência externa... 
+18:49:14 [TREND INFO] CoinGecko Score: 37
+18:49:14 [TREND INFO] Binance Score: 20
+18:49:14 [TREND INFO] Fear & Greed Score: 32
+18:49:14 [TREND SUCCESS] Análise externa concluída: {"trend":"BEARISH","score":29,"confidence":100}
+[18:49:14] [DASHBOARD DEBUG] External trend data obtained { trend: 'BEARISH', score: 29, confidence: 100 }
+2026-01-20T18:49:44.818Z [DEBUG]  Rate limit: waiting 333ms
+2026-01-20T18:49:44.818Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/tickers?symbols=BTC-BRL' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTM4NTUxLCJleHQiOnt9LCJpYXQiOjE3Njg5MzQ5NTEsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiOWU4NzJkYmYtZWZhMy00NTQ2LWEyZjMtOTAzYTdmNmU2ODc2IiwibmJmIjoxNzY4OTM0OTUxLCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.WAdqi9RXODHwyI_yxROpQ6Ar51jqwbbKP9wFHudUR32jpB_RC7SYqNa14MIPcr6hobOqILHI79umc5amqSze-lgJIrO2n2pKDnB2-ZDEyOyZfGLwbHHGJYUc92w_2dOivZeW6lmUfMv8CqgVwvhbwOShgF2FBY_If7ChlLGUpox4-nUVBxJ2lOoMdfYxZTQeBy_SmN_9st50_fwed0sHzD8c_9X_lfJACUnjlvhOuRl7veMzQSS6dIM67Z18yCdcEA_X_L1A9iXLSn4aLxj2G2FSNSLZNsRLoaYxHN_PRzQaDnLzXwcz3ivViwqWJZKpUodfOeGh7XQcVp1Db_kAYn8OfuzyBtJeBym0aQJjxpuyff9Yna9tpFA48RJ9pfRQWMNTXv5dXHx7QIMzrQPHUXDgAGEdOI3hLf8se8RlR41_h6fDhN2R7BqN0pc0jLGSLHg0qbvPhwfg6ye2z8uYWE-Qw1owyglO8JvUG97dYY4Y0s714jrascm22kwpSXqA2LdLROg1ok4jGQpF_Wkwd2MymephmevxPDwsSa5cSimiNngrL1kusqDUUy6zvXwQVaSiJi79qcmvIf561urtX94ewn0g4-4_0AGzuo1UnLLyu8v5sfTAsrH7DdUGVJX5WlCAjc4v1dLjbj7zLsj2oPHcOrDEBpmJn-bEqWYwv-E' -H 'User-Agent: MB-Bot/1.2.1'
+2026-01-20T18:49:45.152Z [DEBUG]  CURL: curl -X GET 'https://api.mercadobitcoin.net/api/v4/accounts/f02d1506b14e6dda4a5f015f64af1b60f46ab56490a4a1547a924e4c2f6d6b82/balances' -H 'Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6InB1YmxpYzpoeWRyYS5qd3QuYWNjZXNzLXRva2VuIiwidHlwIjoiSldUIn0.eyJhdWQiOltdLCJjbGllbnRfaWQiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIiwiZXhwIjoxNzY4OTM4NTUxLCJleHQiOnt9LCJpYXQiOjE3Njg5MzQ5NTEsImlzcyI6Imh0dHBzOi8vc2VydmljZS1hY2NvdW50cy5tZXJjYWRvYml0Y29pbi5uZXQvIiwianRpIjoiOWU4NzJkYmYtZWZhMy00NTQ2LWEyZjMtOTAzYTdmNmU2ODc2IiwibmJmIjoxNzY4OTM0OTUxLCJzY3AiOlsicHJvZmlsZSIsImdsb2JhbCJdLCJzdWIiOiJiZGIyOWE5MTIyNDE3MjYxNDYxMWM0MWYyNzk2MmI5ODk2ZjU0NzQ3NDUxMzZmNTQ2NGQ0ZDhhMmE3ODg4MzhlIn0.WAdqi9RXODHwyI_yxROpQ6Ar51jqwbbKP9wFHudUR32jpB_RC7SYqNa14MIPcr6hobOqILHI79umc5amqSze-lgJIrO2n2pKDnB2-ZDEyOyZfGLwbHHGJYUc92w_2dOivZeW6lmUfMv8CqgVwvhbwOShgF2FBY_If7ChlLGUpox4-nUVBxJ2lOoMdfYxZTQeBy_SmN_9st50_fwed0sHzD8c_9X_lfJACUnjlvhOuRl7veMzQSS6dIM67Z18yCdcEA_X_L1A9iXLSn4aLxj2G2FSNSLZNsRLoaYxHN_PRzQaDnLzXwcz3ivViwqWJZKpUodfOeGh7XQcVp1Db_kAYn8OfuzyBtJeBym0aQJjxpuyff9Yna9tpFA48RJ9pfRQWMNTXv5dXHx7QIMzrQPHUXDgAGEdOI3hLf8se8RlR41_h6fDhN2R7BqN0pc0jLGSLHg0qbvPhwfg6ye2z8uYWE-Qw1owyglO8JvUG97dYY4Y0s714jrascm22kwpSXqA2LdLROg1ok4jGQpF_Wkwd2MymephmevxPDwsSa5cSimiNngrL1kusqDUUy6zvXwQVaSiJi79qcmvIf561urtX94ewn0g4-4_0AGzuo1UnLLyu8v5sfTAsrH7DdUGVJX5WlCAjc4v1dLjbj7zLsj2oPHcOrDEBpmJn-bEqWYwv-E' -H 'User-Agent: MB-Bot/1.2.1'
+[18:49:47] [DASHBOARD DEBUG] Database PnL: 0, Capital Base: R$ 220.00, Saldo Atual: R$ 207.00 
+[18:49:47] [DASHBOARD DEBUG] PnL Correto: Realizado=0.19 + Não Realizado=-2.38 = Total=-2.19 | Position=0.00006148 BTC | Cost Basis=32.02 BRL 
+[18:49:47] [DASHBOARD INFO] RSI calculado: 62.11. 
+[18:49:47] [DASHBOARD INFO] EMA(8) calculada: 481571.15. 
+[18:49:47] [DASHBOARD INFO] EMA(20) calculada: 481668.47. 
+[18:49:47] [DASHBOARD INFO] EMA(12) calculada: 481566.15. 
+[18:49:47] [DASHBOARD INFO] EMA(26) calculada: 481770.80. 
+[18:49:47] [DASHBOARD INFO] EMA(9) calculada: 481611.45. 
+[18:49:47] [DASHBOARD INFO] MACD calculado: MACD=-204.64, Signal=481611.45. 
+[18:49:47] [DASHBOARD INFO] Volatilidade calculada: 2.00%. 
+[18:49:47] [DASHBOARD INFO] Fills históricos insuficientes para análise. Retornando valores padrão. 
+[18:49:47] [DASHBOARD INFO] Previsão de preço {
+  trend: 'down',
+  confidence: '1.00',
+  expectedProfit: '0.33',
+  rsi: '62.11',
+  emaShort: '481571.15',
+  emaLong: '481668.47',
+  volatility: '2.00',
+  macd: '-204.64',
+  signal: '481611.45'
+}
+18:49:47 [TREND INFO] Iniciando análise de tendência externa... 
+18:49:47 [TREND INFO] CoinGecko Score: 37
+18:49:47 [TREND INFO] Binance Score: 20
+18:49:47 [TREND INFO] Fear & Greed Score: 32
+18:49:47 [TREND SUCCESS] Análise externa concluída: {"trend":"BEARISH","score":29,"confidence":100}
+[18:49:47] [DASHBOARD DEBUG] External trend data obtained { trend: 'BEARISH', score: 29, confidence: 100 }
+[18:50:12] [DASHBOARD INFO] Shutting down server... 

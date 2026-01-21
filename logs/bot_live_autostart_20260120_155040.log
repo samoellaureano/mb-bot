@@ -1,0 +1,38 @@
+18:59:27.918 [INFO]   [Bot] Inicializando bot... 
+18:59:27.943 [INFO]   [Bot] Inicializando banco de dados... 
+20/01/2026, 15:59:28 [INFO] [DB] WAL mode ativado
+20/01/2026, 15:59:28 [SUCCESS] [DB] Banco de dados inicializado com sucesso.
+18:59:28.173 [SUCCESS] [Bot] Banco de dados inicializado. 
+18:59:28.185 [INFO]   [Bot] Autenticando Mercado Bitcoin... 
+2026-01-20T18:59:28.263Z [INFO]   API_KEY: bdb29a91...
+2026-01-20T18:59:28.267Z [INFO]   API_SECRET: e14075f1...
+2026-01-20T18:59:30.462Z [INFO]   Account ID: f02d1506...
+2026-01-20T18:59:30.462Z [INFO]   Access Token: eyJhbGci...
+2026-01-20T18:59:30.463Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+18:59:30.464 [SUCCESS] [Bot] Autenticado com sucesso. 
+18:59:30.467 [INFO]   [Bot] Inicializando sistema adaptativo... 
+18:59:30.540 [SUCCESS] [Bot] Sistema adaptativo inicializado. 
+18:59:30.592 [INFO]   [Bot] Iniciando warmup com velas históricas para evitar decisões ruins iniciais. 
+18:59:30.823 [INFO]   [Bot] Buscadas 100 velas históricas válidas. 
+18:59:30.827 [SUCCESS] [Bot] Warmup completo com 60 velas históricas. 
+18:59:30.875 [INFO]   [Bot] Carregando fills históricos... 
+18:59:30.932 [SUCCESS] [Bot] Carregados 30 fills históricos. 
+18:59:30.989 [INFO]   [Bot] Iniciando loop principal. 
+18:59:31.050 [INFO]   [Bot] Iniciando ciclo 1. 
+18:59:31.108 [DEBUG]  [Bot] Sincronização: Carregadas 4 ordens da BD (BUY: 0✓, SELL: 4✓). Pares no mapa: 4 
+18:59:31.159 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+18:59:31 [TREND INFO] Iniciando análise de tendência externa... 
+18:59:31 [TREND INFO] CoinGecko Score: 37
+18:59:31 [TREND INFO] Binance Score: 20
+18:59:31 [TREND INFO] Fear & Greed Score: 32
+18:59:31 [TREND SUCCESS] Análise externa concluída: {"trend":"BEARISH","score":29,"confidence":100}
+18:59:31.735 [SUCCESS] [Bot] Tendência Externa: BEARISH (Score: 29/100, Confiança: 100%) 
+18:59:31.914 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=481703.00, Best Ask=481946.00. 
+18:59:31.934 [INFO]   [Bot] Volatilidade calculada: 2.43%. 
+18:59:31.971 [DEBUG]  [Bot] Volatilidade no ciclo 1: 2.43% 
+18:59:32.022 [INFO]   [Bot] RSI calculado: 39.66. 
+18:59:32.101 [INFO]   [Bot] EMA(8) calculada: 481807.03. 
+18:59:32.146 [INFO]   [Bot] EMA(20) calculada: 481719.12. 
+18:59:32.208 [INFO]   [Bot] EMA(12) calculada: 481884.02. 
+18:59:32.296 [INFO]   [Bot] EMA(26) calculada: 481759.45. 
+18:59:34.136 [INFO]   [Bot] EMA(9) calculada: 481872.52. 

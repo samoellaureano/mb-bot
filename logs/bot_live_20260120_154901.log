@@ -1,0 +1,136 @@
+18:49:03.984 [INFO]   [Bot] Inicializando bot... 
+18:49:03.991 [INFO]   [Bot] Inicializando banco de dados... 
+20/01/2026, 15:49:04 [INFO] [DB] WAL mode ativado
+20/01/2026, 15:49:04 [SUCCESS] [DB] Banco de dados inicializado com sucesso.
+18:49:04.325 [SUCCESS] [Bot] Banco de dados inicializado. 
+18:49:04.328 [INFO]   [Bot] Autenticando Mercado Bitcoin... 
+2026-01-20T18:49:04.377Z [INFO]   API_KEY: bdb29a91...
+2026-01-20T18:49:04.378Z [INFO]   API_SECRET: e14075f1...
+2026-01-20T18:49:05.400Z [INFO]   Account ID: f02d1506...
+2026-01-20T18:49:05.401Z [INFO]   Access Token: eyJhbGci...
+2026-01-20T18:49:05.406Z [SUCCESS] Authentication OK - Token expires in 59 minutes
+18:49:05.408 [SUCCESS] [Bot] Autenticado com sucesso. 
+18:49:05.415 [INFO]   [Bot] Inicializando sistema adaptativo... 
+18:49:05.467 [SUCCESS] [Bot] Sistema adaptativo inicializado. 
+18:49:05.513 [INFO]   [Bot] Iniciando warmup com velas históricas para evitar decisões ruins iniciais. 
+18:49:05.735 [INFO]   [Bot] Buscadas 100 velas históricas válidas. 
+18:49:05.739 [SUCCESS] [Bot] Warmup completo com 60 velas históricas. 
+18:49:05.788 [INFO]   [Bot] Carregando fills históricos... 
+18:49:05.846 [SUCCESS] [Bot] Carregados 30 fills históricos. 
+18:49:05.884 [INFO]   [Bot] Iniciando loop principal. 
+18:49:05.924 [INFO]   [Bot] Iniciando ciclo 1. 
+18:49:05.984 [DEBUG]  [Bot] Sincronização: Carregadas 4 ordens da BD (BUY: 0✓, SELL: 4✓). Pares no mapa: 4 
+18:49:06.050 [INFO]   [Bot] Consultando tendências externas do Bitcoin... 
+18:49:06 [TREND INFO] Iniciando análise de tendência externa... 
+18:49:06 [TREND INFO] CoinGecko Score: 37
+18:49:06 [TREND INFO] Binance Score: 20
+18:49:06 [TREND INFO] Fear & Greed Score: 32
+18:49:06 [TREND SUCCESS] Análise externa concluída: {"trend":"BEARISH","score":29,"confidence":100}
+18:49:06.717 [SUCCESS] [Bot] Tendência Externa: BEARISH (Score: 29/100, Confiança: 100%) 
+18:49:06.901 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=481688.00, Best Ask=482008.00. 
+18:49:06.916 [INFO]   [Bot] Volatilidade calculada: 2.68%. 
+18:49:06.957 [DEBUG]  [Bot] Volatilidade no ciclo 1: 2.68% 
+18:49:07.002 [INFO]   [Bot] RSI calculado: 61.14. 
+18:49:07.051 [INFO]   [Bot] EMA(8) calculada: 481724.17. 
+18:49:07.091 [INFO]   [Bot] EMA(20) calculada: 481709.74. 
+18:49:07.128 [INFO]   [Bot] EMA(12) calculada: 481597.23. 
+18:49:07.170 [INFO]   [Bot] EMA(26) calculada: 481941.82. 
+18:49:07.257 [INFO]   [Bot] EMA(9) calculada: 481660.42. 
+18:49:07.364 [INFO]   [Bot] MACD calculado: MACD=-344.59, Signal=481660.42. 
+18:49:07.447 [INFO]   [Bot] Volatilidade calculada: 2.68%. 
+18:49:07.497 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=0.00%, PnL médio=0.00. 
+18:49:07.541 [INFO]   [Bot] ADX calculado: 14.31. 
+18:49:07.571 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.35","expectedProfit":"0.08","rsi":"61.14","emaShort":"481724.17","emaLong":"481709.74","vo...
+18:49:07.613 [INFO]   [Bot] 
+═════════════════════════════════════════════════════════════════
+📊 ESTRATÉGIA ADAPTATIVA ATIVADA: 📈 ACUMULAÇÃO: Comprando BTC em alta
+═════════════════════════════════════════════════════════════════
+
+🎯 TENDÊNCIA: UP
+   • Spread: 1.0%
+   • Order Size: 5 µBTC (micro-ordens)
+   • Viés: +0.00010 (COMPRA)
+   • Max Position: 0.000500 BTC
+   • Stop Loss: 0.12%
+
+📋 PROPORÇÃO DE ORDENS:
+   • BUY: 70% | SELL: 30%
+   • Colocando mais BUY (+70%) do que SELL
+
+═════════════════════════════════════════════════════════════════
+ 
+18:49:07.655 [DEBUG]  [Bot] Convicção calculada: 62.6% | Tendência: UP | Força: MODERATE 
+18:49:07.701 [ERROR]  [Bot] Erro no ciclo 1: MAX_SPREAD_PCT is not defined. 
+18:49:07.736 [SUCCESS] [Bot] Bot operacional - SIMULATE=false 
+18:49:38.897 [INFO]   [Bot] Iniciando ciclo 2. 
+18:49:38.904 [DEBUG]  [Bot] Sincronização: Carregadas 4 ordens da BD (BUY: 0✓, SELL: 4✓). Pares no mapa: 4 
+18:49:39.196 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=481808.00, Best Ask=482130.00. 
+18:49:39.209 [INFO]   [Bot] Volatilidade calculada: 2.66%. 
+18:49:39.228 [DEBUG]  [Bot] Volatilidade no ciclo 2: 2.66% 
+18:49:39.260 [INFO]   [Bot] RSI calculado: 70.29. 
+18:49:39.291 [INFO]   [Bot] EMA(8) calculada: 481858.69. 
+18:49:39.334 [INFO]   [Bot] EMA(20) calculada: 481753.96. 
+18:49:39.382 [INFO]   [Bot] EMA(12) calculada: 481698.93. 
+18:49:39.422 [INFO]   [Bot] EMA(26) calculada: 481806.49. 
+18:49:39.483 [INFO]   [Bot] EMA(9) calculada: 481879.53. 
+18:49:39.528 [INFO]   [Bot] MACD calculado: MACD=-107.56, Signal=481879.53. 
+18:49:39.574 [INFO]   [Bot] Volatilidade calculada: 2.66%. 
+18:49:39.611 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=0.00%, PnL médio=0.00. 
+18:49:39.652 [INFO]   [Bot] ADX calculado: 13.03. 
+18:49:39.683 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.40","expectedProfit":"0.08","rsi":"70.29","emaShort":"481858.69","emaLong":"481753.96","vo...
+18:49:39.744 [INFO]   [Bot] 
+═════════════════════════════════════════════════════════════════
+📊 ESTRATÉGIA ADAPTATIVA ATIVADA: 📈 ACUMULAÇÃO: Comprando BTC em alta
+═════════════════════════════════════════════════════════════════
+
+🎯 TENDÊNCIA: UP
+   • Spread: 1.0%
+   • Order Size: 5 µBTC (micro-ordens)
+   • Viés: +0.00010 (COMPRA)
+   • Max Position: 0.000500 BTC
+   • Stop Loss: 0.12%
+
+📋 PROPORÇÃO DE ORDENS:
+   • BUY: 70% | SELL: 30%
+   • Colocando mais BUY (+70%) do que SELL
+
+═════════════════════════════════════════════════════════════════
+ 
+18:49:39.786 [DEBUG]  [Bot] Convicção calculada: 54.8% | Tendência: UP | Força: WEAK 
+18:49:39.825 [ERROR]  [Bot] Erro no ciclo 2: MAX_SPREAD_PCT is not defined. 
+18:50:10.026 [INFO]   [Bot] Iniciando ciclo 3. 
+18:50:10.033 [DEBUG]  [Bot] Sincronização: Carregadas 4 ordens da BD (BUY: 0✓, SELL: 4✓). Pares no mapa: 4 
+18:50:10.337 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=481810.00, Best Ask=482000.00. 
+18:50:10.346 [INFO]   [Bot] Volatilidade calculada: 2.64%. 
+18:50:10.377 [DEBUG]  [Bot] Volatilidade no ciclo 3: 2.64% 
+18:50:10.410 [INFO]   [Bot] RSI calculado: 71.81. 
+18:50:10.445 [INFO]   [Bot] EMA(8) calculada: 481912.47. 
+18:50:10.475 [INFO]   [Bot] EMA(20) calculada: 481728.30. 
+18:50:10.507 [INFO]   [Bot] EMA(12) calculada: 481779.35. 
+18:50:10.555 [INFO]   [Bot] EMA(26) calculada: 481840.13. 
+18:50:10.623 [INFO]   [Bot] EMA(9) calculada: 481845.48. 
+18:50:10.670 [INFO]   [Bot] MACD calculado: MACD=-60.78, Signal=481845.48. 
+18:50:10.723 [INFO]   [Bot] Volatilidade calculada: 2.64%. 
+18:50:10.765 [INFO]   [Bot] Análise fills históricos: Bias=0.00%, Sucesso=0.00%, PnL médio=0.00. 
+18:50:10.822 [INFO]   [Bot] ADX calculado: 11.54. 
+18:50:10.872 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.41","expectedProfit":"0.06","rsi":"71.81","emaShort":"481912.47","emaLong":"481728.30...
+18:50:10.921 [INFO]   [Bot] 
+═════════════════════════════════════════════════════════════════
+📊 ESTRATÉGIA ADAPTATIVA ATIVADA: ⚪ NEUTRAL: Market making equilibrado
+═════════════════════════════════════════════════════════════════
+
+🎯 TENDÊNCIA: NEUTRAL
+   • Spread: 1.2%
+   • Order Size: 5 µBTC (micro-ordens)
+   • Viés: 0.00000 (NEUTRAL)
+   • Max Position: 0.000300 BTC
+   • Stop Loss: 0.12%
+
+📋 PROPORÇÃO DE ORDENS:
+   • BUY: 50% | SELL: 50%
+   • Colocando BUY e SELL equilibrados
+
+═════════════════════════════════════════════════════════════════
+ 
+18:50:10.971 [DEBUG]  [Bot] Convicção calculada: 54.8% | Tendência: UP | Força: WEAK 
+18:50:11.001 [ERROR]  [Bot] Erro no ciclo 3: MAX_SPREAD_PCT is not defined. 
