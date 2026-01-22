@@ -29,6 +29,7 @@ let automatedTestRunning = false;
 // Config
 const SIMULATE = process.env.SIMULATE === 'true';
 const PORT = parseInt(process.env.PORT) || 3001;
+const ENABLE_AUTOMATED_TESTS = process.env.ENABLE_AUTOMATED_TESTS !== 'false'; // Default: true (disable on Render via env)
 const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 30000;
 const DEBUG = process.env.DEBUG === 'true';
 const PNL_HISTORY_FILE = path.join(__dirname, 'pnl_history.json');
@@ -1133,6 +1134,17 @@ app.get('/api/pairs', async (req, res) => {
 // GET /api/tests - Obter resultados dos últimos testes
 app.get('/api/tests', async (req, res) => {
     try {
+        if (!ENABLE_AUTOMATED_TESTS) {
+            return res.json({
+                hasResults: false,
+                isRunning: false,
+                results: null,
+                lastRunTime: null,
+                message: '⚠️ Testes automatizados desabilitados (ENABLE_AUTOMATED_TESTS=false)',
+                enabled: false
+            });
+        }
+        
         const cached = AutomatedTestRunner.getLastTestResults();
         
         res.json({
@@ -1141,7 +1153,8 @@ app.get('/api/tests', async (req, res) => {
             results: cached.results,
             lastRunTime: cached.lastRunTime,
             cacheAgeSeconds: cached.cacheAge,
-            canRerun: !automatedTestRunning
+            canRerun: !automatedTestRunning,
+            enabled: true
         });
     } catch (err) {
         log('ERROR', 'Erro ao obter resultados de testes:', err.message);
@@ -1152,6 +1165,13 @@ app.get('/api/tests', async (req, res) => {
 // POST /api/tests/run - Executar nova bateria de testes
 app.post('/api/tests/run', async (req, res) => {
     try {
+        if (!ENABLE_AUTOMATED_TESTS) {
+            return res.status(403).json({ 
+                error: 'Testes automatizados desabilitados',
+                message: 'ENABLE_AUTOMATED_TESTS=false. Para ativar, configure a variável de ambiente.'
+            });
+        }
+        
         if (automatedTestRunning) {
             return res.status(409).json({ 
                 error: 'Testes já em execução',
@@ -1288,19 +1308,23 @@ db.init().then(() => {
         app.listen(PORT, '0.0.0.0', () => {
             log('INFO', `Dashboard ready at http://localhost:${PORT} - Mode: ${SIMULATE ? 'SIMULATE' : 'LIVE'}`);
             
-            // Executar testes automatizados na inicialização
-            log('INFO', 'Iniciando testes automatizados na inicialização...');
-            automatedTestRunning = true;
-            AutomatedTestRunner.runTestBattery(24)
-                .then(results => {
-                    automatedTestResults = results;
-                    automatedTestRunning = false;
-                    log('INFO', `✅ Testes de inicialização concluídos: ${results.summary.passed}/${results.summary.total} passaram (${results.summary.passRate}%)`);
-                })
-                .catch(err => {
-                    automatedTestRunning = false;
-                    log('WARN', `⚠️ Testes de inicialização falharam: ${err.message}`);
-                });
+            // Executar testes automatizados na inicialização (somente se ENABLE_AUTOMATED_TESTS !== 'false')
+            if (ENABLE_AUTOMATED_TESTS) {
+                log('INFO', 'Iniciando testes automatizados na inicialização...');
+                automatedTestRunning = true;
+                AutomatedTestRunner.runTestBattery(24)
+                    .then(results => {
+                        automatedTestResults = results;
+                        automatedTestRunning = false;
+                        log('INFO', `✅ Testes de inicialização concluídos: ${results.summary.passed}/${results.summary.total} passaram (${results.summary.passRate}%)`);
+                    })
+                    .catch(err => {
+                        automatedTestRunning = false;
+                        log('WARN', `⚠️ Testes de inicialização falharam: ${err.message}`);
+                    });
+            } else {
+                log('INFO', '⚠️ Testes automatizados desabilitados (ENABLE_AUTOMATED_TESTS=false)');
+            }
         });
     });
 });

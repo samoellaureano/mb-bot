@@ -1462,9 +1462,9 @@
     function startDataLoading() {
         console.log('[Dashboard] ✅ Starting data loading cycle...');
         loadData();
-        loadTestResults(); // Carregar resultados de testes
+        // loadTestResults(); // DESABILITADO: Teste automático apenas em dev local, não em Render (Binance 451)
         setInterval(loadData, 5 * 1000);
-        setInterval(loadTestResults, 30 * 1000); // Atualizar testes a cada 30s
+        // setInterval(loadTestResults, 30 * 1000); // DESABILITADO: Teste automático com polling
     }
 
     // Aguardar gráficos serem criados (eles são criados no primeiro DOMContentLoaded)
