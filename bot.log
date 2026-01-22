@@ -50094,3 +50094,21 @@ nohup: ignoring input
 02:41:30.827 [INFO]   [Bot] Volatilidade calculada: 0.88%.
 02:41:31.117 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
 02:41:31.732 [INFO]   [Bot] ADX calculado: 31.22.
+02:41:32.450 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.49","expectedProfit":"0.00","rsi":"14.46","emaShort":"480017.59","emaLong":"480021.21","volatility":"0.88","macd":"-0.86","signal":"480019.00"}
+02:41:33.048 [INFO]   [Bot] ADX calculado: 31.22.
+02:41:33.858 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+02:41:57.221 [INFO]   [Bot] Iniciando ciclo 128.
+02:41:57.225 [DEBUG]  [Bot] Sincronização: Carregadas 2 ordens da BD (BUY: 1✓, SELL: 1✓). Pares no mapa: 1
+02:41:57.751 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=479923.00, Best Ask=480067.00.
+02:41:57.815 [INFO]   [Bot] RSI calculado: 7.23.
+02:41:58.143 [INFO]   [Bot] EMA(8) calculada: 480009.00.
+02:41:58.550 [INFO]   [Bot] EMA(20) calculada: 480015.37.
+02:41:58.990 [INFO]   [Bot] EMA(12) calculada: 480013.97.
+02:41:59.518 [INFO]   [Bot] EMA(26) calculada: 480016.07.
+02:41:59.869 [INFO]   [Bot] EMA(9) calculada: 480010.15.
+02:42:00.191 [INFO]   [Bot] MACD calculado: MACD=-2.11, Signal=480010.15.
+02:42:00.530 [INFO]   [Bot] Volatilidade calculada: 0.87%.
+02:42:00.815 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+02:42:01.069 [INFO]   [Bot] ADX calculado: 32.01.
+02:42:01.287 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.53","expectedProfit":"0.00","rsi":"7.23","emaShort":"480009.00","emaLong":"480015.37","volatility":"0.87","macd":"-2.11","signal":"480010.15"}
+02:42:01.471 [INFO]   [Bot] ADX calculado: 32.01.
