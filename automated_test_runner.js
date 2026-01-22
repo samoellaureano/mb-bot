@@ -2,14 +2,26 @@
  * automated_test_runner.js - Módulo de Testes Automatizados com Dados Reais
  * 
  * Executa bateria de testes usando dados históricos online das APIs:
- * - Binance (candles em tempo real)
+ * - Binance (candles em tempo real, com suporte a proxy)
  * - CoinGecko (dados de mercado 24h)
  * 
  * Integrado ao dashboard para exibição dos resultados
  */
 
 const axios = require('axios');
+const HttpProxyAgent = require('http-proxy-agent');
+const HttpsProxyAgent = require('https-proxy-agent');
 const BTCAccumulator = require('./btc_accumulator');
+
+// Proxy configuration for Binance (attempt to bypass 451 errors)
+const PROXY_URL = process.env.HTTP_PROXY_BINANCE || process.env.HTTP_PROXY || null;
+const USE_PROXY = process.env.USE_PROXY_FOR_BINANCE === 'true' && PROXY_URL;
+
+if (USE_PROXY) {
+    console.log(`[TEST_RUNNER] ⚠️ Proxy habilitado: ${PROXY_URL.replace(/:[^:]*@/, ':***@')}`);
+} else if (PROXY_URL) {
+    console.log(`[TEST_RUNNER] ℹ️ Proxy disponível mas desabilitado (USE_PROXY_FOR_BINANCE=true para ativar)`);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // CASH MANAGEMENT STRATEGY OTIMIZADO v2 - Ultra agressivo
@@ -172,11 +184,18 @@ async function fetchBinanceData(symbol = 'BTCBRL', interval = '5m', limit = 100)
     const maxRetries = 3;
     let lastError = null;
     
+    // Setup proxy if enabled
+    let axiosConfig = { timeout: 15000 };
+    if (USE_PROXY) {
+        axiosConfig.httpAgent = new HttpProxyAgent(PROXY_URL);
+        axiosConfig.httpsAgent = new HttpsProxyAgent(PROXY_URL);
+    }
+    
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-            console.log(`[TEST_RUNNER] [Tentativa ${attempt}/${maxRetries}] Buscando ${limit} candles de ${interval} da Binance (${symbol})...`);
+            console.log(`[TEST_RUNNER] [Tentativa ${attempt}/${maxRetries}] Buscando ${limit} candles de ${interval} da Binance (${symbol})${USE_PROXY ? ' [PROXY]' : ''}...`);
             const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-            const response = await axios.get(url, { timeout: 15000 });
+            const response = await axios.get(url, axiosConfig);
             
             if (!response.data || response.data.length === 0) {
                 throw new Error('Resposta vazia da Binance');
@@ -191,11 +210,12 @@ async function fetchBinanceData(symbol = 'BTCBRL', interval = '5m', limit = 100)
                 volume: parseFloat(candle[5])
             }));
             
-            console.log(`[TEST_RUNNER] ✅ ${data.length} candles obtidos com sucesso`);
+            console.log(`[TEST_RUNNER] ✅ ${data.length} candles obtidos com sucesso${USE_PROXY ? ' (via proxy)' : ''}`);
             return data;
         } catch (error) {
             lastError = error;
-            console.warn(`[TEST_RUNNER] ⚠️ Tentativa ${attempt} falhou: ${error.message}`);
+            const errorMsg = error.message || error.code || error.toString();
+            console.warn(`[TEST_RUNNER] ⚠️ Tentativa ${attempt} falhou: ${errorMsg}`);
             
             if (attempt < maxRetries) {
                 const delayMs = Math.pow(2, attempt) * 1000; // Backoff exponencial: 2s, 4s, 8s
@@ -207,6 +227,7 @@ async function fetchBinanceData(symbol = 'BTCBRL', interval = '5m', limit = 100)
     
     // Se todas as tentativas falharem, logar erro e retornar null
     console.error(`[TEST_RUNNER] ❌ Todas ${maxRetries} tentativas falharam. Último erro: ${lastError.message}`);
+    console.error(`[TEST_RUNNER] 💡 Se problema é 451, considere: USE_PROXY_FOR_BINANCE=true e HTTP_PROXY_BINANCE=<proxy_url>`);
     return null;
 }
 
