@@ -37,7 +37,8 @@ const CashManagementStrategy = require('./cash_management_strategy');
 
 
 // ================== INSTÂNCIAS GLOBAIS ==================
-const momentumSync = new MomentumSync();
+// MomentumSync removido (2025-01-21)
+// const momentumSync = new MomentumSync();
 let autoOptimizer = null;
 let lossAnalyzer = null;
 let improvedEntryExit = null;
@@ -48,9 +49,9 @@ const SIMULATE = process.env.SIMULATE === 'true'; // Modo simulação
 const REST_BASE = process.env.REST_BASE || 'https://api.mercadobitcoin.net/api/v4'; // Padrão API v4
 const PAIR = process.env.PAIR || 'BTC-BRL'; // Par padrão BTC-BRL
 const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15')); // Mínimo 1s
-let SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.0006'); // Atualizado para 0.06%
-let ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.05'); // Atualizado para 5%
-const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003'); // Atualizado para 0.03%
+let SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.005'); // Spread maior = 0.5% (captura mais spread, menos sensível a fill)
+let ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.02'); // Reduzido para 2% (ordens menores = mais frequentes, menos perda/ordem)
+const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.00005'); // Reduzido para 0.005% (menos sensível a drift)
 const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0'); // Desativado por padrão
 const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005'); // Atualizado para 0.05%
 const MAX_SPREAD_PCT = parseFloat(process.env.MAX_SPREAD_PCT || '0.040'); // Máximo 4.0%
@@ -69,7 +70,7 @@ const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '1800'); // Máximo 
 const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
 const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Limitado a 2.5% máximo para evitar excessos
 const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% volume para filtrar
-const EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '0.0005'); // 0.05% de lucro esperado (ajustado)
+const EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '-0.0005'); // Negativo = coloca ordem mesmo com pequena perda esperada
 const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // Últimos 20 fills
 const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // Peso decrescente
 const ALERT_PNL_THRESHOLD = parseFloat(process.env.ALERT_PNL_THRESHOLD || '-50'); // Alerta se PnL < -50 BRL
@@ -773,168 +774,10 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
 }
 
 // ---------------- PLACE ORDER ----------------
-/**
- * Cria uma ordem com validação opcional por momentum
- * Se MOMENTUM_VALIDATION_ENABLED, cria em modo simulado e aguarda confirmação
- */
-async function placeOrderWithMomentumValidation(side, price, qty, sessionId = null, pairIdInput = null) {
-    if (!MOMENTUM_VALIDATION_ENABLED) {
-        // Modo padrão: coloca ordem direto
-        return await placeOrder(side, price, qty, sessionId, pairIdInput);
-    }
+// Nota: Lógica de validação momentum removida (2025-01-21)
+// Agora o bot coloca ordens diretamente sem fase de simulação
 
-    // Modo com validação: cria simulado primeiro
-    const { v4: uuidv4 } = require('uuid');
-    const simulatedId = `${side}_PENDING_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const validation = momentumValidator.createSimulatedOrder(simulatedId, side, price, qty);
-    log('INFO', `📊 Ordem ${side.toUpperCase()} criada em modo SIMULADO (${simulatedId}): R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)} | Lógica: ${validation.expectedConfirmationLogic}`);
-    
-    // Salvar no banco de dados
-    const order = momentumValidator.simulatedOrders.get(simulatedId);
-    if (order) {
-        order.sessionId = sessionId || null;
-        order.pairId = pairIdInput || null;
-        order.currentPrice = price;
-        db.saveMomentumOrder({
-            id: simulatedId,
-            side: order.side,
-            createdPrice: order.createdPrice,
-            currentPrice: order.currentPrice,
-            status: order.status,
-            qty: order.qty,
-            peaks: order.peaks,
-            valleys: order.valleys,
-            confirmationReversals: order.confirmationReversals,
-            reason: null,
-            reversalThreshold: order.reversalThreshold,
-            createdAt: order.createdAt,
-            priceHistory: order.priceHistory
-        }).catch(e => log('ERROR', `Erro ao salvar momentum order criada: ${e.message}`));
-    }
-    
-    return {
-        simulatedId,
-        side,
-        price,
-        qty,
-        status: 'simulated',
-        pairId: pairIdInput,
-        sessionId,
-        createdAt: Date.now()
-    };
-}
-
-/**
- * Atualiza ordens simuladas com novo preço (executar a cada ciclo)
- */
-function updateSimulatedOrdersWithPrice(midPrice) {
-    if (!MOMENTUM_VALIDATION_ENABLED) return;
-
-    const expiredOrders = momentumValidator.cleanupExpiredOrders(300); // 5 min max age
-    if (expiredOrders.length > 0) {
-        log('WARN', `${expiredOrders.length} ordem(ns) simulada(s) expirada(s) após 5min. Removidas sem confirmação.`);
-    }
-
-    for (const [orderId, order] of momentumValidator.simulatedOrders) {
-        if (order.status !== 'simulated' && order.status !== 'pending') continue;
-
-        const update = momentumValidator.updateOrderWithPrice(orderId, midPrice);
-        
-        // Log de progresso
-        if (order.confirmationCycles % 2 === 0 && order.confirmationCycles > 0) { // A cada 2 ciclos
-            log('DEBUG', `📍 Validação ${order.side.toUpperCase()} [${orderId.substring(0, 20)}...]: ${update.reason}`);
-        }
-
-        // Confirmação automática
-        if (update.shouldConfirm && update.status === 'confirmed') {
-            log('SUCCESS', `✅ CONFIRMADA ordem ${order.side.toUpperCase()}: ${update.reason}`);
-            momentumValidator.confirmOrder(orderId);
-            
-            // Salvar no banco de dados
-            db.saveMomentumOrder({
-                id: orderId,
-                side: order.side,
-                createdPrice: order.createdPrice,
-                currentPrice: order.currentPrice,
-                status: 'confirmed',
-                qty: order.qty,
-                peaks: order.peaks,
-                valleys: order.valleys,
-                confirmationReversals: order.confirmationReversals,
-                reason: null,
-                reversalThreshold: order.reversalThreshold,
-                createdAt: order.createdAt,
-                priceHistory: order.priceHistory
-            }).catch(e => log('ERROR', `Erro ao salvar momentum order confirmada: ${e.message}`));
-            
-            // Agora efetivar a ordem de verdade
-            placeOrder(order.side, order.price, order.qty, order.sessionId, order.pairId)
-                .then(() => {
-                    log('SUCCESS', `🚀 Ordem ${order.side.toUpperCase()} EFETIVADA após confirmação de momentum`);
-                })
-                .catch(e => {
-                    log('ERROR', `Falha ao efetivar ordem confirmada: ${e.message}`);
-                });
-        } 
-        // Rejeição automática
-        else if (update.status === 'rejected') {
-            log('WARN', `❌ REJEITADA ordem ${order.side.toUpperCase()}: ${update.reason}`);
-            momentumValidator.rejectOrder(orderId, update.reason);
-            
-            // Salvar no banco de dados
-            db.saveMomentumOrder({
-                id: orderId,
-                side: order.side,
-                createdPrice: order.createdPrice,
-                currentPrice: order.currentPrice,
-                status: 'rejected',
-                qty: order.qty,
-                peaks: order.peaks,
-                valleys: order.valleys,
-                confirmationReversals: order.confirmationReversals,
-                reason: update.reason,
-                reversalThreshold: order.reversalThreshold,
-                createdAt: order.createdAt,
-                priceHistory: order.priceHistory
-            }).catch(e => log('ERROR', `Erro ao salvar momentum order rejeitada: ${e.message}`));
-        } else {
-            // Salvar status atual periodicamente
-            if (order.confirmationCycles % 5 === 0) { // A cada 5 ciclos
-                db.saveMomentumOrder({
-                    id: orderId,
-                    side: order.side,
-                    createdPrice: order.createdPrice,
-                    currentPrice: order.currentPrice,
-                    status: order.status,
-                    qty: order.qty,
-                    peaks: order.peaks,
-                    valleys: order.valleys,
-                    confirmationReversals: order.confirmationReversals,
-                    reason: null,
-                    reversalThreshold: order.reversalThreshold,
-                    createdAt: order.createdAt,
-                    priceHistory: order.priceHistory
-                }).catch(e => log('DEBUG', `Erro ao atualizar momentum order: ${e.message}`));
-            }
-        }
-    }
-
-    // Sincronizar com dashboard
-    try {
-        momentumSync.syncFromValidator(momentumValidator);
-    } catch (e) {
-        log('DEBUG', `Erro ao sincronizar momentum: ${e.message}`);
-    }
-}
-
-/**
- * Retorna status das ordens simuladas
- */
-function getSimulatedOrdersStatus() {
-    if (!MOMENTUM_VALIDATION_ENABLED) return null;
-    return momentumValidator.getSimulatedOrdersStatus();
-}
+// Funções de momentum simulado removidas (2025-01-21)
 
 async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null) {
     try {
@@ -1397,11 +1240,8 @@ async function runCycle() {
         priceHistory.push(mid);
         if (priceHistory.length > 100) priceHistory.shift();
 
-        // ===== MOMENTUM VALIDATION: registrar preço e atualizar ordens simuladas =====
-        if (MOMENTUM_VALIDATION_ENABLED) {
-            momentumValidator.recordPrice(mid);
-            updateSimulatedOrdersWithPrice(mid);
-        }
+        // ===== MOMENTUM VALIDATION REMOVIDO (2025-01-21) =====
+        // Momentum validation desativado - usar Cash Management Strategy em seu lugar
 
         // NOTA: Swing trading removido (desativado por redundância com CashManagement)
 
@@ -1501,24 +1341,30 @@ async function runCycle() {
         if (cashManagementStrategy && process.env.USE_CASH_MANAGEMENT === 'true') {
             log('DEBUG', `[CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...`);
 
-            const sellSignalCash = cashManagementStrategy.shouldSell(mid, btcBalance);
+            // Buscar último preço de compra do histórico para melhor decisão
+            const recentBuyOrders = Array.from(activeOrders.values()).filter(o => o.side === 'buy');
+            const lastBuyPrice = recentBuyOrders.length > 0 ? 
+                Math.min(...recentBuyOrders.map(o => o.price)) : 
+                null;
+
+            const sellSignalCash = cashManagementStrategy.shouldSell(mid, btcBalance, pred.trend, lastBuyPrice);
 
             // SELL-first: permite uma venda inicial mesmo sem BUY quando alinhado com a estratégia
             if ((SELL_FIRST_ENABLED || sellSignalCash.shouldSell) && !sellFirstExecuted && !activeOrders.has('sell') && !activeOrders.has('buy') && btcBalance > MIN_ORDER_SIZE) {
                 const sellQty = Math.min(btcBalance, btcBalance * (sellSignalCash.qty || cashManagementStrategy.SELL_AMOUNT_PCT));
                 log('WARN', `[SELL_FIRST] SELL inicial habilitado. Vendendo ${sellQty.toFixed(8)} BTC a R$ ${mid.toFixed(2)}${sellSignalCash.reason ? ` | ${sellSignalCash.reason}` : ''}`);
-                await placeOrderWithMomentumValidation('sell', mid, sellQty);
+                await placeOrder('sell', mid, sellQty);
                 stats.sells = (stats.sells || 0) + 1;
                 sellFirstExecuted = true;
             }
             
             // Verificar sinal de COMPRA
-            const buySignalCash = cashManagementStrategy.shouldBuy(mid, brlBalance, btcBalance);
+            const buySignalCash = cashManagementStrategy.shouldBuy(mid, brlBalance, btcBalance, pred.trend);
             if (buySignalCash.shouldBuy && !activeOrders.has('buy')) {
-                const buyQty = Math.min(0.0001, (brlBalance * buySignalCash.qty) / mid);
+                const buyQty = Math.min(0.0002, (brlBalance * buySignalCash.qty) / mid);
                 if (buyQty > MIN_ORDER_SIZE && brlBalance >= buyQty * mid) {
                     log('SUCCESS', `[CASH_MGT_BUY] ${buySignalCash.reason}`);
-                    await placeOrderWithMomentumValidation('buy', mid, buyQty);
+                    await placeOrder('buy', mid, buyQty);
                     log('SUCCESS', `[CASH_MGT_BUY] Ordem de compra colocada: ${buyQty.toFixed(8)} BTC a R$ ${mid.toFixed(2)}`);
                     stats.buys = (stats.buys || 0) + 1;
                 }
@@ -1529,7 +1375,7 @@ async function runCycle() {
                 const sellQty = Math.min(btcBalance, btcBalance * sellSignalCash.qty);
                 if (sellQty > MIN_ORDER_SIZE) {
                     log('SUCCESS', `[CASH_MGT_SELL] ${sellSignalCash.reason}`);
-                    await placeOrderWithMomentumValidation('sell', mid, sellQty);
+                    await placeOrder('sell', mid, sellQty);
                     log('SUCCESS', `[CASH_MGT_SELL] Ordem de venda colocada: ${sellQty.toFixed(8)} BTC a R$ ${mid.toFixed(2)}`);
                     stats.sells = (stats.sells || 0) + 1;
                 }
@@ -1541,14 +1387,14 @@ async function runCycle() {
                 const microBuyQty = Math.min(0.00006, (brlBalance * microTradeSignals.buy.qty) / mid);
                 if (microBuyQty > MIN_ORDER_SIZE) {
                     log('INFO', `[CASH_MGT_MICRO] ${microTradeSignals.buy.reason}`);
-                    await placeOrderWithMomentumValidation('buy', mid, microBuyQty);
+                    await placeOrder('buy', mid, microBuyQty);
                 }
             }
             if (microTradeSignals.sell && !activeOrders.has('sell') && btcBalance > 0.00001) {
                 const microSellQty = btcBalance * microTradeSignals.sell.qty;
                 if (microSellQty > MIN_ORDER_SIZE) {
                     log('INFO', `[CASH_MGT_MICRO] ${microTradeSignals.sell.reason}`);
-                    await placeOrderWithMomentumValidation('sell', mid, microSellQty);
+                    await placeOrder('sell', mid, microSellQty);
                 }
             }
         } else {
@@ -1561,7 +1407,7 @@ async function runCycle() {
                     
                     if (buyQty >= MIN_ORDER_SIZE && positionSizeBRL <= brlBalance) {
                         log('SUCCESS', `[ENTRY/EXIT] Sinal de COMPRA forte (Score: ${buySignal.score.toFixed(2)}). Razões: ${buySignal.reasons.join(', ')}`);
-                        await placeOrderWithMomentumValidation('buy', bestBid, buyQty);
+                        await placeOrder('buy', bestBid, buyQty);
                     } else {
                         log('WARN', `[ENTRY/EXIT] Compra ignorada. Qtd: ${buyQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BRL insuficiente.`);
                     }
@@ -1577,7 +1423,7 @@ async function runCycle() {
                     await tryCancel('buy');
                     const sellQty = openPositionOrder.qty;
                     if (sellQty >= MIN_ORDER_SIZE && sellQty <= btcBalance) {
-                        await placeOrderWithMomentumValidation('sell', bestAsk, sellQty);
+                        await placeOrder('sell', bestAsk, sellQty);
                     } else {
                         log('WARN', `[ENTRY/EXIT] Venda de saída ignorada. Qtd: ${sellQty.toFixed(8)} (min: ${MIN_ORDER_SIZE}) ou Saldo BTC insuficiente.`);
                     }

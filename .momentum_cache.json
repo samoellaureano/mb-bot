@@ -1,60 +1,240 @@
 {
   "simulatedOrders": [
     {
-      "id": "sell_PENDING_1768996077747_b2jkuvl37",
+      "id": "sell_PENDING_1769004330676_vfvz5gan5",
       "side": "sell",
-      "createdPrice": 479368,
-      "currentPrice": 478850,
-      "status": "simulated",
+      "createdPrice": 476220.5,
+      "currentPrice": 476675.5,
+      "status": "confirmed",
       "qty": 0.00042937,
       "peaks": [
-        479368,
-        479417.5
+        476220.5,
+        476956
       ],
       "valleys": [
-        479046.5,
-        479031.5,
-        479020,
-        478868,
-        478849
+        476220.5
       ],
-      "createdAt": 1768996077747,
+      "createdAt": 1769004330676,
       "reason": null,
       "reversalThreshold": 0.0003,
       "confirmationReversals": 0,
       "priceHistory": [
-        479368,
-        479417.5,
-        479403,
-        479046.5,
-        479085.5,
-        479031.5,
-        479020,
-        479068,
-        478868,
-        478849,
-        478850
+        476220.5,
+        476956,
+        476675.5
+      ]
+    },
+    {
+      "id": "sell_PENDING_1769004360451_g5n43sjy1",
+      "side": "sell",
+      "createdPrice": 476956,
+      "currentPrice": 477112.5,
+      "status": "confirmed",
+      "qty": 0.00042937,
+      "peaks": [
+        476956,
+        476959.5,
+        477112.5
+      ],
+      "valleys": [
+        476611.5,
+        476607.5,
+        476593.5,
+        476318,
+        476312
+      ],
+      "createdAt": 1769004360451,
+      "reason": null,
+      "reversalThreshold": 0.0003,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        476956,
+        476675.5,
+        476959.5,
+        476677.5,
+        476611.5,
+        476607.5,
+        476593.5,
+        476318,
+        476312,
+        477112.5
+      ]
+    },
+    {
+      "id": "buy_PENDING_1769004510613_y19mg1scf",
+      "side": "buy",
+      "createdPrice": 476607.5,
+      "currentPrice": 478149,
+      "status": "rejected",
+      "qty": 0.0001,
+      "peaks": [
+        476607.5,
+        477112.5,
+        477771,
+        478149
+      ],
+      "valleys": [
+        476607.5,
+        476593.5,
+        476318,
+        476312
+      ],
+      "createdAt": 1769004510613,
+      "reason": null,
+      "reversalThreshold": 0.0003,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        476607.5,
+        476593.5,
+        476318,
+        476312,
+        477112.5,
+        477771,
+        478149
+      ]
+    },
+    {
+      "id": "buy_PENDING_1769004542161_idywjthmf",
+      "side": "buy",
+      "createdPrice": 476593.5,
+      "currentPrice": 478149,
+      "status": "rejected",
+      "qty": 0.0001,
+      "peaks": [
+        476593.5,
+        477112.5,
+        477771,
+        478149
+      ],
+      "valleys": [
+        476593.5,
+        476318,
+        476312
+      ],
+      "createdAt": 1769004542162,
+      "reason": null,
+      "reversalThreshold": 0.0003,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        476593.5,
+        476318,
+        476312,
+        477112.5,
+        477771,
+        478149
+      ]
+    },
+    {
+      "id": "buy_PENDING_1769004572619_f0r7npls3",
+      "side": "buy",
+      "createdPrice": 476318,
+      "currentPrice": 477771,
+      "status": "rejected",
+      "qty": 0.0001,
+      "peaks": [
+        476318,
+        477112.5,
+        477771
+      ],
+      "valleys": [
+        476318,
+        476312
+      ],
+      "createdAt": 1769004572619,
+      "reason": null,
+      "reversalThreshold": 0.0003,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        476318,
+        476312,
+        477112.5,
+        477771
+      ]
+    },
+    {
+      "id": "buy_PENDING_1769004601003_82f8heg7u",
+      "side": "buy",
+      "createdPrice": 476312,
+      "currentPrice": 477771,
+      "status": "rejected",
+      "qty": 0.0001,
+      "peaks": [
+        476312,
+        477112.5,
+        477771
+      ],
+      "valleys": [
+        476312
+      ],
+      "createdAt": 1769004601003,
+      "reason": null,
+      "reversalThreshold": 0.0003,
+      "confirmationReversals": 0,
+      "priceHistory": [
+        476312,
+        477112.5,
+        477771
       ]
     }
   ],
   "status": {
-    "total": 1,
+    "total": 6,
     "byStatus": {
-      "simulated": 1,
+      "simulated": 0,
       "pending": 0,
-      "confirmed": 0,
-      "rejected": 0
+      "confirmed": 2,
+      "rejected": 4
     },
     "orders": [
       {
-        "id": "sell_PENDING_1768996077747_b2jkuvl37",
+        "id": "sell_PENDING_1769004330676_vfvz5gan5",
         "side": "sell",
-        "createdPrice": 479368,
-        "currentRange": "478849.00 - 479417.50",
-        "status": "simulated",
-        "cycles": 10
+        "createdPrice": 476220.5,
+        "currentRange": "476220.50 - 476956.00",
+        "status": "confirmed",
+        "cycles": 2
+      },
+      {
+        "id": "sell_PENDING_1769004360451_g5n43sjy1",
+        "side": "sell",
+        "createdPrice": 476956,
+        "currentRange": "476312.00 - 477112.50",
+        "status": "confirmed",
+        "cycles": 9
+      },
+      {
+        "id": "buy_PENDING_1769004510613_y19mg1scf",
+        "side": "buy",
+        "createdPrice": 476607.5,
+        "currentRange": "476312.00 - 478149.00",
+        "status": "rejected",
+        "cycles": 6
+      },
+      {
+        "id": "buy_PENDING_1769004542161_idywjthmf",
+        "side": "buy",
+        "createdPrice": 476593.5,
+        "currentRange": "476312.00 - 478149.00",
+        "status": "rejected",
+        "cycles": 5
+      },
+      {
+        "id": "buy_PENDING_1769004572619_f0r7npls3",
+        "side": "buy",
+        "createdPrice": 476318,
+        "currentRange": "476312.00 - 477771.00",
+        "status": "rejected",
+        "cycles": 3
+      },
+      {
+        "id": "buy_PENDING_1769004601003_82f8heg7u",
+        "side": "buy",
+        "createdPrice": 476312,
+        "currentRange": "476312.00 - 477771.00",
+        "status": "rejected",
+        "cycles": 2
       }
     ]
   },
-  "lastUpdate": "2026-01-21T11:52:50.698Z"
+  "lastUpdate": "2026-01-21T14:13:28.017Z"
 }

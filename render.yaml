@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: mb-bot
+    env: node
+    plan: starter
+    region: ohio
+    buildCommand: npm install && npm run migrate || true
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_KEY
+        sync: false
+      - key: API_SECRET
+        sync: false
+      - key: SIMULATE
+        value: false
+      - key: PAIR
+        value: BTC-BRL
+      - key: PORT
+        value: 3001
+      - key: CYCLE_SEC
+        value: 30
+      - key: USE_CASH_MANAGEMENT
+        value: true
+      - key: DEBUG
+        value: false

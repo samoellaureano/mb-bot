@@ -23,8 +23,8 @@ const trendValidator = new ExternalTrendValidator();
 let automatedTestResults = null;
 let automatedTestRunning = false;
 
-// Instância de sincronização de momentum (carrega dados do bot)
-const momentumSync = new MomentumSync();
+// MomentumSync removido (2025-01-21)
+// const momentumSync = new MomentumSync();
 
 // Config
 const SIMULATE = process.env.SIMULATE === 'true';
@@ -67,7 +67,7 @@ const computeAge = (timestamp) => {
 
 // Express app
 const app = express();
-app.use(express.static(path.join(__dirname, 'public'), {maxAge: '1h', etag: true}));
+app.use(express.static(path.join(__dirname, 'public'), {maxAge: 0, etag: false}));
 app.use(express.json({limit: '1mb'}));
 
 // CORS
@@ -814,46 +814,13 @@ app.get('/api/data', async (req, res) => {
             cache.data.activeOrders.forEach(o => o.drift = o.side === 'buy' ? (mid - o.price).toFixed(2) : (o.price - mid).toFixed(2));
         }
     }
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.json(cache.data);
 });
 
-// ========== ENDPOINT DE MOMENTUM ORDERS ==========
-app.get('/api/momentum', async (req, res) => {
-    try {
-        const limit = parseInt(req.query.limit || '100');
-        const status = req.query.status || undefined;
-        
-        // Carregar momentum orders do banco de dados
-        const orders = await db.getMomentumOrders({ 
-            status: status,
-            limit: limit
-        });
-        
-        // Calcular estatísticas
-        const stats = await db.getMomentumStats(24);
-        
-        return res.json({
-            simulatedOrders: orders,
-            status: {
-                simulated: stats.simulated || 0,
-                pending: stats.pending || 0,
-                confirmed: stats.confirmed || 0,
-                rejected: stats.rejected || 0,
-                expired: stats.expired || 0,
-                total: stats.total || 0
-            },
-            stats: {
-                avgReversals: stats.avg_reversals || 0,
-                buyCount: stats.buy_count || 0,
-                sellCount: stats.sell_count || 0
-            },
-            lastUpdate: new Date().toISOString()
-        });
-    } catch (err) {
-        log('ERROR', 'Failed to fetch momentum orders:', err.message);
-        res.status(500).json({ error: err.message });
-    }
-});
+// Endpoint de momentum removido (2025-01-21)
 
 // ========== ENDPOINT DE PARES (UNIFICADO) ==========
 // INCLUINDO ORDENS ATIVAS ENRIQUECIDAS + HISTÓRICO

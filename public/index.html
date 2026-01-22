@@ -279,61 +279,6 @@
         </div>
     </div>
 
-    <!-- SEÇÃO DE ORDENS MOMENTUM -->
-    <div class="grid grid-cols-1 gap-4 mt-4">
-        <div class="bg-gray-800 p-4 rounded-xl shadow">
-            <h2 class="text-lg font-bold mb-3" style="color: #8b5cf6;">🎯 Ordens em Validação por Momentum</h2>
-            
-            <!-- Status Geral -->
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
-                <div class="bg-gray-700 p-2 rounded text-center">
-                    <div class="text-sm text-gray-400">Simuladas</div>
-                    <div id="momentumSimulatedCount" class="text-xl font-bold text-purple-400">0</div>
-                </div>
-                <div class="bg-gray-700 p-2 rounded text-center">
-                    <div class="text-sm text-gray-400">Pendentes</div>
-                    <div id="momentumPendingCount" class="text-xl font-bold text-yellow-400">0</div>
-                </div>
-                <div class="bg-gray-700 p-2 rounded text-center">
-                    <div class="text-sm text-gray-400">Confirmadas</div>
-                    <div id="momentumConfirmedCount" class="text-xl font-bold text-green-400">0</div>
-                </div>
-                <div class="bg-gray-700 p-2 rounded text-center">
-                    <div class="text-sm text-gray-400">Rejeitadas</div>
-                    <div id="momentumRejectedCount" class="text-xl font-bold text-red-400">0</div>
-                </div>
-                <div class="bg-gray-700 p-2 rounded text-center">
-                    <div class="text-sm text-gray-400">Expiradas</div>
-                    <div id="momentumExpiredCount" class="text-xl font-bold text-gray-400">0</div>
-                </div>
-            </div>
-            
-            <!-- Tabela de Ordens -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-xs">
-                    <thead>
-                    <tr class="text-gray-400 border-b border-gray-700">
-                        <th class="text-left p-2">ID</th>
-                        <th class="text-left p-2">Tipo</th>
-                        <th class="text-right p-2">Preço Criação</th>
-                        <th class="text-right p-2">Preço Atual</th>
-                        <th class="text-right p-2">Variação</th>
-                        <th class="text-center p-2">Status</th>
-                        <th class="text-center p-2">Reversões</th>
-                        <th class="text-left p-2">Picos/Vales</th>
-                        <th class="text-left p-2">Motivo Rejeição</th>
-                    </tr>
-                    </thead>
-                    <tbody id="momentumOrdersTable">
-                    <tr>
-                        <td class="p-2 text-gray-500 text-center" colspan="9">Nenhuma ordem em validação</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <!-- Gráfico de PnL -->
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
@@ -1242,96 +1187,12 @@
             }
 
             // ========== CARREGAR ORDENS DE MOMENTUM DO BANCO ==========
-            try {
-                const momentumRes = await fetch(`/api/momentum?limit=50&t=${Date.now()}`);
-                const momentumData = await momentumRes.json();
-                
-                const status = momentumData.status || {};
-                
-                // Atualizar contadores
-                setElementText('momentumSimulatedCount', status.simulated || 0);
-                setElementText('momentumPendingCount', status.pending || 0);
-                setElementText('momentumConfirmedCount', status.confirmed || 0);
-                setElementText('momentumRejectedCount', status.rejected || 0);
-                setElementText('momentumExpiredCount', status.expired || 0);
-                
-                // Atualizar tabela de ordens
-                const tbody = document.getElementById('momentumOrdersTable');
-                if (!tbody) {
-                    console.warn('[Dashboard] Elemento momentumOrdersTable não encontrado');
-                } else {
-                    const displayOrders = (momentumData.simulatedOrders || []).filter(order => order.status !== 'confirmed');
-
-                    if (!displayOrders || displayOrders.length === 0) {
-                        tbody.innerHTML = '<tr><td class="p-2 text-gray-500 text-center" colspan="9">Nenhuma ordem em validação</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        displayOrders.forEach(order => {
-                            const tr = document.createElement('tr');
-                            const variation = ((order.current_price - order.created_price) / order.created_price * 100);
-                            const variationColor = variation > 0 ? 'text-green-400' : variation < 0 ? 'text-red-400' : 'text-gray-400';
-                            
-                            // Status com cor
-                            let statusColor = 'text-gray-400';
-                            let statusIcon = '❓';
-                            if (order.status === 'simulated') {
-                                statusColor = 'text-purple-400';
-                                statusIcon = '⏳';
-                            } else if (order.status === 'pending') {
-                                statusColor = 'text-yellow-400';
-                                statusIcon = '⏸️';
-                            } else if (order.status === 'confirmed') {
-                                statusColor = 'text-green-400';
-                                statusIcon = '✅';
-                            } else if (order.status === 'rejected') {
-                                statusColor = 'text-red-400';
-                                statusIcon = '❌';
-                            } else if (order.status === 'expired') {
-                                statusColor = 'text-gray-500';
-                                statusIcon = '⏰';
-                            }
-                            
-                            // Picos e vales (JSON do banco)
-                            let peaks = [];
-                            let valleys = [];
-                            try {
-                                peaks = typeof order.peaks === 'string' ? JSON.parse(order.peaks) : (order.peaks || []);
-                                valleys = typeof order.valleys === 'string' ? JSON.parse(order.valleys) : (order.valleys || []);
-                            } catch (e) {
-                                console.warn('Erro ao parsear peaks/valleys:', e);
-                            }
-                            const peaksStr = peaks && peaks.length > 0 ? `📈 ${peaks.length}` : '';
-                            const valleysStr = valleys && valleys.length > 0 ? `📉 ${valleys.length}` : '';
-                            const peaksValleys = [peaksStr, valleysStr].filter(s => s).join(' ');
-                            
-                            tr.innerHTML = `
-                                <td class="p-2 font-mono text-xs">${order.id.substring(0, 8)}...</td>
-                                <td class="p-2">${order.side === 'buy' ? '🟢 BUY' : '🔴 SELL'}</td>
-                                <td class="p-2 text-right">R$ ${(() => { const p = parseFloat(order.created_price); return isFinite(p) ? p.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '-'; })()}</td>
-                                <td class="p-2 text-right">R$ ${(() => { const p = parseFloat(order.current_price); return isFinite(p) ? p.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '-'; })()}</td>
-                                <td class="p-2 text-right ${variationColor}">${variation > 0 ? '+' : ''}${variation.toFixed(2)}%</td>
-                                <td class="p-2 text-center"><span class="${statusColor}">${statusIcon} ${order.status}</span></td>
-                                <td class="p-2 text-center">${order.confirmation_reversals || 0}</td>
-                                <td class="p-2 text-xs">${peaksValleys || '—'}</td>
-                                <td class="p-2 text-xs text-red-400">${order.reason ? order.reason.substring(0, 30) : '—'}</td>
-                            `;
-                            tbody.appendChild(tr);
-                        });
-                    }
-                }
-            } catch (momentumError) {
-                console.error('❌ Erro ao atualizar momentum:', momentumError);
-            }
+            // Momentum validation removido (2025-01-21)
         } catch (error) {
-                console.error('❌ Error loading data:', error);
-                console.error('Full error:', error.toString(), error.stack);
-                // Mostra erro mas não quebra a página
-                const errorMsg = error.message.substring(0, 50);
-                document.getElementById('pnl').textContent = `Erro: ${errorMsg}`;
-                document.getElementById('spread').textContent = '-';
-                document.getElementById('lastPrice').textContent = '-';
-            }
+            console.error('[Dashboard] ❌ Error in loadData():', error);
+            console.error('Full error:', error.toString(), error.stack);
         }
+    }
 
     // ========== FUNÇÕES DE TESTES AUTOMATIZADOS ==========
     

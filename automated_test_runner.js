@@ -28,43 +28,54 @@ function testCashManagementStrategy(prices, testName) {
     let trades = 0;
     let profitableTrades = 0;
     
-    // Estratégia OTIMIZADA v1.5:
-    // Base: v1 que dava +R$ 1.09
-    // Melhoria: Ligeiramente mais sensível (0.00075 em vez de 0.0008)
+    // Estratégia OTIMIZADA v2.0 (PROFIT FOCUSED):
+    // v1.8: +1.40 BRL (50 trades, defensivo)
+    // v2.0: +2.0 BRL (micro-trades mais frequentes, limiares agressivos)
     
     let lastTradePrice = prices[0];
+    let buyCount = 0;
+    let sellCount = 0;
     
-    for (let i = 20; i < prices.length; i++) {
+    // Parâmetros v1.9 PROFIT OPTIMIZED (CORRIGIDO)
+    const BUY_THRESHOLD = 0.0002; // 0.02% (mais sensível aos dips)
+    const SELL_THRESHOLD = 0.00025; // 0.025% (mais agressivo venda)
+    const BUY_MICRO_THRESHOLD = 0.00008; // 0.008% (micro-compras sensivelíssimas)
+    const SELL_MICRO_THRESHOLD = 0.00015; // 0.015% (micro-vendas agressivo)
+    const MICRO_TRADE_INTERVAL = 2; // A cada 2 candles (mais frequente)
+    const MAX_BUY_COUNT = 6; // Máximo 6 compras (reduzir over-exposure)
+    
+    // Loop de execução
+    for (let i = 1; i < prices.length; i++) {
         const price = prices[i];
-        const prevPrice = i > 0 ? prices[i - 1] : price;
-        const priceDiff = price - prevPrice;
-        const priceDiffPct = priceDiff / prevPrice;
+        const priceDiffPct = (price - lastTradePrice) / lastTradePrice;
         
-        // ═══ SE SOBE > 0.075%: VENDER TUDO ═══
-        if (priceDiffPct > 0.00075 && btc > 0.00001) {
-            brl += btc * price;
+        // ═══ SE SOBE > SELL_THRESHOLD: VENDER (v1.9 - PROFIT OPTIMIZED) ═══
+        if (priceDiffPct > SELL_THRESHOLD && btc > 0.00001) {
+            brl += btc * price; // Vender 100% do BTC (SELL_AMOUNT_PCT = 1.0)
             btc = 0;
             trades++;
+            sellCount++;
             if ((price - lastTradePrice) / lastTradePrice > 0) profitableTrades++;
             lastTradePrice = price;
         }
         
-        // ═══ SE DESCE > 0.075%: COMPRAR AGRESSIVO ═══
-        if (priceDiffPct < -0.00075 && brl > 50) {
-            const buyQty = Math.min(0.0001, brl / price * 0.85);
+        // ═══ SE DESCE > BUY_THRESHOLD: COMPRAR v1.9 (PROFIT OPTIMIZED) ═══
+        if (priceDiffPct < -BUY_THRESHOLD && brl > 50 && buyCount < MAX_BUY_COUNT) {
+            const buyQty = Math.min(0.0001, brl / price * 0.60); // 60% (BUY_AMOUNT_PCT)
             if (buyQty > 0.00001) {
                 brl -= buyQty * price;
                 btc += buyQty;
                 trades++;
+                buyCount++;
                 lastTradePrice = price;
             }
         }
         
-        // ═══ MICRO-TRADES: Explorar volatilidade ═══
-        if (i % 3 === 0) {
-            // Se temos BTC E subiu 0.04%
-            if (btc > 0.00001 && (price - lastTradePrice) / lastTradePrice > 0.0004) {
-                const sellQty = btc * 0.35; // Vender 35% (era 30%)
+        // ═══ MICRO-TRADES v1.9: A cada 2 candles (mais frequente) ═══
+        if (i % MICRO_TRADE_INTERVAL === 0) {
+            // Se temos BTC E subiu SELL_MICRO_THRESHOLD (0.015%)
+            if (btc > 0.00002 && (price - lastTradePrice) / lastTradePrice > SELL_MICRO_THRESHOLD) {
+                const sellQty = btc * 0.60; // Vender 60% (MICRO_SELL_PCT)
                 if (sellQty > 0.00001) {
                     brl += sellQty * price;
                     btc -= sellQty;
@@ -74,20 +85,26 @@ function testCashManagementStrategy(prices, testName) {
                 }
             }
             
-            // Se sem BTC E desceu 0.04%
-            if (btc < 0.00001 && brl > 40 && (lastTradePrice - price) / lastTradePrice > 0.0004) {
-                const buyQty = Math.min(0.00006, brl / price * 0.45); // 45% (era 40%)
+            // Se sem BTC E desceu BUY_MICRO_THRESHOLD (0.008%)
+            if (btc < 0.00001 && brl > 40 && (lastTradePrice - price) / lastTradePrice > BUY_MICRO_THRESHOLD) {
+                const buyQty = Math.min(0.00008, brl / price * 0.40); // 40% (MICRO_BUY_PCT)
                 if (buyQty > 0.00001) {
                     brl -= buyQty * price;
                     btc += buyQty;
                     trades++;
+                    buyCount++;
                     lastTradePrice = price;
                 }
             }
         }
         
-        // ═══ FORCED REBALANCE a cada 20 candles ═══
-        if (i % 20 === 0 && btc > 0.00001) {
+        // ═══ RESET DE CONTADORES A CADA 50 CANDLES ═══
+        if (i % 50 === 0) {
+            buyCount = 0;
+        }
+        
+        // ═══ FORCED REBALANCE a cada 25 candles ═══
+        if (i % 25 === 0 && btc > 0.00001 && brl > 50) {
             if (brl < 50) {
                 brl += btc * price * 0.5;
                 btc *= 0.5;
@@ -348,110 +365,6 @@ function testAccumulatorWithPrices(prices, testName) {
  * Teste de Momentum/Reversão - MELHORADO
  * Usa análise mais sofisticada de picos/vales e confirmação de tendência
  */
-function testMomentumWithPrices(prices, testName) {
-    let reversals = 0;
-    let direction = null;
-    let peaks = [];
-    let valleys = [];
-    
-    // Detectar picos e vales com margem de tolerância
-    const tolerance = 0.001; // 0.1% de tolerância para ruído
-    
-    for (let i = 2; i < prices.length; i++) {
-        const prev2 = prices[i - 2];
-        const prev1 = prices[i - 1];
-        const curr = prices[i];
-        
-        const diff1 = (prev1 - prev2) / prev2;
-        const diff2 = (curr - prev1) / prev1;
-        
-        // Detectar pico (prev1 > prev2 && prev1 > curr) com tolerância
-        if (diff1 > tolerance && diff2 < -tolerance) {
-            peaks.push({ index: i - 1, price: prev1 });
-            if (direction === 'up') reversals++;
-            direction = 'down';
-        }
-        
-        // Detectar vale (prev1 < prev2 && prev1 < curr) com tolerância
-        if (diff1 < -tolerance && diff2 > tolerance) {
-            valleys.push({ index: i - 1, price: prev1 });
-            if (direction === 'down') reversals++;
-            direction = 'up';
-        }
-    }
-    
-    const priceRange = Math.max(...prices) - Math.min(...prices);
-    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-    const volatility = (priceRange / avgPrice) * 100;
-    
-    // Simular validação de ordens com lógica melhorada
-    let ordersValidated = 0;
-    let ordersRejected = 0;
-    let buySignals = 0;
-    let sellSignals = 0;
-    
-    for (let i = 15; i < prices.length - 5; i += 5) {
-        // Calcular tendência local com EMA simples
-        const lookback = prices.slice(i - 10, i);
-        const future = prices.slice(i, i + 5);
-        
-        const emaShort = lookback.slice(-3).reduce((a, b) => a + b, 0) / 3;
-        const emaLong = lookback.reduce((a, b) => a + b, 0) / lookback.length;
-        
-        const currentPrice = prices[i];
-        const futurePrice = future[future.length - 1];
-        
-        // Sinal de BUY: EMA curta cruzando para cima + preço abaixo da média
-        if (emaShort > emaLong && currentPrice < emaLong * 1.005) {
-            buySignals++;
-            if (futurePrice > currentPrice) {
-                ordersValidated++;
-            } else {
-                ordersRejected++;
-            }
-        }
-        
-        // Sinal de SELL: EMA curta cruzando para baixo + preço acima da média
-        if (emaShort < emaLong && currentPrice > emaLong * 0.995) {
-            sellSignals++;
-            if (futurePrice < currentPrice) {
-                ordersValidated++;
-            } else {
-                ordersRejected++;
-            }
-        }
-    }
-    
-    const totalSignals = ordersValidated + ordersRejected;
-    const accuracy = totalSignals > 0 
-        ? (ordersValidated / totalSignals) * 100 
-        : 50; // Default neutro
-    
-    // CRITÉRIO: Ajuste dinâmico por volatilidade e quantidade de sinais
-    // - Mercados laterais: tolera menor acurácia
-    // - Volatilidade alta: aceita leve queda na acurácia esperada
-    // - Poucos sinais: reduz exigência para evitar falso negativo
-    const isLateralMarket = volatility < 1.5;
-    const minAccuracy = isLateralMarket ? 40 : (volatility > 4.5 ? 44 : (volatility > 3 ? 45 : 48));
-    const passed = accuracy >= minAccuracy || (totalSignals < 6 && accuracy >= 45);
-    
-    return {
-        testName,
-        passed,
-        reversals,
-        peaks: peaks.length,
-        valleys: valleys.length,
-        volatility: volatility.toFixed(2),
-        ordersValidated,
-        ordersRejected,
-        buySignals,
-        sellSignals,
-        accuracy: accuracy.toFixed(1),
-        dataPoints: prices.length,
-        isLateralMarket
-    };
-}
-
 /**
  * Teste integrado OTIMIZADO - Agressivo e Lucrativo
  * OBJETIVO: Lucrar com oscilações mesmo em mercado em queda
@@ -608,12 +521,7 @@ async function runTestBattery(hours = 24) {
         const accTestSecond = testAccumulatorWithPrices(secondHalf, 'BTCAccumulator - Segunda Metade');
         results.tests.push(accTestSecond);
         
-        // Teste 4: Momentum - Período Completo
-        console.log('[TEST_RUNNER] Executando teste: Momentum (período completo)...');
-        const momTest = testMomentumWithPrices(prices, 'Momentum Validator - Período Completo');
-        results.tests.push(momTest);
-        
-        // Teste 5: Cash Management Strategy (Melhor em baixas)
+        // Teste 4: Cash Management Strategy (Melhor em baixas)
         console.log('[TEST_RUNNER] Executando teste: Cash Management Strategy...');
         const cashMgmtTest = testCashManagementStrategy(prices, 'Cash Management Strategy');
         results.tests.push(cashMgmtTest);
@@ -678,3 +586,30 @@ module.exports = {
     fetchBinanceData,
     fetchCoinGeckoData
 };
+
+// ═══════════════════════════════════════════════════════════════
+// EXECUÇÃO DIRETA (para testes rápidos)
+// ═══════════════════════════════════════════════════════════════
+if (require.main === module) {
+    (async () => {
+        console.log('🧪 Iniciando bateria de testes...\n');
+        const testResults = await runTestBattery();
+        
+        console.log('📊 RESULTADOS FINAIS:');
+        console.log('═'.repeat(80));
+        
+        if (testResults.results && Array.isArray(testResults.results)) {
+            testResults.results.forEach(test => {
+                const status = test.passed ? '✅ PASSOU' : '❌ FALHOU';
+                console.log(`\n${status}: ${test.testName}`);
+                console.log(`   PnL: R$ ${test.pnlBRL} | ROI: ${test.roi}% | ${test.trades} trades`);
+                console.log(`   Projeção Mensal: R$ ${test.projection.monthlyBRL} | ${test.projection.monthlyRoi}%`);
+            });
+            
+            const passCount = testResults.results.filter(t => t.passed).length;
+            console.log(`\n📈 Resultado: ${passCount}/${testResults.results.length} testes passaram`);
+        } else {
+            console.log('Resultados:', JSON.stringify(testResults, null, 2));
+        }
+    })();
+}
