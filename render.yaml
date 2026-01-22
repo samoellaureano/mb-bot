@@ -18,8 +18,6 @@ services:
         value: false
       - key: PAIR
         value: BTC-BRL
-      - key: PORT
-        value: 3001
       - key: CYCLE_SEC
         value: 30
       - key: USE_CASH_MANAGEMENT
