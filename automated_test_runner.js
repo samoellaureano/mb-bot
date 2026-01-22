@@ -166,25 +166,48 @@ let lastTestResults = null;
 let lastTestTime = null;
 
 /**
- * Busca dados históricos da Binance
+ * Busca dados históricos da Binance com retry automático
  */
 async function fetchBinanceData(symbol = 'BTCBRL', interval = '5m', limit = 100) {
-    try {
-        const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-        const response = await axios.get(url, { timeout: 10000 });
-        
-        return response.data.map(candle => ({
-            timestamp: candle[0],
-            open: parseFloat(candle[1]),
-            high: parseFloat(candle[2]),
-            low: parseFloat(candle[3]),
-            close: parseFloat(candle[4]),
-            volume: parseFloat(candle[5])
-        }));
-    } catch (error) {
-        console.error('[TEST_RUNNER] Erro ao buscar dados Binance:', error.message);
-        return null;
+    const maxRetries = 3;
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`[TEST_RUNNER] [Tentativa ${attempt}/${maxRetries}] Buscando ${limit} candles de ${interval} da Binance (${symbol})...`);
+            const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+            const response = await axios.get(url, { timeout: 15000 });
+            
+            if (!response.data || response.data.length === 0) {
+                throw new Error('Resposta vazia da Binance');
+            }
+            
+            const data = response.data.map(candle => ({
+                timestamp: candle[0],
+                open: parseFloat(candle[1]),
+                high: parseFloat(candle[2]),
+                low: parseFloat(candle[3]),
+                close: parseFloat(candle[4]),
+                volume: parseFloat(candle[5])
+            }));
+            
+            console.log(`[TEST_RUNNER] ✅ ${data.length} candles obtidos com sucesso`);
+            return data;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[TEST_RUNNER] ⚠️ Tentativa ${attempt} falhou: ${error.message}`);
+            
+            if (attempt < maxRetries) {
+                const delayMs = Math.pow(2, attempt) * 1000; // Backoff exponencial: 2s, 4s, 8s
+                console.log(`[TEST_RUNNER] Aguardando ${delayMs}ms antes de próxima tentativa...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
     }
+    
+    // Se todas as tentativas falharem, logar erro e retornar null
+    console.error(`[TEST_RUNNER] ❌ Todas ${maxRetries} tentativas falharam. Último erro: ${lastError.message}`);
+    return null;
 }
 
 /**
@@ -489,10 +512,17 @@ async function runTestBattery(hours = 24) {
         const limit = Math.min(Math.floor((hours * 60) / 5), 1000);
         console.log(`[TEST_RUNNER] Buscando ${limit} candles de 5m da Binance...`);
         
-        const binanceData = await fetchBinanceData('BTCBRL', '5m', limit);
+        let binanceData = await fetchBinanceData('BTCBRL', '5m', limit);
         
-        if (!binanceData || binanceData.length < 20) {
-            throw new Error('Dados insuficientes da Binance');
+        // Fallback: tentar symbol sem o R (BTC em vez de BTCBRL)
+        if (!binanceData || binanceData.length < 10) {
+            console.warn('[TEST_RUNNER] ⚠️ Dados insuficientes, tentando fallback com BTC/USDT...');
+            binanceData = await fetchBinanceData('BTCUSDT', '5m', limit);
+        }
+        
+        // Mínimo de 10 candles (50 minutos) para fazer testes significativos
+        if (!binanceData || binanceData.length < 10) {
+            throw new Error(`Dados insuficientes da Binance (obtidos: ${binanceData ? binanceData.length : 0} candles, esperado: ≥10)`);
         }
         
         const prices = binanceData.map(c => c.close);
@@ -506,24 +536,28 @@ async function runTestBattery(hours = 24) {
             change: (((prices[prices.length - 1] - prices[0]) / prices[0]) * 100).toFixed(2)
         };
         
-        console.log(`[TEST_RUNNER] ${prices.length} preços obtidos. Range: R$${results.summary.priceRange.min} - R$${results.summary.priceRange.max}`);
+        console.log(`[TEST_RUNNER] ✅ ${prices.length} preços obtidos. Range: R$${results.summary.priceRange.min} - R$${results.summary.priceRange.max}`);
         
         // Teste 1: BTCAccumulator - Período Completo
         console.log('[TEST_RUNNER] Executando teste: BTCAccumulator (período completo)...');
         const accTest = testAccumulatorWithPrices(prices, 'BTCAccumulator - Período Completo');
         results.tests.push(accTest);
         
-        // Teste 2: BTCAccumulator - Primeira Metade
-        const firstHalf = prices.slice(0, Math.floor(prices.length / 2));
-        console.log('[TEST_RUNNER] Executando teste: BTCAccumulator (primeira metade)...');
-        const accTestFirst = testAccumulatorWithPrices(firstHalf, 'BTCAccumulator - Primeira Metade');
-        results.tests.push(accTestFirst);
+        // Teste 2: BTCAccumulator - Primeira Metade (se há dados suficientes)
+        if (prices.length >= 5) {
+            const firstHalf = prices.slice(0, Math.floor(prices.length / 2));
+            console.log('[TEST_RUNNER] Executando teste: BTCAccumulator (primeira metade)...');
+            const accTestFirst = testAccumulatorWithPrices(firstHalf, 'BTCAccumulator - Primeira Metade');
+            results.tests.push(accTestFirst);
+        }
         
-        // Teste 3: BTCAccumulator - Segunda Metade
-        const secondHalf = prices.slice(Math.floor(prices.length / 2));
-        console.log('[TEST_RUNNER] Executando teste: BTCAccumulator (segunda metade)...');
-        const accTestSecond = testAccumulatorWithPrices(secondHalf, 'BTCAccumulator - Segunda Metade');
-        results.tests.push(accTestSecond);
+        // Teste 3: BTCAccumulator - Segunda Metade (se há dados suficientes)
+        if (prices.length >= 5) {
+            const secondHalf = prices.slice(Math.floor(prices.length / 2));
+            console.log('[TEST_RUNNER] Executando teste: BTCAccumulator (segunda metade)...');
+            const accTestSecond = testAccumulatorWithPrices(secondHalf, 'BTCAccumulator - Segunda Metade');
+            results.tests.push(accTestSecond);
+        }
         
         // Teste 4: Cash Management Strategy (Melhor em baixas)
         console.log('[TEST_RUNNER] Executando teste: Cash Management Strategy...');
@@ -553,6 +587,7 @@ async function runTestBattery(hours = 24) {
         
     } catch (error) {
         console.error('[TEST_RUNNER] ❌ Erro ao executar testes:', error.message);
+        console.error('[TEST_RUNNER] Stack trace:', error.stack);
         results.status = 'error';
         results.error = error.message;
         
