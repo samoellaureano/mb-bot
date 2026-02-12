@@ -20,6 +20,7 @@ require('dotenv').config();
 const axios = require('axios');
 const chalk = require('chalk');
 const fs = require('fs');
+const path = require('path');
 const db = require('./db');
 const MB = require('./mb_client');
 const ConfidenceSystem = require('./confidence_system');
@@ -1309,6 +1310,27 @@ async function runBacktest(candlesPath) {
 // ---------------- CICLO PRINCIPAL ----------------
 async function runCycle() {
     try {
+        // ===== VERIFICAR E APLICAR RESET DE MÉTRICAS =====
+        const resetFile = path.join(__dirname, '.reset_metrics');
+        if (fs.existsSync(resetFile)) {
+            try {
+                const resetData = JSON.parse(fs.readFileSync(resetFile, 'utf8'));
+                if (resetData.resetTotalPairsCreated) {
+                    log('WARN', `🔄 RESETANDO MÉTRICAS: totalPairsCreated: ${totalPairsCreated} → 0`);
+                    totalPairsCreated = 0;
+                }
+                if (resetData.resetTotalPairsCompleted) {
+                    log('WARN', `🔄 RESETANDO MÉTRICAS: totalPairsCompleted: ${totalPairsCompleted} → 0`);
+                    totalPairsCompleted = 0;
+                }
+                // Delete reset file after applying
+                fs.unlinkSync(resetFile);
+                log('SUCCESS', `✅ Métricas resetadas com sucesso. Bot pode criar novos pares agora.`);
+            } catch (err) {
+                log('WARN', `Erro ao ler arquivo de reset: ${err.message}`);
+            }
+        }
+
         cycleCount++;
         stats.cycles = cycleCount;
         pairsCreatedThisCycle = 0; // Reset contador de pares criados neste ciclo

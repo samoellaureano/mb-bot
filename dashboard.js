@@ -1532,6 +1532,48 @@ app.use((err, req, res, next) => {
     res.status(500).json({error: 'Internal server error'});
 });
 
+// POST /api/metrics/reset - Reset pair creation metrics
+app.post('/api/metrics/reset', async (req, res) => {
+    try {
+        log('WARN', '🔄 RESETANDO MÉTRICAS DE PARES...');
+        
+        // 1. Create a reset signal file for bot to read
+        const resetFile = path.join(__dirname, '.reset_metrics');
+        fs.writeFileSync(resetFile, JSON.stringify({
+            resetAt: new Date().toISOString(),
+            resetTotalPairsCreated: true,
+            resetTotalPairsCompleted: true
+        }), 'utf8');
+        
+        log('SUCCESS', '✅ Arquivo de reset criado para bot.');
+        
+        // 2. LIMPAR BANCO DE DADOS - Marcar todas as ordens como cancelled
+        const allOrders = await db.getOrders({ limit: 10000 });
+        let cleanedCount = 0;
+        for (const order of allOrders) {
+            if (order.status !== 'cancelled') {
+                try {
+                    await db.saveOrder({ ...order, status: 'cancelled' });
+                    cleanedCount++;
+                } catch (err) {
+                    log('WARN', `Erro ao limpar ordem ${order.id}: ${err.message}`);
+                }
+            }
+        }
+        log('SUCCESS', `✅ ${cleanedCount} ordens marcadas como cancelled no banco.`);
+        
+        res.json({
+            success: true,
+            message: `✅ Métricas resetadas! ${cleanedCount} ordens limpas do banco. Bot aplicará reset no próximo ciclo.`,
+            timestamp: new Date().toISOString(),
+            ordersCleared: cleanedCount
+        });
+    } catch (err) {
+        log('ERROR', 'Erro ao criar arquivo de reset:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Graceful shutdown
 process.on('SIGINT', () => {
     log('INFO', 'Shutting down server...');
