@@ -1,0 +1,37 @@
+
+[44m[37m[1m═══════════════════════════════════════════════════════[22m[39m[49m
+[44m[37m[1m   📊 RELATÓRIO PERIÓDICO #1 - 11/02/2026, 17:14:51[22m[39m[49m
+[44m[37m[1m═══════════════════════════════════════════════════════[22m[39m[49m
+
+[36m⏱️ UPTIME:[39m
+   0h 0m desde inicialização
+
+[36m💰 POSIÇÃO FINANCEIRA:[39m
+   Capital Base:        R$ 0,00
+   Saldo Atual:         ---
+   PnL Realizado:       [31mR$ 0,00[39m
+   PnL Não Realizado:   [31mR$ 0,00[39m
+   PnL Total:           [31mR$ 0,00[39m 
+
+[36m📈 TENDÊNCIA:[39m
+   Trend Direction:     → INICIAL
+   Mudança:             (primeira leitura)
+
+[36m🎯 PERFORMANCE:[39m
+   Total de Ordens:     0
+   Ordens Preenchidas:  0
+   Fill Rate:           0%
+   Volatilidade:        0%
+   Posição BTC:         0 BTC
+
+[36m📊 INDICADORES TÉCNICOS:[39m
+   RSI:                 -- 
+   EMA 8:               R$ 0,00
+   EMA 20:              R$ 0,00
+   MACD:                0.0000
+   Tendência Externa:   BEARISH (Score: 37/100)
+
+[36m💡 RECOMENDAÇÕES:[39m
+[36m  [MÉDIA] 📊 Fill rate baixo (<20%). Aumentar SPREAD_PCT ou ORDER_SIZE.[39m
+
+[44m[37m[1m═══════════════════════════════════════════════════════[22m[39m[49m

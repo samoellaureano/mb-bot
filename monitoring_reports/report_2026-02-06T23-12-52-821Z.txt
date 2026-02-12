@@ -1,0 +1,64 @@
+
+[44m[37m[1m═══════════════════════════════════════════════════════[22m[39m[49m
+[44m[37m[1m   📊 RELATÓRIO PERIÓDICO #1 - 06/02/2026, 20:12:52[22m[39m[49m
+[44m[37m[1m═══════════════════════════════════════════════════════[22m[39m[49m
+
+[36m⏱️ UPTIME:[39m
+   0h 0m desde inicialização
+
+[36m💰 POSIÇÃO FINANCEIRA:[39m
+   Capital Base:        R$ 0,00
+   Saldo Atual:         ---
+   PnL Realizado:       (...arguments_) => {
+		if (isArray(arguments_[0]) && isArray(arguments_[0].raw)) {
+			// Called as a template literal, for example: chalk.red`2 + 3 = {bold ${2+3}}`
+			return applyStyle(builder, chalkTag(builder, ...arguments_));
+		}
+
+		// Single argument is hot path, implicit coercion is faster than anything
+		// eslint-disable-next-line no-implicit-coercion
+		return applyStyle(builder, (arguments_.length === 1) ? ('' + arguments_[0]) : arguments_.join(' '));
+	}R$ 0,00
+   PnL Não Realizado:   (...arguments_) => {
+		if (isArray(arguments_[0]) && isArray(arguments_[0].raw)) {
+			// Called as a template literal, for example: chalk.red`2 + 3 = {bold ${2+3}}`
+			return applyStyle(builder, chalkTag(builder, ...arguments_));
+		}
+
+		// Single argument is hot path, implicit coercion is faster than anything
+		// eslint-disable-next-line no-implicit-coercion
+		return applyStyle(builder, (arguments_.length === 1) ? ('' + arguments_[0]) : arguments_.join(' '));
+	}R$ 0,00
+   PnL Total:           (...arguments_) => {
+		if (isArray(arguments_[0]) && isArray(arguments_[0].raw)) {
+			// Called as a template literal, for example: chalk.red`2 + 3 = {bold ${2+3}}`
+			return applyStyle(builder, chalkTag(builder, ...arguments_));
+		}
+
+		// Single argument is hot path, implicit coercion is faster than anything
+		// eslint-disable-next-line no-implicit-coercion
+		return applyStyle(builder, (arguments_.length === 1) ? ('' + arguments_[0]) : arguments_.join(' '));
+	}R$ 0,00 
+
+[36m📈 TENDÊNCIA:[39m
+   Trend Direction:     → INICIAL
+   Mudança:             (primeira leitura)
+
+[36m🎯 PERFORMANCE:[39m
+   Total de Ordens:     0
+   Ordens Preenchidas:  0
+   Fill Rate:           0%
+   Volatilidade:        0%
+   Posição BTC:         0 BTC
+
+[36m📊 INDICADORES TÉCNICOS:[39m
+   RSI:                 -- 
+   EMA 8:               R$ 0,00
+   EMA 20:              R$ 0,00
+   MACD:                0.0000
+   Tendência Externa:   NEUTRAL (Score: 56/100)
+
+[36m💡 RECOMENDAÇÕES:[39m
+[36m  [MÉDIA] 📊 Fill rate baixo (<20%). Aumentar SPREAD_PCT ou ORDER_SIZE.[39m
+
+[44m[37m[1m═══════════════════════════════════════════════════════[22m[39m[49m

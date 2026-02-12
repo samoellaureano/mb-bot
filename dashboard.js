@@ -12,19 +12,7 @@ const fs = require('fs');
 const mbClient = require('./mb_client');
 const axios = require('axios');
 const db = require('./db');
-const ExternalTrendValidator = require('./external_trend_validator');
-const MomentumSync = require('./momentum_sync');
 const AutomatedTestRunner = require('./automated_test_runner');
-
-// Instância do validador externo
-const trendValidator = new ExternalTrendValidator();
-
-// Cache de resultados de testes automatizados
-let automatedTestResults = null;
-let automatedTestRunning = false;
-
-// MomentumSync removido (2025-01-21)
-// const momentumSync = new MomentumSync();
 
 // Config
 const SIMULATE = process.env.SIMULATE === 'true';
@@ -634,18 +622,8 @@ async function getLiveData() {
         const trendBias = pred.trend === 'up' ? pred.confidence * BIAS_FACTOR * 1.5
             : (pred.trend === 'down' ? -pred.confidence * BIAS_FACTOR * 1.5 : 0);
 
-        // Obter dados de tendência externa - ADICIONADO
-        let externalTrend = null;
-        try {
-            externalTrend = await trendValidator.analyzeCombinedTrend();
-            log('DEBUG', 'External trend data obtained', {
-                trend: externalTrend.trend,
-                score: externalTrend.score,
-                confidence: externalTrend.confidence
-            });
-        } catch (error) {
-            log('WARN', 'Failed to get external trend data:', error.message);
-        }
+        // Obter dados de tendência externa removido (módulo não disponível)
+        const externalTrend = null; // FIX: Definir como null para evitar erro "not defined"
 
         return {
             timestamp: new Date().toISOString(),
@@ -882,7 +860,8 @@ app.get('/api/pairs', async (req, res) => {
         
         // ========== FASE 2: PROCESSAR ORDENS DO BANCO (histórico) ==========
         const activeOrdersFromBank = correctedBankOrders.filter(o => o.status === 'open');
-        const historicalOrders = correctedBankOrders.filter(o => o.status !== 'open');
+        // APENAS INCLUIR FILLED, NÃO CANCELLED - Para evitar 290 pares incompletos que já foram cancelados
+        const historicalOrders = correctedBankOrders.filter(o => o.status === 'filled');
         
         // Enriquecer ordens ativas do banco que não estão em memória
         const newActivesFromBank = activeOrdersFromBank.filter(o => !processedOrders.has(o.id));
@@ -942,11 +921,23 @@ app.get('/api/pairs', async (req, res) => {
             }
         }
 
-        // Remover pares completos sem ordens abertas
+        // ❌ REMOVER PARES APENAS QUANDO AMBAS AS ORDENS ESTIVEREM FILLED (EXECUTADAS)
+        // Antes: Removíamos pares quando ambas eram "closed" (open/filled/cancelled)
+        // Agora: Só remove quando ambas estão FILLED (completamente executadas)
+        let pairedCompletedThisCycle = 0; // Contador de pares completados nesta iteração
         for (const [pairId, pair] of Object.entries(pairMap)) {
-            const hasOpenBuy = pair.buyOrder && pair.buyOrder.status === 'open';
-            const hasOpenSell = pair.sellOrder && pair.sellOrder.status === 'open';
-            if (!hasOpenBuy && !hasOpenSell) {
+            const hasBuy = pair.buyOrder !== null;
+            const hasSell = pair.sellOrder !== null;
+            
+            // Remover APENAS se ambas as ordens estiverem preenchidas (filled)
+            const buyOrderFilled = hasBuy && pair.buyOrder.status === 'filled';
+            const sellOrderFilled = hasSell && pair.sellOrder.status === 'filled';
+            const bothOrdersFilled = buyOrderFilled && sellOrderFilled;
+            
+            // Se ambas estão filled, remover par (ciclo completado)
+            if (bothOrdersFilled) {
+                log('DEBUG', `✅ Par ${pairId.substring(0, 20)}... removido (ambas orders filled)`);
+                pairedCompletedThisCycle++;
                 delete pairMap[pairId];
             }
         }
@@ -1055,14 +1046,40 @@ app.get('/api/pairs', async (req, res) => {
             const hasSell = pair.sellOrder !== null;
             const isComplete = hasBuy && hasSell;
             
-            // FILTRO: Remover pares sem ordens ativas
-            const hasActiveBuy = hasBuy && pair.buyOrder.status === 'open';
-            const hasActiveSell = hasSell && pair.sellOrder.status === 'open';
-            const hasAnyActiveOrder = hasActiveBuy || hasActiveSell;
+            // Status detalhado de colocação
+            let buyStatus = 'SEM_ORDEM';
+            let sellStatus = 'SEM_ORDEM';
+            let buyPlacementIndicator = '⚪ SEM ORDEM';
+            let sellPlacementIndicator = '⚪ SEM ORDEM';
+            let buyExecutionIndicator = '⚪ SEM ORDEM';
+            let sellExecutionIndicator = '⚪ SEM ORDEM';
             
-            // Pular pares que não têm nenhuma ordem ativa (ambas cancelled/filled)
-            if (!hasAnyActiveOrder) {
-                continue;
+            if (hasBuy) {
+                buyStatus = pair.buyOrder.status;
+                if (pair.buyOrder.status === 'open') {
+                    buyPlacementIndicator = '🟡 COLOCADA';
+                    buyExecutionIndicator = '⏳ AGUARDANDO EXEC';
+                } else if (pair.buyOrder.status === 'filled') {
+                    buyPlacementIndicator = '🟢 COLOCADA';
+                    buyExecutionIndicator = '✅ EXECUTADA';
+                } else if (pair.buyOrder.status === 'cancelled') {
+                    buyPlacementIndicator = '🔴 CANCELADA';
+                    buyExecutionIndicator = '❌ CANCELADA';
+                }
+            }
+            
+            if (hasSell) {
+                sellStatus = pair.sellOrder.status;
+                if (pair.sellOrder.status === 'open') {
+                    sellPlacementIndicator = '🟡 COLOCADA';
+                    sellExecutionIndicator = '⏳ AGUARDANDO EXEC';
+                } else if (pair.sellOrder.status === 'filled') {
+                    sellPlacementIndicator = '🟢 COLOCADA';
+                    sellExecutionIndicator = '✅ EXECUTADA';
+                } else if (pair.sellOrder.status === 'cancelled') {
+                    sellPlacementIndicator = '🔴 CANCELADA';
+                    sellExecutionIndicator = '❌ CANCELADA';
+                }
             }
             
             // Indicador: ambas ordens foram executadas (filled)
@@ -1084,6 +1101,12 @@ app.get('/api/pairs', async (req, res) => {
             pairs.push({
                 pairId: pairId.substring(0, 50),
                 status: isComplete ? 'COMPLETO' : (hasBuy ? 'AGUARDANDO_SELL' : 'AGUARDANDO_BUY'),
+                buyStatus: buyStatus,
+                sellStatus: sellStatus,
+                buyPlacementIndicator: buyPlacementIndicator,
+                sellPlacementIndicator: sellPlacementIndicator,
+                buyExecutionIndicator: buyExecutionIndicator,
+                sellExecutionIndicator: sellExecutionIndicator,
                 bothOrdersExecuted: bothOrdersExecuted,
                 cycleComplete: cycleComplete,
                 executionIndicator: cycleComplete ? '✅ CICLO COMPLETO' : (bothOrdersExecuted ? '✅ EXECUTADAS (Em Remoção)' : '⏳ AGUARDANDO'),
@@ -1128,6 +1151,10 @@ app.get('/api/pairs', async (req, res) => {
         res.status(500).json({error: err.message});
     }
 });
+
+// ========== VARIÁVEIS DE CONTROLE DE TESTES ==========
+let automatedTestRunning = false;
+let automatedTestResults = null;
 
 // ========== ENDPOINTS DE TESTES AUTOMATIZADOS ==========
 
@@ -1214,6 +1241,219 @@ app.get('/api/tests/status', (req, res) => {
         isRunning: automatedTestRunning,
         lastResults: AutomatedTestRunner.getLastTestResults()
     });
+});
+
+// ========== ENDPOINTS DE GERENCIAMENTO DE PARES ==========
+
+// POST /api/pairs/cancel/:pairId - Cancelar todas as ordens de um par
+app.post('/api/pairs/cancel/:pairId', async (req, res) => {
+    try {
+        const pairId = req.params.pairId;
+        if (!pairId) {
+            return res.status(400).json({ error: 'pairId é obrigatório' });
+        }
+
+        log('INFO', `Cancelando todas as ordens do par: ${pairId}`);
+
+        // Buscar todas as ordens do par no banco de dados
+        const allOrders = await db.getOrders({ limit: 10000 });
+        const pairOrders = allOrders.filter(o => o.pair_id === pairId && o.status === 'open');
+
+        if (pairOrders.length === 0) {
+            return res.json({
+                success: true,
+                message: 'Nenhuma ordem aberta encontrada para este par',
+                pairId: pairId,
+                cancelledCount: 0
+            });
+        }
+
+        // Cancelar cada ordem
+        const cancelledOrders = [];
+        const failedOrders = [];
+
+        for (const order of pairOrders) {
+            try {
+                const result = await mbClient.cancelOrder(order.id);
+                // Atualizar status no banco usando saveOrder
+                await db.saveOrder({ 
+                    ...order, 
+                    status: 'cancelled' 
+                });
+                cancelledOrders.push({
+                    id: order.id,
+                    side: order.side,
+                    price: order.price,
+                    qty: order.qty
+                });
+                log('SUCCESS', `Ordem ${order.side.toUpperCase()} cancelada: ${order.id}`);
+            } catch (err) {
+                failedOrders.push({
+                    id: order.id,
+                    side: order.side,
+                    error: err.message
+                });
+                log('WARN', `Erro ao cancelar ordem ${order.id}: ${err.message}`);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `${cancelledOrders.length}/${pairOrders.length} ordens canceladas com sucesso`,
+            pairId: pairId,
+            cancelledCount: cancelledOrders.length,
+            failedCount: failedOrders.length,
+            cancelled: cancelledOrders,
+            failed: failedOrders.length > 0 ? failedOrders : undefined
+        });
+    } catch (err) {
+        log('ERROR', 'Erro ao cancelar par:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/orders/cancel-all - Cancelar TODAS as ordens abertas
+app.post('/api/orders/cancel-all', async (req, res) => {
+    try {
+        log('WARN', '🚨 CANCELANDO TODAS AS ORDENS ABERTAS DO SISTEMA!');
+
+        // Buscar todas as ordens abertas
+        const allOrders = await db.getOrders({ limit: 10000 });
+        const openOrders = allOrders.filter(o => o.status === 'open');
+
+        if (openOrders.length === 0) {
+            return res.json({
+                success: true,
+                message: 'Nenhuma ordem aberta para cancelar',
+                totalOrders: 0,
+                cancelledCount: 0,
+                failedCount: 0,
+                cancelled: [],
+                failed: []
+            });
+        }
+
+        const cancelledOrders = [];
+        const failedOrders = [];
+
+        // Cancelar cada ordem
+        for (const order of openOrders) {
+            try {
+                const result = await mbClient.cancelOrder(order.id);
+                // Atualizar status no banco
+                await db.saveOrder({ 
+                    ...order, 
+                    status: 'cancelled' 
+                });
+                cancelledOrders.push({
+                    id: order.id,
+                    side: order.side,
+                    price: order.price,
+                    qty: order.qty,
+                    pair_id: order.pair_id
+                });
+                log('SUCCESS', `✅ Ordem cancelada: ${order.side.toUpperCase()} ${order.id}`);
+            } catch (err) {
+                failedOrders.push({
+                    id: order.id,
+                    side: order.side,
+                    error: err.message,
+                    pair_id: order.pair_id
+                });
+                log('WARN', `❌ Erro ao cancelar ordem ${order.id}: ${err.message}`);
+            }
+        }
+
+        log('INFO', `📊 Resultado: ${cancelledOrders.length}/${openOrders.length} ordens canceladas`);
+
+        res.json({
+            success: true,
+            message: `${cancelledOrders.length}/${openOrders.length} ordens canceladas com sucesso`,
+            totalOrders: openOrders.length,
+            cancelledCount: cancelledOrders.length,
+            failedCount: failedOrders.length,
+            cancelled: cancelledOrders,
+            failed: failedOrders.length > 0 ? failedOrders : undefined
+        });
+    } catch (err) {
+        log('ERROR', 'Erro ao cancelar todas as ordens:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/pairs/clear-all - LIMPAR TODOS OS PARES (marca ordens como cancelled)
+app.post('/api/pairs/clear-all', async (req, res) => {
+    try {
+        log('WARN', '🚨 LIMPANDO TODOS OS PARES DO SISTEMA!');
+
+        // Buscar todas as ordens (open + filled)
+        const allOrders = await db.getOrders({ limit: 10000 });
+        
+        if (allOrders.length === 0) {
+            return res.json({
+                success: true,
+                message: 'Nenhum par para limpar',
+                totalPairs: 0,
+                clearedCount: 0,
+                failedCount: 0
+            });
+        }
+
+        const clearedPairs = new Set();
+        const failedPairs = [];
+
+        // 1. PRIMEIRO: Tentar cancelar todas as ordens OPEN
+        const openOrders = allOrders.filter(o => o.status === 'open');
+        for (const order of openOrders) {
+            let cancelled = false;
+            try {
+                await mbClient.cancelOrder(order.id);
+                cancelled = true;
+                log('SUCCESS', `✅ Ordem cancelada na exchange: ${order.id}`);
+            } catch (err) {
+                log('WARN', `⚠️ Erro ao cancelar na exchange ${order.id}: ${err.message}`);
+            }
+            
+            // SEMPRE marcar como cancelled no banco, independente de erro na exchange
+            try {
+                await db.saveOrder({ ...order, status: 'cancelled' });
+                if (order.pair_id) clearedPairs.add(order.pair_id);
+                log('SUCCESS', `✅ Ordem marcada como cancelled no DB: ${order.id}`);
+            } catch (err) {
+                if (order.pair_id) failedPairs.push(order.pair_id);
+                log('ERROR', `❌ Erro ao marcar como cancelled no DB: ${order.id} - ${err.message}`);
+            }
+        }
+
+        // 2. SEGUNDO: Marcar TODAS as ordens FILLED como CANCELLED (já foram executadas, apenas limpar do display)
+        const filledOrders = allOrders.filter(o => o.status === 'filled');
+        for (const order of filledOrders) {
+            try {
+                await db.saveOrder({ ...order, status: 'cancelled' });
+                if (order.pair_id) clearedPairs.add(order.pair_id);
+                log('SUCCESS', `✅ Ordem filled marcada como cancelled: ${order.id}`);
+            } catch (err) {
+                if (order.pair_id) failedPairs.push(order.pair_id);
+                log('WARN', `❌ Erro ao marcar como cancelled: ${order.id}`);
+            }
+        }
+
+        const uniqueFailedPairs = new Set(failedPairs);
+        log('INFO', `📊 LIMPEZA CONCLUÍDA: ${clearedPairs.size} pares limpos, ${uniqueFailedPairs.size} pares com erro`);
+
+        res.json({
+            success: true,
+            message: `✅ Sistema limpo! ${clearedPairs.size} pares removidos`,
+            totalPairs: allOrders.length,
+            clearedCount: clearedPairs.size,
+            failedCount: uniqueFailedPairs.size,
+            clearedPairs: Array.from(clearedPairs).slice(0, 10),
+            failedPairs: Array.from(uniqueFailedPairs).slice(0, 10)
+        });
+    } catch (err) {
+        log('ERROR', 'Erro ao limpar todos os pares:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Health check

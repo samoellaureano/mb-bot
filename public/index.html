@@ -112,9 +112,16 @@
 
     <!-- SEÇÃO DE PARES BUY/SELL -->
     <div class="mt-4 bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
             <h2 class="text-base sm:text-lg font-bold">🔗 Rastreamento de Pares BUY/SELL</h2>
-            <span id="pairsRefreshBadge" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Atualizando...</span>
+            <div class="flex gap-2 items-center">
+                <span id="pairsRefreshBadge" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Atualizando...</span>
+                <button id="clearAllOrdersBtn" onclick="clearAllOrders()" 
+                    class="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 rounded text-white transition"
+                    title="Cancelar TODAS as ordens abertas do sistema">
+                    🚨 Limpar Todas
+                </button>
+            </div>
         </div>
         
         <!-- Resumo de Pares -->
@@ -148,11 +155,12 @@
                     <th class="text-center p-2">SELL</th>
                     <th class="text-right p-2">Spread</th>
                     <th class="text-right p-2">ROI Líquido</th>
+                    <th class="text-center p-2">Ações</th>
                 </tr>
                 </thead>
                 <tbody id="pairsTableBody">
                 <tr>
-                    <td class="p-2 text-gray-400 text-center" colspan="6">Carregando pares...</td>
+                    <td class="p-2 text-gray-400 text-center" colspan="7">Carregando pares...</td>
                 </tr>
                 </tbody>
             </table>
@@ -1121,7 +1129,7 @@
                     tbody.innerHTML = '';
                     
                     if (displayPairs.length === 0) {
-                        tbody.innerHTML = '<tr><td class="p-2 text-gray-400 text-center" colspan="6">Nenhum par registrado</td></tr>';
+                        tbody.innerHTML = '<tr><td class="p-2 text-gray-400 text-center" colspan="7">Nenhum par registrado</td></tr>';
                     } else {
                         displayPairs.forEach(pair => {
                             const tr = document.createElement('tr');
@@ -1164,6 +1172,13 @@
                                 </td>
                                 <td class="p-2 text-right ${roiNum >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
                                     ${roiVal}
+                                </td>
+                                <td class="p-2 text-center">
+                                    <button onclick="cancelPair('${pair.pairId}')" 
+                                        class="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs transition" 
+                                        title="Cancelar todas as ordens deste par">
+                                        ❌ Cancelar
+                                    </button>
                                 </td>
                             `;
                             tbody.appendChild(tr);
@@ -1455,6 +1470,76 @@
                 statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
             }
             testsLoading = false;
+        }
+    }
+
+    async function cancelPair(pairId) {
+        // Confirmação antes de cancelar
+        if (!confirm(`⚠️ Tem certeza que deseja cancelar TODAS as ordens do par ${pairId.substring(0, 30)}...?`)) {
+            return;
+        }
+
+        try {
+            console.log(`[Dashboard] Cancelando par: ${pairId}`);
+            
+            const res = await fetch(`/api/pairs/cancel/${encodeURIComponent(pairId)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                console.log(`[Dashboard] Resultado cancelamento:`, data);
+                alert(`✅ ${data.message}\n\nCanceladas: ${data.cancelledCount}\nFalhadas: ${data.failedCount}`);
+                // Recarregar pares após cancelamento
+                setTimeout(loadData, 1000);
+            } else {
+                throw new Error(data.error || 'Erro ao cancelar par');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao cancelar par:', error);
+            alert(`❌ Erro ao cancelar par:\n\n${error.message}`);
+        }
+    }
+
+    async function clearAllOrders() {
+        // Confirmação de segurança - dupla verificação
+        if (!confirm('⚠️ AVISO: Você está para LIMPAR TODOS OS PARES do sistema!\n\nTem certeza?')) {
+            return;
+        }
+        if (!confirm('🚨 ÚLTIMA CHANCE: Deseja realmente LIMPAR TODOS OS PARES?\n\nIsso não pode ser desfeito!')) {
+            return;
+        }
+
+        const btn = document.getElementById('clearAllOrdersBtn');
+        if (btn) btn.disabled = true;
+
+        try {
+            console.log('[Dashboard] 🚨 Limpando TODOS os pares...');
+            
+            const res = await fetch('/api/pairs/clear-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                console.log(`[Dashboard] Resultado limpeza:`, data);
+                alert(`🚨 SISTEMA LIMPO!\n\n✅ Pares removidos: ${data.clearedCount}\n❌ Com erro: ${data.failedCount}\n📊 Total processado: ${data.totalPairs}`);
+                // Recarregar dados após limpeza
+                setTimeout(loadData, 1500);
+            } else {
+                throw new Error(data.error || 'Erro ao limpar pares');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao limpar pares:', error);
+            alert(`❌ Erro ao limpar pares:\n\n${error.message}`);
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 

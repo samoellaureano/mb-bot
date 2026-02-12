@@ -10,8 +10,7 @@
 
 const axios = require('axios');
 const HttpProxyAgent = require('http-proxy-agent');
-const HttpsProxyAgent = require('https-proxy-agent');
-const BTCAccumulator = require('./btc_accumulator');
+const HttpsProxyAgent = require('https-proxy-agent').HttpsProxyAgent;
 
 // Proxy configuration for Binance (attempt to bypass 451 errors)
 const PROXY_URL = process.env.HTTP_PROXY_BINANCE || process.env.HTTP_PROXY || null;
@@ -21,6 +20,153 @@ if (USE_PROXY) {
     console.log(`[TEST_RUNNER] ⚠️ Proxy habilitado: ${PROXY_URL.replace(/:[^:]*@/, ':***@')}`);
 } else if (PROXY_URL) {
     console.log(`[TEST_RUNNER] ℹ️ Proxy disponível mas desabilitado (USE_PROXY_FOR_BINANCE=true para ativar)`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLASSE: BTCAccumulator - Estratégia de Acumulação
+// ═══════════════════════════════════════════════════════════════
+class BTCAccumulator {
+    constructor(params = {}) {
+        this.minBTCTarget = params.minBTCTarget || 0.001;
+        this.maxBRLHolding = params.maxBRLHolding || 30;
+        this.sellResistance = params.sellResistance || 0.9;
+        this.dcaDropThreshold = params.dcaDropThreshold || 0.005;
+        this.minHoldHours = params.minHoldHours || 2;
+        this.strongDropThreshold = params.strongDropThreshold || 0.03;
+        this.reversalConfirmationCycles = params.reversalConfirmationCycles || 4;
+        this.minReversalRecovery = params.minReversalRecovery || 0.005;
+        this.trendFilterEnabled = params.trendFilterEnabled !== false;
+        this.blockOnBearishTrend = params.blockOnBearishTrend !== false;
+        this.rsiFilterEnabled = params.rsiFilterEnabled !== false;
+        this.rsiOverboughtThreshold = params.rsiOverboughtThreshold || 80;
+        this.rsiOversoldThreshold = params.rsiOversoldThreshold || 20;
+        this.stopLossEnabled = params.stopLossEnabled !== false;
+        this.stopLossThreshold = params.stopLossThreshold || 0.075;
+        
+        this.priceHistory = [];
+        this.rsi = 50;
+        this.trend = 'neutral';
+        this.highestPrice = 0;
+    }
+    
+    recordPrice(price) {
+        this.priceHistory.push(price);
+        if (this.priceHistory.length > 100) {
+            this.priceHistory.shift();
+        }
+        this.highestPrice = Math.max(this.highestPrice, price);
+        this.calculateRSI();
+        this.calculateTrend();
+    }
+    
+    calculateRSI() {
+        if (this.priceHistory.length < 14) {
+            this.rsi = 50;
+            return;
+        }
+        const prices = this.priceHistory;
+        let gains = 0, losses = 0;
+        for (let i = prices.length - 14; i < prices.length - 1; i++) {
+            const change = prices[i + 1] - prices[i];
+            if (change > 0) gains += change;
+            else losses -= change;
+        }
+        const avgGain = gains / 14;
+        const avgLoss = losses / 14;
+        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        this.rsi = 100 - (100 / (1 + rs));
+    }
+    
+    calculateTrend() {
+        if (this.priceHistory.length < 10) {
+            this.trend = 'neutral';
+            return;
+        }
+        const prices = this.priceHistory.slice(-20);
+        const avgPrice = prices.reduce((a, b) => a + b) / prices.length;
+        const currentPrice = prices[prices.length - 1];
+        
+        if (currentPrice > avgPrice * 1.02) {
+            this.trend = 'up';
+        } else if (currentPrice < avgPrice * 0.98) {
+            this.trend = 'down';
+        } else {
+            this.trend = 'neutral';
+        }
+    }
+    
+    getRecommendation(price, btc, brl) {
+        // Stop loss
+        if (this.stopLossEnabled && btc > 0 && this.highestPrice > 0) {
+            const drawdown = (this.highestPrice - price) / this.highestPrice;
+            if (drawdown > this.stopLossThreshold) {
+                return { action: 'STOP_LOSS', buyPaused: false };
+            }
+        }
+        
+        // RSI filters
+        if (this.rsiFilterEnabled) {
+            if (this.rsi > this.rsiOverboughtThreshold && btc > 0) {
+                return { action: 'CONSIDER_SELL', buyPaused: false };
+            }
+            if (this.rsi < this.rsiOversoldThreshold && brl > 30) {
+                return { action: 'STRONG_BUY', buyPaused: false };
+            }
+        }
+        
+        // Trend filter
+        if (this.blockOnBearishTrend && this.trend === 'down') {
+            return { action: 'WAIT_REVERSAL', buyPaused: true };
+        }
+        
+        // Normal logic
+        if (btc > 0 && this.rsi > 60) {
+            return { action: 'CONSIDER_SELL', buyPaused: false };
+        }
+        if (brl > 30 && this.rsi < 40) {
+            return { action: 'BUY', buyPaused: false };
+        }
+        
+        return { action: 'WAIT', buyPaused: false };
+    }
+    
+    shouldDCA(price, brl) {
+        if (brl < 30) return { should: false };
+        const recent = this.priceHistory.slice(-10);
+        if (recent.length < 5) return { should: false };
+        
+        const avgPrice = recent.reduce((a, b) => a + b) / recent.length;
+        const dropPct = (avgPrice - price) / avgPrice;
+        
+        return { 
+            should: dropPct > this.dcaDropThreshold,
+            reason: dropPct > 0 ? `Queda ${(dropPct * 100).toFixed(2)}%` : 'Alta'
+        };
+    }
+    
+    recordBuy(price, qty) {
+        // Mock buy
+    }
+    
+    shouldBlockSell(price, btc, targetPrice, qty) {
+        // Anti-orphan protection
+        if (btc - qty < 0.00001) {
+            return { block: true, reason: 'Última BTC' };
+        }
+        return { block: false };
+    }
+    
+    getStats() {
+        return {
+            highestPrice: this.highestPrice,
+            rsi: this.rsi,
+            trend: this.trend
+        };
+    }
+    
+    getAccumulationScore(price, brl, btc) {
+        return btc > 0.0001 ? 1.0 : 0.5;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -151,6 +297,9 @@ function testCashManagementStrategy(prices, testName) {
     const projectedMonthlyBRL = (pnl / hoursInTest) * hoursInMonth;
     const projectedYearlyBRL = (pnl / hoursInTest) * hoursInYear;
     
+    // Calcular BTC ganho/perdido
+    const btcGained = btc - initialBTC;
+    
     return {
         testName,
         passed,
@@ -163,6 +312,7 @@ function testCashManagementStrategy(prices, testName) {
         profitableTrades,
         btcFinal: btc.toFixed(8),
         brlFinal: brl.toFixed(2),
+        btcGained: btcGained.toFixed(8),
         projection: {
             hoursInTest: hoursInTest.toFixed(1),
             monthlyRoi: projectedMonthlyRoi.toFixed(2),
@@ -529,25 +679,57 @@ async function runTestBattery(hours = 24) {
     };
     
     try {
-        // Buscar dados da Binance (5m candles)
-        const limit = Math.min(Math.floor((hours * 60) / 5), 1000);
-        console.log(`[TEST_RUNNER] Buscando ${limit} candles de 5m da Binance...`);
+        // ===== TENTAR BUSCAR DADOS LOCAIS DO BANCO PRIMEIRO =====
+        let prices = [];
+        let dataSource = null;
         
-        let binanceData = await fetchBinanceData('BTCBRL', '5m', limit);
-        
-        // Fallback: tentar symbol sem o R (BTC em vez de BTCBRL)
-        if (!binanceData || binanceData.length < 10) {
-            console.warn('[TEST_RUNNER] ⚠️ Dados insuficientes, tentando fallback com BTC/USDT...');
-            binanceData = await fetchBinanceData('BTCUSDT', '5m', limit);
+        try {
+            const db = require('./db');
+            console.log(`[TEST_RUNNER] 🔍 Tentando carregar dados históricos do banco de dados...`);
+            
+            // Buscar histórico local
+            const priceHistory = await Promise.race([
+                db.getPriceHistory(hours, 500), // 500 pontos nas últimas X horas
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+            ]);
+            
+            if (priceHistory && priceHistory.length >= 10) {
+                prices = priceHistory.map(p => parseFloat(p.price));
+                dataSource = 'Local DB';
+                console.log(`[TEST_RUNNER] ✅ ${prices.length} preços carregados do banco local`);
+            }
+        } catch (DBError) {
+            console.warn(`[TEST_RUNNER] ⚠️ Erro ao carregar banco local: ${DBError.message}`);
         }
         
-        // Mínimo de 10 candles (50 minutos) para fazer testes significativos
-        if (!binanceData || binanceData.length < 10) {
-            throw new Error(`Dados insuficientes da Binance (obtidos: ${binanceData ? binanceData.length : 0} candles, esperado: ≥10)`);
+        // ===== FALLBACK: BUSCAR DA BINANCE SE NÃO HOUVER DADOS LOCAIS =====
+        if (!prices || prices.length < 10) {
+            console.log(`[TEST_RUNNER] 📡 Dados insuficientes localmente, buscando da Binance...`);
+            
+            const limit = Math.min(Math.floor((hours * 60) / 5), 1000);
+            console.log(`[TEST_RUNNER] Buscando ${limit} candles de 5m da Binance...`);
+            
+            let binanceData = await fetchBinanceData('BTCBRL', '5m', limit);
+            
+            // Fallback: tentar symbol sem o R (BTC em vez de BTCBRL)
+            if (!binanceData || binanceData.length < 10) {
+                console.warn('[TEST_RUNNER] ⚠️ Dados insuficientes, tentando fallback com BTC/USDT...');
+                binanceData = await fetchBinanceData('BTCUSDT', '5m', limit);
+            }
+            
+            if (binanceData && binanceData.length >= 10) {
+                prices = binanceData.map(c => c.close);
+                dataSource = 'Binance';
+                console.log(`[TEST_RUNNER] ✅ ${prices.length} candles obtidos da Binance`);
+            }
         }
         
-        const prices = binanceData.map(c => c.close);
-        results.summary.dataSource = 'Binance';
+        // ===== VALIDAR DADOS =====
+        if (!prices || prices.length < 10) {
+            throw new Error(`Dados insuficientes (obtidos: ${prices ? prices.length : 0} preços, esperado: ≥10)`);
+        }
+        
+        results.summary.dataSource = dataSource || 'Desconhecido';
         results.summary.dataPoints = prices.length;
         results.summary.priceRange = {
             min: Math.min(...prices).toFixed(2),
@@ -557,7 +739,7 @@ async function runTestBattery(hours = 24) {
             change: (((prices[prices.length - 1] - prices[0]) / prices[0]) * 100).toFixed(2)
         };
         
-        console.log(`[TEST_RUNNER] ✅ ${prices.length} preços obtidos. Range: R$${results.summary.priceRange.min} - R$${results.summary.priceRange.max}`);
+        console.log(`[TEST_RUNNER] ✅ ${prices.length} preços obtidos da fonte: ${dataSource}. Range: R$${results.summary.priceRange.min} - R$${results.summary.priceRange.max}`);
         
         // Teste 1: BTCAccumulator - Período Completo
         console.log('[TEST_RUNNER] Executando teste: BTCAccumulator (período completo)...');

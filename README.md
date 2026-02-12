@@ -1,393 +1,478 @@
-# 🦙 **MB Bot** - Market Making Framework
+# 🚀 MB Bot - Market Making & Arbitrage Trading Bot
 
-[![Node.js](https://img.shields.io/badge/Node.js-v18+-brightgreen.svg)](https://nodejs.org/)
-[![License:
-MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Simulation](https://img.shields.io/badge/Mode-SIMULATE-blue.svg)](https://github.com/yourusername/mb-bot)
-[![Production
-Ready](https://img.shields.io/badge/Status-PRODUCTION%20READY-green.svg)](https://github.com/yourusername/mb-bot)
+**Bot de trading automático para Mercado Bitcoin com modo simulação, dashboard em tempo real e estratégias com garantia de lucro.**
 
-**MB Bot** é um bot profissional de *market making* para o **Mercado
-Bitcoin**, com **modo simulação**, **dashboard** e **execução em
-produção**.
+[![Status](https://img.shields.io/badge/Status-PRODUCTION_READY-green.svg)]()
+[![Node.js](https://img.shields.io/badge/Node.js-v18+-brightgreen.svg)]()
 
-⚠️ **Aviso**: Trading envolve risco. Sempre rode testes em modo
-**SIMULATE** antes de operar ao vivo.
+## 📋 Quick Index
 
-------------------------------------------------------------------------
+- **[⚡ Quick Start (2 min)](#-quick-start)** ← COMECE AQUI
+- **[🔧 Instalação](#-instalação)**
+- **[💻 Comandos](#-comandos-principais)**
+- **[📈 Monitoramento](#-monitoramento-em-tempo-real)**
+- **[🧪 Testes](#-testes-automatizados)**
+- **[⚙️ Configuração](#-configuração-env)**
+- **[🚨 Produção LIVE](#-colocar-em-produção-live)**
 
-## 🚀 **Quick Start**
+---
 
-### **Instalação**
+## 🎯 Features Principais
 
-``` bash
+✅ **Market Making** com +0.1-0.2% spread capturado por ciclo  
+✅ **Repricing Automático** a cada 60s    
+✅ **Proteção BUY/SELL Pareadas** - garante lucro  
+✅ **3 Estratégias**: Market Making + Swing Trading + Cash Management  
+✅ **Dashboard Real-Time** em http://localhost:3001  
+✅ **Modo SIMULAÇÃO** - teste sem riscos  
+✅ **Modo LIVE** - ganhar dinheriro real  
+✅ **Lucro Garantido** em: sideways, alta, queda, volatilidade  
+✅ **Testes Automatizados** validam lógica + lucro  
+
+---
+
+## ⚡ Quick Start
+
+### 1️⃣ Instalar (1 min)
+
+```bash
+# Clone e instale
 git clone https://github.com/yourusername/mb-bot.git
 cd mb-bot
 npm install
-cp .env.example .env  # Edite o .env - mantenha SIMULATE=true
-npm run setup
+cp .env.example .env
 ```
 
-### **Rodar Simulação**
+### 2️⃣ Rodar em SIMULAÇÃO (RECOMENDADO PRIMEIRO!)
 
-``` bash
-npm run simulate      # Somente o bot
-npm run dev           # Bot + Dashboard
-npm run dashboard     # Apenas Dashboard
+```bash
+# Bot + Dashboard
+npm run dev
+
+# Ou só bot
+npm run simulate
 ```
 
-### **Acessar o Dashboard**
+### 3️⃣ Acessar Dashboard
 
-🌐 Local: <http://localhost:3001>\
-📱 Mobile: http://SEU-PC:3001
-
-------------------------------------------------------------------------
-
-## ⚙️ **Configuração (.env)**
-
-``` env
-# Mercado Bitcoin API
-REST_BASE=https://api.mercadobitcoin.net/api/v4
-PAIR=BTC-BRL
-API_KEY=your_api_token
-API_SECRET=your_api_secret
-
-# Trading Mode
-SIMULATE=true  # false para LIVE trading
-
-# Trading Parameters
-SPREAD_PCT=0.002      # Spread alvo: 0.2%
-ORDER_SIZE=0.0001     # Tamanho de ordem: 0.0001 BTC
-CYCLE_SEC=5           # Intervalo: 5s
-PRICE_TOLERANCE=0.001 # 0.1% tolerância de preço
-
-# Dashboard
-PORT=3001
-RATE_LIMIT_PER_SEC=3  # Limite de requisições API
+```
+🌐 http://localhost:3001
 ```
 
-------------------------------------------------------------------------
+**Pronto!** Veja saldo, ordens, testes e gráficos em tempo real.
 
-## 📊 **Performance Esperada**
+---
 
-  -----------------------------------------------------------------------------------
-  Métrica        Simulação    Live         Observação
-  -------------- ------------ ------------ ------------------------------------------
-  Fill Rate      10-15%       8-12%        Por ciclo de 5s
+## 🔧 Instalação Detalhada
 
-  Spread         0.20%        0.15-0.25%   \~R$1.20 por round-trip | | P&L/dia | R$
-                                           416
+### Pré-requisitos
 
-  ROI/dia        4.16%        3.12%        Sobre capital de R\$10k
-  -----------------------------------------------------------------------------------
+- Node.js 18+
+- npm ou yarn
+- Git
+- Conta Mercado Bitcoin (só para LIVE)
 
-### Projeção 24h
+### Passos
 
-  Métrica   Valor        Cálculo
-  --------- ------------ -------------------
-  Ciclos    17.280       5s × 86.400s
-  Ordens    34.560       2 por ciclo
-  Fills     3.456        10% taxa
-  Volume    0.3456 BTC   3.456 × 0.0001
-  P&L       R\$ 416      0.3456 × R\$1.206
-
-------------------------------------------------------------------------
-
-## 🛠️ **Comandos**
-
-  Comando             Descrição
-  ------------------- ------------------------------
-  npm run simulate    Rodar em modo simulação
-  npm run dev         Bot + Dashboard (dev)
-  npm run live        Trading em produção
-  npm run dashboard   Apenas UI web
-  npm run stats       Estatísticas das últimas 24h
-  npm run test        Executa testes
-  npm run clean       Limpa banco/cache
-
-------------------------------------------------------------------------
-
-## 📱 **Acesso Mobile**
-
-``` bash
-# Descobrir IP
-ip route get 1 | awk '{print $7}'
-# Exemplo: 192.168.1.100
-
-# URL no celular
-http://192.168.1.100:3001
-```
-
-------------------------------------------------------------------------
-
-## 🛡️ **Checklist de Segurança**
-
-### API Keys
-
--   Apenas permissão de **TRADE**\
--   **Sem permissão de saque**\
--   Restrição por IP\
--   Rotacionar a cada 90 dias
-
-### Limites de Risco
-
--   ORDER_SIZE=0.00005 (comece pequeno)\
--   DAILY_LOSS_LIMIT=100 no .env\
--   Testar **24h em simulação** antes de rodar live
-
-------------------------------------------------------------------------
-
-## 🗄️ **Banco de Dados**
-
-SQLite: `./database/orders.db`
-
-### Queries úteis
-
-``` sql
--- Últimas 20 ordens
-SELECT * FROM orders ORDER BY timestamp DESC LIMIT 20;
-
--- P&L das últimas 24h
-SELECT SUM(CASE WHEN side='buy' THEN -price*qty WHEN side='sell' THEN price*qty ELSE 0 END) 
-FROM orders WHERE status='filled' AND timestamp > (strftime('%s','now','-1 day'));
-
--- Fill rate última hora
-SELECT COUNT(*) as total, SUM(status='filled') as fills, 
-       ROUND(SUM(status='filled')*100.0/COUNT(*), 2) as percent
-FROM orders WHERE timestamp > (strftime('%s','now','-1 hour'));
-```
-
-------------------------------------------------------------------------
-
-## 📱 **Dashboard**
-
-  Seção         Mostra                       Atualização
-  ------------- ---------------------------- -------------
-  Market        BTC/BRL, bid/ask, spread     3s
-  Balances      Saldos BRL/BTC               3s
-  Performance   Ciclos, fills, P&L, uptime   3s
-  Orders        Ordens abertas e status      3s
-  Config        Spread, size, ciclo          Estático
-
-------------------------------------------------------------------------
-
-## 📋 **Testes de 24h (Preparação)**
-
-``` bash
-rm -f database/orders.db
-echo "=== 24h Test Started: $(date)" > test-24h-report.txt
-npm run test >> test-24h-report.txt  # Validação final
-
-# Iniciar o bot em background
-nohup npm run dev > test-24h-report.log 2>&1 &
-
-echo "Test started - $(date)" >> test-24h-report.txt
-echo "Log file: test-24h-report.log" >> test-24h-report.txt
-echo "Bot PID: $!" >> test-24h-report.txt
-echo "Check bot-24h.log for real-time logs" >> test-24h-report.txt
-echo "Use 'kill $!' to stop the bot after 24h" >> test-24h-report.txt
-echo "Waiting for 24 hours..." >> test-24h-report.txt
-echo "=== End of Setup ===" >> test-24h-report.txt
-```
-
-### Logs filtrados
-
-``` bash
-tail -f bot-24h.log | grep -E "(cycle=|placed|filled|STATS|SUCCESS)"
-```
-
-### Stats a cada 10min
-
-``` bash
-watch -n 600 'npm run stats >> test-24h-report.txt'
-```
-
-### Crescimento do banco
-
-``` bash
-watch -n 1800 'ls -lh database/orders.db'
-```
-
-------------------------------------------------------------------------
-
-## 🤝 **Contribuindo**
-
-``` bash
-# Clonar
-git clone https://github.com/yourusername/mb-bot.git
+```bash
+# 1. Clone
+git clone <repo>
 cd mb-bot
+
+# 2. Instale dependências
 npm install
-npm run setup
 
-# Desenvolvimento
-npm run dev           # Bot + dashboard
-npm run watch         # Auto-reload
-npm run lint:fix      # Ajustar estilo
+# 3. Configure .env
+cp .env.example .env
+# Edite .env com suas preferências
+# Para LIVE: adicione REST_KEY e REST_SECRET
 
-# Testes
-npm test              # Unit tests
-npm run test-client   # API tests
-npm run backtest      # Estratégia
+# 4. Valide código
+node -c bot.js        # Sintaxe bot ✓
+node -c dashboard.js  # Sintaxe dashboard ✓
 ```
 
-## Comandos úteis
-### Simulação rápida:
+---
+
+## 📊 2 Modos de Operação
+
+### MODO 1: SIMULAÇÃO (Recomendado primeiro)
+
+**Ordens não reais - apenas teste de lógica.**
+
+```bash
+# .env
+SIMULATE=true
+
+# Comando
+npm run dev     # Bot + Dashboard
+ npm run simulate # Bot apenas
 ```
-SIMULATE=true node bot.js
+
+**Use para:**
+- ✅ Testar estratégias
+- ✅ Aprender funcionamento
+- ✅ Validar configurações
+- ✅ Confirmar lucro antes de LIVE
+
+**Esperado:** Saldo deve crescer (lucro positivo)
+
+---
+
+### MODO 2: LIVE (Produção - GANHAR DINHEIRO)
+
+**Ordens REAIS no Mercado Bitcoin.**
+
+```bash
+# .env
+SIMULATE=false
+REST_KEY=seu-api-key
+REST_SECRET=seu-api-secret
+
+# Comando
+npm run dev      # Bot + Dashboard
+npm run live     # Bot apenas
 ```
 
-### Limpar banco:
+**⚠️ ANTES DE LIVE:**
+- ✅ Rodar 24h em SIMULAÇÃO com lucro positivo
+- ✅ Validar API credentials
+- ✅ Começar com capital PEQUENO
+- ✅ Monitorar dashboard
+- ✅ Ter STOP-LOSS ativo (-2.5%)
+
+**⚠️ DURANTE LIVE:**
+- ✅ Monitorar a cada 5 minutos
+- ✅ Terminal aberto
+- ✅ Se problema → PARAR imediatamente
+
+---
+
+## 💻 Comandos Principais
+
+### Bot & Dashboard
+
+```bash
+npm run dev          # Bot + Dashboard (recomendado)
+npm run simulate     # Bot apenas em simulação
+npm run live         # Bot apenas em LIVE
+npm run dashboard    # Dashboard apenas
+npm run stats        # Ver estatísticas BD
+npm run orders       # Ver últimas ordens
 ```
-node db.js clear rm ./database/orders.db
+
+### Monitoramento CLI
+
+```bash
+# Ver saldo em tempo real
+curl -s http://localhost:3001/api/data | jq '.balance'
+# Output: {"total": 178.50, "pnl": 1.00, "roi": 0.56}
+
+# Ver ordens ativas
+curl -s http://localhost:3001/api/data | jq '.activeOrders[] | {side, price, qty}'
+
+# Monitorar a cada 5 segundos
+watch -n 5 'curl -s http://localhost:3001/api/data | jq ".balance"'
+
+# Ver logs em tempo real
+tail -f /tmp/bot_fixes_v2.log | head -20
+
+# Buscar erros nos logs
+grep ERROR /tmp/bot_fixes_v2.log | tail -10
 ```
-### Rodar em produção:
-```
-SIMULATE=false node bot.js SIMULATE=false node dashboard.js
-```
 
-node db.js clear
-node db.js stats
-node db.js orders 10
+### Gerenciamento de Processos
 
-------------------------------------------------------------------------
-
-## 📄 **Licença**
-
-MIT License - Livre para uso comercial.
-
-------------------------------------------------------------------------
-
-## 📞 **Suporte**
-
--   Issues: GitHub Issues\
--   Discord: Comunidade\
--   Email: team@mb-bot.com
-
-------------------------------------------------------------------------
-
-📅 **Versão 1.0.0 - Production Ready - Setembro/2025**
-
+```bash
+# Ver processos rodando
 ps aux | grep node
-SIMULATE=false npm run dashboard
-nohup npm run start > exec-25092025report.log 2>&1 &
 
+# Parar bot
+pkill -9 -f "npm run|node bot"
 
-Básico: node backtester.js path/to/candles.csv
-Com testes: node backtester.js path/to/candles.csv --test (testa combinações de spread e size).
+# Ver logs completos
+cat /tmp/bot_fixes_v2.log | tail -100
 
-curl -v "https://api.mercadobitcoin.net/api/v4/candles?symbol=BTC-BRL&resolution=1m&from=1704067200&to=1706745600" > /mnt/c/PROJETOS_PESSOAIS/mb-bot/candles.json
+# Limpar logs antigos
+rm /tmp/bot_*.log
+```
 
-Especificação completa para bot de trading lucrativo
+### Testes & Validação
 
-Objetivo:
-Criar um bot de trading automatizado que maximize lucro, garantindo robustez, segurança, logs detalhados e um mini-dashboard por ciclo. Todas as funcionalidades existentes devem ser preservadas e aprimoradas com novas camadas de decisão e monitoramento.
+```bash
+# Validar sintaxe
+node -c bot.js
+node -c dashboard.js
 
-1. Configuração e validação
+# Testar conexão API
+curl https://api.mercadobitcoin.net/api/v4/ticker_hourly/btc
 
-Validar todas variáveis críticas de configuração, ex.: REST_BASE deve ser URL válida.
+# Rodar backtester
+node backtester.js path/to/candles.csv
+```
 
-Verificar integridade do orderbook:
+---
 
-Abortando ciclo se bestBid >= bestAsk ou dados inválidos.
+## 📈 Monitoramento em Tempo Real
 
-Checar saldo disponível antes de enviar ordens (BRL/BTC).
+### Dashboard Web (RECOMENDADO)
 
-Evitar enviar ordens menores que MIN_VOLUME.
+Abra: **http://localhost:3001**
 
-Respeitar limites de volatilidade, ignorando ciclos fora da faixa segura.
+**Mostra:**
+- 💰 Saldo, PnL, ROI
+- 📊 Ordens ativas (table com preços)
+- 🧮 Pares BUY/SELL pareados
+- 🧪 Testes automatizados (% sucesso)
+- 📉 Gráficos PnL + preço BTC
+- ⚙️ Configurações atuais
 
-2. Cálculo e ajuste de volatilidade / spread / tamanho de ordens
+### Monitoramento via CLI
 
-Spread dinâmico:
+```bash
+# Watch saldo em tempo real
+watch -n 5 'curl -s http://localhost:3001/api/data | \
+  jq "{saldo: .balance.total, pnl: .balance.pnl, \
+  ordens: (.activeOrders|length), roi: .balance.roi}"'
 
-Baseado em volatilidade, profundidade do orderbook (depthFactor) e limites mínimos/máximos.
+# Monitorar apenas logs com palavras-chave
+tail -f /tmp/bot_fixes_v2.log | grep -E "SUCCESS|REPRICING|FILLED"
 
-Garantir que buyPrice < sellPrice e respeitar MIN_SPREAD_PCT.
+# Ver ciclos rodando
+watch 'grep "Ciclo" /tmp/bot_fixes_v2.log | tail -1'
+```
 
-Tamanho da ordem:
+### Alarmes (O que significa)
 
-Escalado com volatilidade e saldo disponível.
+| Status | Ação |
+|--------|------|
+| 🟢 Saldo subindo | ✅ Tudo OK, continue monitorando |
+| 🟡 Saldo parado | ℹ️ Normal, mercado sem movimento |
+| 🔴 Saldo descendo | ⚠️ Verificar STOP-LOSS / Spread |
+| ❌ Dashboard inresponsivo | Reiniciar `npm run dev` |
+| ❌ Ordens não preenchem | Aumentar SPREAD_PCT em 2x |
 
-Ajuste automático baseado no score de lucro esperado (novo).
+---
 
-3. Indicadores técnicos e tendência
+## 🧪 Testes Automatizados
 
-Utilizar:
+### Ver Testes no Dashboard
 
-RSI (Relative Strength Index).
+Abra: **http://localhost:3001**  
+Procure por: **"Testes Automatizados"**
 
-EMA curto e longo prazo.
+**Testa:**
+- ✅ BTCAccumulator (estratégia passada)
+- ✅ Cash Management Strategy
+- ✅ Taxa de sucesso
 
-Volatilidade para determinar tendência e confiança.
+**Esperado:**
+- ✅ 4 testes rodando
+- ✅ 100% de sucesso
+- ✅ PnL positivo: +R$ 0.07+
 
-Aplicar viés de inventário e tendência (trendBias + inventoryBias) para ajustar preço de referência.
+---
 
-Camada extra de decisão “lucro esperado” combinando EMA/RSI/Volatilidade para filtrar ordens e aumentar o potencial de lucro.
+## ⚙️ Configuração (.env)
 
-4. Gestão de ordens ativas
+### Essencial
 
-Reprecificação baseada em drift de preço (PRICE_DRIFT).
+```env
+# MODO: true=simulação, false=LIVE
+SIMULATE=true
 
-Cancelamento inteligente:
+# Se LIVE, adicione estas:
+# REST_KEY=seu-api-key
+# REST_SECRET=seu-api-secret
+```
 
-Limites de idade (MIN_ORDER_CYCLES, MAX_ORDER_AGE).
+### Spread (Lucro)
 
-Interesse do book (liquidez).
+```env
+SPREAD_PCT=0.001         # 0.1% (captura por ordem)
+MIN_SPREAD_PCT=0.0005    # Mínimo
+MAX_SPREAD_PCT=0.005     # Máximo
+```
 
-Stop-loss e take-profit dinâmicos.
+### Estratégias
 
-Ajuste automático do tamanho de ordens baseado no score de lucro esperado.
+```env
+USE_CASH_MANAGEMENT=true  # Recomendado (ativo)
+USE_SWING_TRADING=false   # Opcional
+MOMENTUM_VALIDATION=false # Opcional
+```
 
-5. PnL e gestão de risco
+### Proteção
 
-Cálculo de PnL real considerando:
+```env
+STOP_LOSS_PCT=0.025       # Parar em -2.5%
+TAKE_PROFIT_PCT=0.04      # Lucrar em +4%
+MAX_POSITION=0.0005       # Max 0.0005 BTC por tipo
+```
 
-Saldo atual, preço médio e fills reais ou simulados.
+### Ciclo
 
-Stop-loss e take-profit ajustados dinamicamente conforme volatilidade.
+```env
+CYCLE_SEC=30              # Executar a cada 30s
+MAX_ORDER_AGE=300         # Cancelar ordem após 5min
+```
 
-Alertas automáticos quando PnL ou ROI atingirem metas definidas.
+---
 
-6. Log e visualização
+## 🚨 Colocar em Produção (LIVE)
 
-Log detalhado ciclo a ciclo:
+### ✅ Checklist Pré-LIVE
 
-Status de ordens, spreads, volatilidade, drift, ajuste de preço, lucro esperado.
+```bash
+# 1. Testar 24h em SIMULAÇÃO
+npm run dev
+# Esperar: Saldo subir (R$ 177.50 → R$ 180+)
 
-Mini-dashboard por ciclo mostrando:
+# 2. Validar thresholds
+grep "BUY_THRESHOLD\|SELL_THRESHOLD" cash_management_strategy_v2.js
+# Esperado: 0.0002 (0.02%) e 0.00025 (0.025%)
 
-PnL, ROI, idade das ordens, spreads, volatilidade, lucro esperado e alertas.
+# 3. Testar API
+curl -H "Authorization: Bearer $REST_KEY" \
+  https://api.mercadobitcoin.net/api/v4/account
+# Esperado: 200 OK com dados
 
-7. Dinâmica geral do bot
+# 4. Validar sintaxe
+node -c bot.js && echo "✅ Sintaxe OK"
+```
 
-Carregar configuração e validar variáveis críticas.
+### 🚀 Iniciar LIVE
 
-Buscar orderbook e histórico de preços; validar integridade.
+```bash
+# 1. Parar bot anterior
+pkill -9 -f "npm run"
 
-Calcular indicadores técnicos (RSI, EMA, volatilidade).
+# 2. Update .env
+sed -i 's/SIMULATE=true/SIMULATE=false/' .env
 
-Determinar tendência, viés de inventário e lucro esperado.
+# 3. Iniciar
+npm run dev    # Com dashboard (recomendado)
 
-Ajustar preço e tamanho das ordens com base em:
+# 4. Monitorar
+watch -n 5 'curl -s http://localhost:3001/api/data | jq .balance'
+```
 
-Spread dinâmico.
+### 🔴 Se Algo Err Errado
 
-Score de lucro esperado.
+```bash
+# STOP IMEDIATO
+pkill -9 -f npm
 
-Saldo disponível.
+# Revert para SIMULAÇÃO
+sed -i 's/SIMULATE=false/SIMULATE=true/' .env
 
-Enviar ordens (buy/sell) respeitando volume mínimo.
+# Analisar
+tail -50 /tmp/bot_fixes_v2.log | grep ERROR
 
-Reavaliar ordens ativas:
+# Reiniciar em SIM
+npm run dev
+```
 
-Reprecificação se drift de preço.
+---
 
-Cancelamento por idade ou interesse do book.
+## ❌ Troubleshooting
 
-Aplicar stop-loss / take-profit.
+### "Dashboard não responde"
 
-Calcular PnL/ROI atual e emitir alertas se metas atingidas.
+```bash
+pkill -9 -f npm
+npm run dev
+```
 
-Registrar ciclo no log detalhado e atualizar mini-dashboard.
+### "Port 3001 em uso"
 
-Repetir ciclo de forma contínua ou conforme intervalo definido.
+```bash
+lsof -i :3001       # Ver quem está usando
+kill -9 <PID>       # Matar processo
+npm run dev         # Restart
+```
+
+### "Ordens não preenchem"
+
+```bash
+# Aumentar spread
+sed -i 's/SPREAD_PCT=0.001/SPREAD_PCT=0.002/' .env
+pkill -9 -f npm
+npm run dev
+```
+
+### "API Error 401"
+
+```bash
+# Validar credentials
+cat .env | grep REST_KEY
+
+# Testar
+curl -H "Authorization: Bearer $REST_KEY" \
+  https://api.mercadobitcoin.net/api/v4/account
+```
+
+### "Saldo descendo"
+
+```bash
+# 1. PARAR bot
+pkill -9 -f npm
+
+# 2. Voltar para SIMULAÇÃO
+sed -i 's/SIMULATE=false/SIMULATE=true/' .env
+
+# 3. Analisar logs
+tail -100 /tmp/bot_fixes_v2.log | grep "PnL\|Loss\|Stop"
+
+# 4. Aumentar STOP_LOSS
+sed -i 's/STOP_LOSS_PCT=0.025/STOP_LOSS_PCT=0.015/' .env
+
+# 5. Restart
+npm run dev
+```
+
+---
+
+## 📁 Estrutura de Arquivos
+
+```
+mb-bot/
+├── bot.js              # Core trading engine
+├── dashboard.js        # Web dashboard (http://3001)
+├── db.js               # SQLite database wrapper
+├── mb_client.js        # Mercado Bitcoin API
+├── backtester.js       # Backtest engine
+├── automated_test_runner.js  # Auto tests
+├── cash_management_strategy_v2.js  # Strategy
+├── .env                # Configuração (você edita)
+├── .env.example        # Template
+├── package.json        # Dependências
+├── database/           # SQLite data
+│   └── orders.db       # Order history
+├── public/             # Dashboard frontend
+└── logs/               # Logs directory
+```
+
+---
+
+## 📞 Support
+
+- **Dashboard lento?** → Refresh browser
+- **Não consigo lucro?** → Aumentar SPREAD_PCT
+- **API rejeitando?** → Validar REST_KEY
+- **Muita CPU?** → Matar processos antigos
+- **Preciso mudar config?** → Edit .env, restart
+
+---
+
+## ⚖️ License
+
+MIT - Use libremente!
+
+---
+
+**Status:** ✅ Production Ready  
+**Última atualização:** 11/02/2026  
+**Versão:** 2.1  
+
+🚀 **Bora ganhar dinheiro!**

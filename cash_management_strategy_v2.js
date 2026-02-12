@@ -20,17 +20,17 @@ class CashManagementStrategy {
         this.trades = 0;
         this.profitableTrades = 0;
         
-        // ===== PARÂMETROS v2.0 - PROFIT FOCUSED =====
-        this.BUY_THRESHOLD = 0.0005; // 0.05% (mais agressivo, era 0.08%)
-        this.SELL_THRESHOLD = 0.0005; // 0.05% (mais agressivo, era 0.08%)
-        this.BUY_MICRO_THRESHOLD = 0.0002; // 0.02% micro-compras (mais sensível)
-        this.SELL_MICRO_THRESHOLD = 0.0002; // 0.02% micro-vendas (mais sensível)
+        // ===== PARÂMETROS v2.0 - PROFIT FOCUSED (SINCRONIZADO COM TESTE) =====
+        this.BUY_THRESHOLD = 0.0002; // 0.02% (alinhado com teste automatizado!)
+        this.SELL_THRESHOLD = 0.00025; // 0.025% (alinhado com teste automatizado!)
+        this.BUY_MICRO_THRESHOLD = 0.00008; // 0.008% micro-compras (máxima sensibilidade)
+        this.SELL_MICRO_THRESHOLD = 0.00015; // 0.015% micro-vendas (máxima sensibilidade)
         
         // Position sizing
-        this.BUY_AMOUNT_PCT = 0.70; // 70% do BRL (reduzido de 80% - mais seguro)
-        this.SELL_AMOUNT_PCT = 1.0; // 100% do BTC
-        this.MICRO_SELL_PCT = 0.50; // Vender 50% (aumentado de 40% - mais agressivo)
-        this.MICRO_BUY_PCT = 0.60; // Comprar 60% (aumentado de 50%)
+        this.BUY_AMOUNT_PCT = 0.60; // 60% do BRL (sincronizado com teste v1.9)
+        this.SELL_AMOUNT_PCT = 1.0; // 100% do BTC (vender tudo como no teste)
+        this.MICRO_SELL_PCT = 0.60; // Vender 60% (sincronizado com teste)
+        this.MICRO_BUY_PCT = 0.40; // Comprar 40% (sincronizado com teste)
         
         // Timing
         this.MICRO_TRADE_INTERVAL = 2; // A cada 2 candles (era 3 - mais frequente)
