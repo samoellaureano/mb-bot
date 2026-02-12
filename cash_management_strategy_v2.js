@@ -20,27 +20,122 @@ class CashManagementStrategy {
         this.trades = 0;
         this.profitableTrades = 0;
         
-        // ===== PARÂMETROS v2.0 - PROFIT FOCUSED (SINCRONIZADO COM TESTE) =====
-        this.BUY_THRESHOLD = 0.0002; // 0.02% (alinhado com teste automatizado!)
-        this.SELL_THRESHOLD = 0.00025; // 0.025% (alinhado com teste automatizado!)
-        this.BUY_MICRO_THRESHOLD = 0.00008; // 0.008% micro-compras (máxima sensibilidade)
-        this.SELL_MICRO_THRESHOLD = 0.00015; // 0.015% micro-vendas (máxima sensibilidade)
-        
-        // Position sizing
-        this.BUY_AMOUNT_PCT = 0.60; // 60% do BRL (sincronizado com teste v1.9)
-        this.SELL_AMOUNT_PCT = 1.0; // 100% do BTC (vender tudo como no teste)
-        this.MICRO_SELL_PCT = 0.60; // Vender 60% (sincronizado com teste)
-        this.MICRO_BUY_PCT = 0.40; // Comprar 40% (sincronizado com teste)
-        
+        // ===== PARÂMETROS BASE (alinhados com melhor resultado do teste) =====
+        this.BASE_BUY_THRESHOLD = 0.00040; // 0.040%
+        this.BASE_SELL_THRESHOLD = 0.00060; // 0.060%
+        this.BASE_BUY_MICRO_THRESHOLD = 0.00020; // 0.020%
+        this.BASE_SELL_MICRO_THRESHOLD = 0.00032; // 0.032%
+        this.BASE_MICRO_TRADE_INTERVAL = 6; // A cada 6 candles
+        this.MAX_BUY_COUNT = 4; // Controle de exposição
+        this.MIN_BTC_RESERVE = 0.000015; // Reserva mínima para não zerar posição
+        this.BUY_BRL_MIN = 60;
+        this.MICRO_BUY_BRL_MIN = 50;
+
+        // Position sizing (base)
+        this.SELL_PCT_BASE = 0.60;
+        this.BUY_PCT_BASE = 0.25;
+        this.SELL_PCT_MIN = 0.45;
+        this.SELL_PCT_MAX = 0.95;
+        this.BUY_PCT_MIN = 0.10;
+        this.BUY_PCT_MAX = 0.55;
+
         // Timing
-        this.MICRO_TRADE_INTERVAL = 2; // A cada 2 candles (era 3 - mais frequente)
-        this.REBALANCE_INTERVAL = 20; // A cada 20 candles (era 25)
-        this.MAX_BUY_COUNT = 15; // Máximo 15 compras (aumentado de 10)
-        this.RESET_INTERVAL = 40; // Reset mais frequente (era 50)
-        
+        this.REBALANCE_INTERVAL = 20;
+        this.RESET_INTERVAL = 40;
+
         // Profit targets
-        this.PROFIT_TARGET_PCT = 0.003; // Target 0.3% de lucro
-        this.STOP_LOSS_PCT = 0.002; // Stop loss em 0.2% de perda
+        this.PROFIT_TARGET_PCT = 0.003;
+        this.STOP_LOSS_PCT = 0.002;
+    }
+
+    clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+    }
+
+    calcEMA(values, period) {
+        if (values.length < period) return values[values.length - 1] || 0;
+        const k = 2 / (period + 1);
+        let ema = values[values.length - period];
+        for (let i = values.length - period + 1; i < values.length; i++) {
+            ema = values[i] * k + ema * (1 - k);
+        }
+        return ema;
+    }
+
+    calcRSI(values, period = 14) {
+        if (values.length < period + 1) return 50;
+        let gains = 0;
+        let losses = 0;
+        for (let i = values.length - period - 1; i < values.length - 1; i++) {
+            const change = values[i + 1] - values[i];
+            if (change > 0) gains += change; else losses -= change;
+        }
+        const avgGain = gains / period;
+        const avgLoss = losses / period;
+        if (avgLoss === 0) return 100;
+        const rs = avgGain / avgLoss;
+        return 100 - (100 / (1 + rs));
+    }
+
+    calcVolatilityPct(values) {
+        if (values.length < 2) return 0;
+        const returns = values.slice(1).map((p, i) => {
+            const prev = values[i];
+            return prev > 0 ? Math.log(p / prev) : 0;
+        }).filter(r => r !== 0 && !isNaN(r));
+        if (returns.length < 2) return 0;
+        const mean = returns.reduce((s, r) => s + r, 0) / returns.length;
+        const variance = returns.reduce((s, r) => s + Math.pow(r - mean, 2), 0) / returns.length;
+        return Math.sqrt(variance) * Math.sqrt(24 * 60) * 100;
+    }
+
+    getDynamicParams() {
+        const windowPrices = this.priceHistory.slice(-30);
+        const emaShort = this.calcEMA(windowPrices, 8);
+        const emaLong = this.calcEMA(windowPrices, 20);
+        const rsi = this.calcRSI(windowPrices, 14);
+        const volPct = this.calcVolatilityPct(windowPrices);
+
+        const trendScore = this.clamp(((emaShort - emaLong) / (emaLong || 1)) * 50, -1, 1);
+        const rsiScore = this.clamp((rsi - 50) / 50, -1, 1);
+        const score = this.clamp((0.6 * trendScore) + (0.4 * rsiScore), -1, 1);
+        const volScore = this.clamp(volPct / 2, 0, 1);
+        const volAdjust = 1 + (volScore * 0.25);
+
+        const buyThreshold = this.clamp(
+            this.BASE_BUY_THRESHOLD * volAdjust * (score < 0 ? 1.2 : 0.9),
+            this.BASE_BUY_THRESHOLD * 0.7,
+            this.BASE_BUY_THRESHOLD * 1.6
+        );
+        const sellThreshold = this.clamp(
+            this.BASE_SELL_THRESHOLD * volAdjust * (score > 0 ? 1.2 : 0.9),
+            this.BASE_SELL_THRESHOLD * 0.7,
+            this.BASE_SELL_THRESHOLD * 1.6
+        );
+        const buyMicroThreshold = this.clamp(
+            this.BASE_BUY_MICRO_THRESHOLD * volAdjust * (score < 0 ? 1.15 : 0.9),
+            this.BASE_BUY_MICRO_THRESHOLD * 0.7,
+            this.BASE_BUY_MICRO_THRESHOLD * 1.6
+        );
+        const sellMicroThreshold = this.clamp(
+            this.BASE_SELL_MICRO_THRESHOLD * volAdjust * (score > 0 ? 1.15 : 0.9),
+            this.BASE_SELL_MICRO_THRESHOLD * 0.7,
+            this.BASE_SELL_MICRO_THRESHOLD * 1.6
+        );
+        const microInterval = this.BASE_MICRO_TRADE_INTERVAL + (volScore > 0.6 ? 1 : 0) + (score < 0 ? 1 : 0);
+
+        const sellPct = this.clamp(this.SELL_PCT_BASE + (score * 0.20) + ((rsi - 50) / 100) * 0.2, this.SELL_PCT_MIN, this.SELL_PCT_MAX);
+        const buyPct = this.clamp(this.BUY_PCT_BASE + (-score * 0.20) + ((50 - rsi) / 100) * 0.2, this.BUY_PCT_MIN, this.BUY_PCT_MAX);
+
+        return {
+            buyThreshold,
+            sellThreshold,
+            buyMicroThreshold,
+            sellMicroThreshold,
+            microInterval,
+            sellPct,
+            buyPct
+        };
     }
 
     updatePrice(price) {
@@ -61,7 +156,7 @@ class CashManagementStrategy {
     }
 
     shouldBuy(currentPrice, brlBalance, btcBalance, marketTrend = 'neutral', buyCount = 0) {
-        if (!this.lastTradePrice || brlBalance < 30) {
+        if (!this.lastTradePrice || brlBalance < this.BUY_BRL_MIN) {
             return { shouldBuy: false, qty: 0, reason: 'Capital insuficiente' };
         }
 
@@ -71,16 +166,17 @@ class CashManagementStrategy {
         }
 
         const priceDiffPct = (currentPrice - this.lastTradePrice) / this.lastTradePrice;
+        const params = this.getDynamicParams();
         
         // Compra principal: queda > 0.05% (mais sensível)
-        if (priceDiffPct < -this.BUY_THRESHOLD && brlBalance > 30) {
+        if (priceDiffPct < -params.buyThreshold && brlBalance > this.BUY_BRL_MIN) {
             this.lastTradePrice = currentPrice;
             this.lastBuyPrice = currentPrice;
             this.trades++;
             
             return {
                 shouldBuy: true,
-                qty: this.BUY_AMOUNT_PCT,
+                qty: params.buyPct,
                 reason: `Queda ${Math.abs(priceDiffPct * 100).toFixed(3)}% - COMPRA (${buyCount + 1}/${this.MAX_BUY_COUNT})`
             };
         }
@@ -88,15 +184,21 @@ class CashManagementStrategy {
         return { shouldBuy: false, qty: 0, reason: 'Sem sinal de compra' };
     }
 
-    shouldSell(currentPrice, btcBalance, marketTrend = 'neutral') {
-        if (!this.lastTradePrice || btcBalance < 0.00001) {
+    shouldSell(currentPrice, btcBalance, marketTrend = 'neutral', avgBuyPrice = null, minProfitPct = 0) {
+        if (!this.lastTradePrice || btcBalance < this.MIN_BTC_RESERVE) {
             return { shouldSell: false, qty: 0, reason: 'Sem BTC' };
         }
 
         const priceDiffPct = (currentPrice - this.lastTradePrice) / this.lastTradePrice;
+        const params = this.getDynamicParams();
+        const minSellPrice = avgBuyPrice ? (avgBuyPrice * (1 + minProfitPct)) : null;
+
+        if (minSellPrice && currentPrice < minSellPrice) {
+            return { shouldSell: false, qty: 0, reason: 'Preco abaixo do custo medio' };
+        }
         
         // Venda principal: alta > 0.05% (mais sensível)
-        if (priceDiffPct > this.SELL_THRESHOLD && btcBalance > 0.00001) {
+        if (priceDiffPct > params.sellThreshold && btcBalance > this.MIN_BTC_RESERVE) {
             const wasProfit = priceDiffPct > 0;
             if (wasProfit) this.profitableTrades++;
             
@@ -106,7 +208,8 @@ class CashManagementStrategy {
             
             return {
                 shouldSell: true,
-                qty: this.SELL_AMOUNT_PCT,
+                qty: params.sellPct,
+                minReserve: this.MIN_BTC_RESERVE,
                 reason: `Alta ${(priceDiffPct * 100).toFixed(3)}% - VENDA`
             };
         }
@@ -114,30 +217,36 @@ class CashManagementStrategy {
         return { shouldSell: false, qty: 0, reason: 'Sem sinal de venda' };
     }
 
-    shouldMicroTrade(cycle, currentPrice, btcBalance, brlBalance) {
+    shouldMicroTrade(cycle, currentPrice, btcBalance, brlBalance, avgBuyPrice = null, minProfitPct = 0) {
         const signals = { buy: null, sell: null };
 
-        // Micro-trades a cada 2 candles (era 3)
-        if (cycle % this.MICRO_TRADE_INTERVAL !== 0) {
+        const params = this.getDynamicParams();
+
+        // Micro-trades a cada N candles (dinâmico)
+        if (cycle % params.microInterval !== 0) {
             return signals;
         }
 
-        // Micro-venda: 0.02% de alta (mais sensível, era 0.03%)
-        if (btcBalance > 0.00001 && (currentPrice - this.lastSellPrice) / this.lastSellPrice > this.SELL_MICRO_THRESHOLD) {
+        const minSellPrice = avgBuyPrice ? (avgBuyPrice * (1 + minProfitPct)) : null;
+
+        // Micro-venda
+        if (btcBalance > this.MIN_BTC_RESERVE && (!minSellPrice || currentPrice >= minSellPrice) &&
+            (currentPrice - this.lastSellPrice) / this.lastSellPrice > params.sellMicroThreshold) {
             signals.sell = {
                 shouldSell: true,
-                qty: this.MICRO_SELL_PCT,
+                qty: Math.max(0.30, params.sellPct - 0.15),
+                minReserve: this.MIN_BTC_RESERVE,
                 reason: `Micro-venda: ${((currentPrice - this.lastSellPrice) / this.lastSellPrice * 100).toFixed(3)}%`
             };
             this.profitableTrades++;
             this.trades++;
         }
 
-        // Micro-compra: 0.02% de queda (mais sensível, era 0.03%)
-        if (btcBalance < 0.00001 && brlBalance > 25 && (this.lastBuyPrice - currentPrice) / this.lastBuyPrice > this.BUY_MICRO_THRESHOLD) {
+        // Micro-compra
+        if (btcBalance < 0.00001 && brlBalance > this.MICRO_BUY_BRL_MIN && (this.lastBuyPrice - currentPrice) / this.lastBuyPrice > params.buyMicroThreshold) {
             signals.buy = {
                 shouldBuy: true,
-                qty: this.MICRO_BUY_PCT,
+                qty: Math.min(0.50, params.buyPct + 0.10),
                 reason: `Micro-compra: ${((this.lastBuyPrice - currentPrice) / this.lastBuyPrice * 100).toFixed(3)}%`
             };
             this.trades++;
@@ -178,9 +287,9 @@ class CashManagementStrategy {
             profitableTrades: this.profitableTrades,
             winRate: this.trades > 0 ? ((this.profitableTrades / this.trades) * 100).toFixed(1) : 0,
             parameters: {
-                buyThreshold: `${(this.BUY_THRESHOLD * 100).toFixed(3)}%`,
-                sellThreshold: `${(this.SELL_THRESHOLD * 100).toFixed(3)}%`,
-                microTradeInterval: this.MICRO_TRADE_INTERVAL,
+                buyThreshold: `${(this.BASE_BUY_THRESHOLD * 100).toFixed(3)}%`,
+                sellThreshold: `${(this.BASE_SELL_THRESHOLD * 100).toFixed(3)}%`,
+                microTradeInterval: this.BASE_MICRO_TRADE_INTERVAL,
                 profitTarget: `${(this.PROFIT_TARGET_PCT * 100).toFixed(2)}%`,
                 stopLoss: `${(this.STOP_LOSS_PCT * 100).toFixed(2)}%`
             }

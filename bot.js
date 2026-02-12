@@ -59,6 +59,7 @@ const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // Ajustad
 const SELL_FIRST_ENABLED = process.env.SELL_FIRST === 'true'; // Permite SELL sem BUY inicial
 const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
 const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '86400'); // Máximo 86400s (1 dia) antes de cancelar - tempo generoso para preenchimento
+const MIN_REPRICE_AGE_SEC = parseInt(process.env.MIN_REPRICE_AGE_SEC || '86400'); // Aguardar 24h antes de repricing
 const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
 const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Limitado a 2.5% máximo para evitar excessos
 const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% volume para filtrar
@@ -77,6 +78,7 @@ const FEE_RATE_MAKER = 0.003; // 0,30%
 const FEE_RATE_TAKER = 0.007; // 0,70%
 const FEE_RATE = FEE_RATE_MAKER; // Padrão para ordens limite
 const INITIAL_CAPITAL = 220.00; // Capital inicial em BRL (mesmo valor do dashboard)
+const RESET_INITIAL_BALANCE_ON_START = process.env.RESET_INITIAL_BALANCE_ON_START === 'true';
 
 // -------- LIMITE DE PARES (DINÂMICO) --------
 const MAX_CONCURRENT_PAIRS = parseInt(process.env.MAX_CONCURRENT_PAIRS || '10');     // Máx pares simultâneos abertos
@@ -100,6 +102,18 @@ if (!REST_BASE.startsWith('http')) {
 if (!PAIR.includes('-')) {
     log('ERROR', 'PAIR inválido. Use formato como BTC-BRL. Encerrando.');
     process.exit(1);
+}
+
+if (RESET_INITIAL_BALANCE_ON_START) {
+    try {
+        const initialBalanceFile = path.join(__dirname, '.initial_balance.json');
+        if (fs.existsSync(initialBalanceFile)) {
+            fs.unlinkSync(initialBalanceFile);
+        }
+        log('INFO', 'RESET_INITIAL_BALANCE_ON_START ativo. Base inicial sera recapturada no primeiro ciclo.');
+    } catch (e) {
+        log('WARN', `Falha ao resetar .initial_balance.json: ${e.message}`);
+    }
 }
 
 // ---------------- LOGGING ----------------
@@ -133,6 +147,9 @@ let lastOrderbook = {bids: [], asks: []};
 let marketTrend = 'Neutra';
 let lastTradeCycle = -1;
 let lastCycleTimestamp = Date.now();
+let initialBRLBalance = null;  // ✅ Registra saldo inicial em BRL
+let initialBTCBalance = null;  // ✅ Registra saldo inicial em BTC
+let initialBalanceCaptureCycle = -1;  // ✅ Marca quando foi capturado
 let priceHistory = [];
 let historicalFills = [];
 let performanceHistory = [];
@@ -164,7 +181,10 @@ let stats = {
     avgFillPrice: 0.0,
     fillRate: '0.0%',
     avgSpread: SPREAD_PCT * 100,
-    uptime: '0min'
+    uptime: '0min',
+    initialBRL: 0.0,     // ✅ Saldo inicial em BRL
+    initialBTC: 0.0,     // ✅ Saldo inicial em BTC
+    initialCapital: 0.0  // ✅ Capital inicial total em BRL
 };
 
 // Contador de confirmações de baseline inferior por sessão para evitar reversões imediatas
@@ -577,26 +597,27 @@ async function fetchOrderbookRest() {
 async function managePrices(mid, volatility, spreadPct) {
     try {
         const spreadAmount = mid * spreadPct;
-        const maxPriceDiff = Math.max(0.005, volatility / 100); // Mínimo 0.5% ou volatility
         const now = Date.now();
 
         for (const [key, order] of activeOrders.entries()) {
             if (!order || !order.timestamp) continue;
 
-            const age = (now - order.timestamp) / 1000;
+            // ✅ FIX: Converter timestamp se necessário (pode ser segundos ou milissegundos)
+            const effectiveTimestamp = order.loadTimestamp || (order.timestamp < 1e11 ? order.timestamp * 1000 : order.timestamp);
+            const ageMs = now - effectiveTimestamp;
+            if (ageMs < MIN_REPRICE_AGE_SEC * 1000) {
+                continue;
+            }
+
             const orderMid = (order.side === 'buy') ? (mid - spreadAmount) : (mid + spreadAmount);
             const priceDiff = Math.abs(order.price - orderMid) / orderMid;
 
-            // Condições para recolocar:
-            // 1. Ordem muito velha (> 86400 segundos = 1 dia) OU
-            // 2. Preço mudou muito (> volatility OU > 0.5%) OU
-            // 3. Ordem está no lado errado do spread
-            const shouldReprice = (age > 86400) || (priceDiff > maxPriceDiff) || 
-                                  (order.side === 'buy' && order.price >= mid) ||
-                                  (order.side === 'sell' && order.price <= mid);
+            // ✅ Recolocar APENAS se preço mudou mais que a volatilidade
+            const volatilityThreshold = volatility / 100; // Converter % para decimal
+            const shouldReprice = priceDiff > volatilityThreshold;
 
             if (shouldReprice) {
-                log('INFO', `🔄 [REPRICING] ${order.side.toUpperCase()} ${order.id}: Idade ${age.toFixed(1)}s, PriceDiff ${(priceDiff*100).toFixed(2)}%. Recolocando...`);
+                log('INFO', `🔄 [REPRICING] ${order.side.toUpperCase()} ${order.id}: Preço mudou ${(priceDiff*100).toFixed(2)}% > Volatilidade ${volatility.toFixed(2)}%. Recolocando...`);
                 
                 try {
                     // ✅ FIX: Guardar pair_id antiga ANTES de cancelar
@@ -762,9 +783,11 @@ function validatePairIntegrity() {
     return result;
 }
 
-async function checkOrderStatus(orderKey, side, sessionId = null) {
+async function checkOrderStatus(orderKey, side, mid = null, spreadAmount = null, sessionId = null) {
     const order = activeOrders.get(orderKey);
     if (!order) return {status: 'unknown', filledQty: 0};
+    const midPrice = mid || order.price;
+    const spread = spreadAmount || (midPrice * SPREAD_PCT);
     if (SIMULATE) {
         const fillChance = 0.08 + Math.random() * 0.07;
         const isTaker = Math.random() < 0.2; // 20% de chance de ser Taker na simulação - ADICIONADO
@@ -795,11 +818,34 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
             }, `simulated_fill_${slippage.toFixed(3)}`, sessionId); // Passa o sessionId
             historicalFills.push({side, price: fillPrice, qty, timestamp: Date.now(), pnl, feeRate});
             if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();
+            
+            // ✅ FIX CRÍTICO: Criar SELL pareada SINCRONAMENTE quando BUY é preenchida
+            if (side === 'buy' && order.pairId) {
+                // Preservar dados do BUY antes de deletar
+                const buyOrderData = {
+                    price: fillPrice,
+                    qty: qty,
+                    id: order.id,
+                    pairId: order.pairId
+                };
+                // ✅ Criar SELL IMEDIATAMENTE com spread calculado
+                const buyPrice = parseFloat(fillPrice);
+                const minSellPrice = buyPrice * (1 + MIN_SPREAD_PCT);
+                const targetSellPrice = Math.max(
+                    (midPrice + spread) || midPrice,
+                    minSellPrice
+                );
+                if (targetSellPrice > 0 && qty > 0) {
+                    await placeOrder('sell', targetSellPrice, qty, null, order.pairId);
+                    log('SUCCESS', `[AUTO_SELL] ✅ SELL pareada criada: ${qty.toFixed(8)} BTC @ R$${targetSellPrice.toFixed(2)} (Spread: ${(((targetSellPrice - buyPrice) / buyPrice) * 100).toFixed(2)}%)`);
+                }
+            }
+            
             activeOrders.delete(orderKey);
             log('INFO', `Fill simulado ${side.toUpperCase()} ${order.id} @ R$${fillPrice.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}, Taxa: ${(feeRate * 100).toFixed(2)}%`);
             
-            // SINCRONIZAÇÃO: Cancelar a ordem par quando uma ordem é preenchida
-            await cancelPairOrder(side);
+            // SINCRONIZAÇÃO: Opcionalmente cancelar a ordem par (apenas se ainda existir)
+            // await cancelPairOrder(side);
             
             return {status: 'filled', filledQty: qty};
         }
@@ -836,11 +882,34 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
             }, 'live_fill', sessionId); // Passa o sessionId
             historicalFills.push({side: status.side, price, qty, timestamp: Date.now(), pnl, feeRate});
             if (historicalFills.length > HISTORICAL_FILLS_WINDOW * 2) historicalFills.shift();
+            
+            // ✅ FIX CRÍTICO: Criar SELL pareada SINCRONAMENTE quando BUY é preenchida
+            if (status.side === 'buy' && order.pairId) {
+                // Preservar dados do BUY antes de deletar
+                const buyOrderData = {
+                    price: price,
+                    qty: qty,
+                    id: order.id,
+                    pairId: order.pairId
+                };
+                // ✅ Criar SELL IMEDIATAMENTE com spread calculado
+                const buyPrice = parseFloat(price);
+                const minSellPrice = buyPrice * (1 + MIN_SPREAD_PCT);
+                const targetSellPrice = Math.max(
+                    (midPrice + spread) || midPrice,
+                    minSellPrice
+                );
+                if (targetSellPrice > 0 && qty > 0) {
+                    await placeOrder('sell', targetSellPrice, qty, null, order.pairId);
+                    log('SUCCESS', `[AUTO_SELL] ✅ SELL pareada criada: ${qty.toFixed(8)} BTC @ R$${targetSellPrice.toFixed(2)} (Spread: ${(((targetSellPrice - buyPrice) / buyPrice) * 100).toFixed(2)}%)`);
+                }
+            }
+            
             activeOrders.delete(orderKey);
             log('INFO', `Fill real ${status.side.toUpperCase()} ${order.id} @ R$${price.toFixed(2)}, Qty: ${qty.toFixed(8)}, PnL Total: ${totalPnL.toFixed(2)}, Taxa: ${(feeRate * 100).toFixed(2)}%`);
             
-            // SINCRONIZAÇÃO: Cancelar a ordem par quando uma ordem é preenchida
-            await cancelPairOrder(status.side);
+            // SINCRONIZAÇÃO: Opcionalmente cancelar a ordem par (apenas se ainda existir)
+            // await cancelPairOrder(status.side);
             
             // ✅ FIX: LIMPAR REFERÊNCIA DE PAR PREENCHIDA DO pairMapping
             const pairId = order.pairId;
@@ -867,6 +936,107 @@ async function checkOrderStatus(orderKey, side, sessionId = null) {
     } catch (e) {
         log('WARN', `Erro ao verificar status da ordem ${order.id}: ${e.message}.`);
         return {status: 'error', filledQty: 0};
+    }
+}
+
+// ============ CRIAR SELL PAREADA AUTOMATICAMENTE APÓS BUY PREENCHIDA ============
+/**
+ * Cria automaticamente uma ordem SELL quando uma BUY é preenchida
+ * Garante que BUY e SELL sejam sempre pareadas
+ */
+async function createPairedSellOrder(buyOrderData, currentMid, pairId) {
+    try {
+        if (!buyOrderData || !buyOrderData.qty || buyOrderData.qty <= 0) {
+            log('WARN', `[AUTO_SELL] Quantidade de BUY inválida para criar SELL: ${buyOrderData?.qty}`);
+            return;
+        }
+        
+        // Calcular preço de venda com spread mínimo para garantir lucro
+        // BUY foi preenchida a buyOrderData.price
+        // SELL deve ser colocada ACIMA para lucrar
+        const buyPrice = parseFloat(buyOrderData.price);
+        const minSellPrice = buyPrice * (1 + MIN_SPREAD_PCT); // Mínimo para cobrir fees
+        const targetSellPrice = Math.max(
+            currentMid * (1 + currentSpreadPct / 2),  // Spread normal
+            minSellPrice                              // Mínimo obrigatório
+        );
+        
+        const sellQty = parseFloat(buyOrderData.qty);
+        
+        log('INFO', `[AUTO_SELL] 🔗 Criando SELL pareada automaticamente:`);
+        log('INFO', `  - BUY preenchido: ${sellQty.toFixed(8)} BTC @ R$${buyPrice.toFixed(2)}`);
+        log('INFO', `  - Mínimo SELL: R$${minSellPrice.toFixed(2)} (BUY + fees)`);
+        log('INFO', `  - Target SELL: R$${targetSellPrice.toFixed(2)} (spread ${(((targetSellPrice - buyPrice) / buyPrice) * 100).toFixed(3)}%)`);
+        
+        // Chamar placeOrder com pairId para associar ao BUY
+        await placeOrder('sell', targetSellPrice, sellQty, null, pairId);
+        
+        log('SUCCESS', `[AUTO_SELL] ✅ SELL pareada criada com sucesso para pair ${pairId.substring(0, 20)}...`);
+    } catch (e) {
+        log('ERROR', `[AUTO_SELL] Falha ao criar SELL pareada: ${e.message}`);
+    }
+}
+
+// ============ RECOVERY: CRIAR SELL PARA BUY JÁ PREENCHIDA ============
+const AUTO_SELL_RECOVERY_COOLDOWN_MS = 60000; // evita recriação em loop
+const AUTO_SELL_RECOVERY_LIMIT = 2; // limita SELLs recuperadas por ciclo
+const autoSellRecoveryAttempts = new Map();
+
+async function recoverMissingPairedSells(mid, spreadAmount, btcBalance) {
+    try {
+        const orders = await db.getOrders({ limit: 2000 });
+        const pairs = new Map();
+
+        for (const order of orders) {
+            if (!order.pair_id) continue;
+            if (!pairs.has(order.pair_id)) {
+                pairs.set(order.pair_id, { buyFilled: null, hasSell: false });
+            }
+            const entry = pairs.get(order.pair_id);
+
+            if (order.side === 'buy' && order.status === 'filled') {
+                if (!entry.buyFilled || order.timestamp > entry.buyFilled.timestamp) {
+                    entry.buyFilled = order;
+                }
+            }
+            if (order.side === 'sell' && (order.status === 'open' || order.status === 'filled')) {
+                entry.hasSell = true;
+            }
+        }
+
+        let availableBtc = btcBalance;
+        let created = 0;
+
+        for (const [pairId, entry] of pairs.entries()) {
+            if (!entry.buyFilled || entry.hasSell) continue;
+
+            const lastAttempt = autoSellRecoveryAttempts.get(pairId) || 0;
+            if (Date.now() - lastAttempt < AUTO_SELL_RECOVERY_COOLDOWN_MS) {
+                continue;
+            }
+
+            const qty = parseFloat(entry.buyFilled.qty || entry.buyFilled.filledQty || 0);
+            const buyPrice = parseFloat(entry.buyFilled.price || entry.buyFilled.avgPrice || 0);
+            if (qty <= MIN_ORDER_SIZE || buyPrice <= 0) continue;
+            if (availableBtc < qty) {
+                log('WARN', `[AUTO_SELL_RECOVERY] BTC insuficiente para pair ${pairId.substring(0, 20)}... Necessario=${qty.toFixed(8)} Disponivel=${availableBtc.toFixed(8)}`);
+                continue;
+            }
+
+            const minSellPrice = buyPrice * (1 + MIN_SPREAD_PCT);
+            const targetSellPrice = Math.max((mid + spreadAmount) || mid, minSellPrice);
+            if (targetSellPrice <= 0) continue;
+
+            await placeOrder('sell', targetSellPrice, qty, null, pairId);
+            log('SUCCESS', `[AUTO_SELL_RECOVERY] ✅ SELL recuperada criada: ${qty.toFixed(8)} BTC @ R$${targetSellPrice.toFixed(2)} | pair ${pairId.substring(0, 20)}...`);
+
+            autoSellRecoveryAttempts.set(pairId, Date.now());
+            availableBtc -= qty;
+            created++;
+            if (created >= AUTO_SELL_RECOVERY_LIMIT) break;
+        }
+    } catch (e) {
+        log('WARN', `[AUTO_SELL_RECOVERY] Falha ao recuperar SELLs: ${e.message}`);
     }
 }
 
@@ -900,7 +1070,8 @@ function canCreateNewPair() {
     const totalCreated = totalPairsCreated;
     const fillRate = totalCreated > 0 ? (completedPairs / totalCreated) * 100 : 100;
     
-    if (totalCreated > 5 && fillRate < MIN_FILL_RATE_FOR_NEW) {
+    // Não bloquear se não há ordens abertas
+    if (incompletePairs > 0 && totalCreated > 5 && fillRate < MIN_FILL_RATE_FOR_NEW) {
         log('WARN', `⚠️  Taxa preenchimento baixa: ${fillRate.toFixed(1)}% < ${MIN_FILL_RATE_FOR_NEW}%. Aguardando melhoria.`);
         return false;
     }
@@ -968,8 +1139,9 @@ async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null
             pairsCreatedThisCycle++;
         }
         
-        // ===== PROTEÇÃO CRÍTICA: IMPEDIR SELL ÓRFÁ =====
+        // ===== PROTEÇÃO CRÍTICA: IMPEDIR SELL ÓRFÃ =====
         if (side.toLowerCase() === 'sell' && !pairIdInput) {
+            // ✅ FIX: Se pairIdInput é fornecido, SELL pareada é permitida (AUTO_SELL)
             const buyOrder = activeOrders.get('buy');
             if (!buyOrder || !buyOrder.pairId) {
                 log('ERROR', `❌ BLOQUEADO: Tentativa de colocar SELL SEM BUY pareada! Volume:${qty.toFixed(8)} @ ${price.toFixed(2)}`);
@@ -986,7 +1158,6 @@ async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null
         if (!pairId) {
             if (side.toLowerCase() === 'buy') {
                 // Gerar novo pair_id para BUY
-                const { v4: uuidv4 } = require('uuid');
                 pairId = `PAIR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             } else if (side.toLowerCase() === 'sell') {
                 // Para SELL, DEVE encontrar BUY aberta (proteção acima garante isso)
@@ -1352,9 +1523,64 @@ async function runCycle() {
         // ===== SINCRONIZAÇÃO COM BANCO DE DADOS =====
         // Recarregar ordens abertas para manter activeOrders atualizado
         try {
-            const openOrders = await db.getOrders({ status: 'open' });
+            const openOrders = await db.getOrders({ status: 'open', limit: 2000 });
+            const allOrders = await db.getOrders({ limit: 2000 });
             activeOrders.clear();
             pairMapping.clear(); // Reconstruir mapa de pares
+
+            // Cancelar ordens orfas (sem ordem correspondente). Ignorar se correspondente ja foi executado.
+            if (allOrders.length > 0) {
+                const pairIndex = new Map();
+                for (const order of allOrders) {
+                    if (!order.pair_id) continue;
+                    if (!pairIndex.has(order.pair_id)) {
+                        pairIndex.set(order.pair_id, {
+                            buyAny: false,
+                            sellAny: false,
+                            buyFilled: false,
+                            sellFilled: false
+                        });
+                    }
+                    const entry = pairIndex.get(order.pair_id);
+                    if (order.side === 'buy') {
+                        entry.buyAny = true;
+                        if (order.status === 'filled') entry.buyFilled = true;
+                    }
+                    if (order.side === 'sell') {
+                        entry.sellAny = true;
+                        if (order.status === 'filled') entry.sellFilled = true;
+                    }
+                }
+
+                for (const order of openOrders) {
+                    if (!order.pair_id) continue;
+                    const entry = pairIndex.get(order.pair_id);
+                    if (!entry) continue;
+                    const isBuy = order.side === 'buy';
+                    const hasOppositeAny = isBuy ? entry.sellAny : entry.buyAny;
+                    const hasOppositeFilled = isBuy ? entry.sellFilled : entry.buyFilled;
+
+                    if (!hasOppositeAny && !hasOppositeFilled) {
+                        log('WARN', `[ORPHAN_CANCEL] Ordem ${order.side.toUpperCase()} ${order.id} sem correspondente no par ${order.pair_id.substring(0, 20)}...`);
+                        try {
+                            if (SIMULATE) {
+                                await db.saveOrderSafe({
+                                    ...order,
+                                    status: 'cancelled'
+                                }, 'orphan_cancel');
+                            } else {
+                                const result = await MB.cancelOrder(order.id);
+                                await db.saveOrderSafe({
+                                    ...order,
+                                    status: result.status || 'cancelled'
+                                }, 'orphan_cancel');
+                            }
+                        } catch (e) {
+                            log('WARN', `[ORPHAN_CANCEL] Falha ao cancelar ${order.id}: ${e.message}`);
+                        }
+                    }
+                }
+            }
             
             // Contar ordens por tipo e carregar a mais recente de cada
             let buyOrders = openOrders.filter(o => o.side.toLowerCase() === 'buy');
@@ -1482,6 +1708,7 @@ async function runCycle() {
         }
         const mid = (bestBid + bestAsk) / 2;
         const spreadPct = ((bestAsk - bestBid) / mid) * 100;
+        const spreadAmount = mid * SPREAD_PCT;
 
         // Atualizar priceHistory com o preço atual
         priceHistory.push(mid);
@@ -1537,6 +1764,49 @@ async function runCycle() {
         const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.available || 0);
         const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
 
+        // ✅ CAPTURAR SALDO INICIAL NO PRIMEIRO CICLO
+        if (initialBRLBalance === null && initialBTCBalance === null) {
+            initialBRLBalance = brlBalance;
+            initialBTCBalance = btcBalance;
+            initialBalanceCaptureCycle = cycleCount;
+            log('SUCCESS', `✅ SALDO INICIAL CAPTURADO (Ciclo ${cycleCount}): BRL=R$ ${initialBRLBalance.toFixed(2)} + BTC=${initialBTCBalance.toFixed(8)}`);
+            
+            // ✅ Atualizar stats com saldo inicial
+            stats.initialBRL = parseFloat(initialBRLBalance.toFixed(2));
+            stats.initialBTC = parseFloat(initialBTCBalance.toFixed(8));
+            stats.initialCapital = parseFloat((initialBRLBalance + (initialBTCBalance * mid)).toFixed(2));
+            
+            // ✅ Salvar saldo inicial em arquivo para o dashboard usar
+            try {
+                const initialBalanceFile = path.join(__dirname, '.initial_balance.json');
+                if (!RESET_INITIAL_BALANCE_ON_START && fs.existsSync(initialBalanceFile)) {
+                    log('INFO', 'Saldo inicial ja existe; mantendo .initial_balance.json atual.');
+                } else {
+                    fs.writeFileSync(initialBalanceFile, JSON.stringify({
+                        brl: stats.initialBRL,
+                        btc: stats.initialBTC,
+                        total: stats.initialCapital,
+                        capturedAt: new Date().toISOString(),
+                        capturedAtCycle: cycleCount
+                    }), 'utf8');
+                    log('DEBUG', `✅ Saldo inicial salvo em arquivo para dashboard`);
+                }
+            } catch (e) {
+                log('WARN', `Falha ao salvar saldo inicial em arquivo: ${e.message}`);
+            }
+        }
+
+        // ✅ CALCULAR PnL CORRETO = Saldo Atual - Saldo Inicial
+        const totalBalanceNow = brlBalance + (btcBalance * mid);  // Saldo total atual em BRL
+        const totalBalanceInitial = initialBRLBalance + (initialBTCBalance * mid);  // Saldo inicial em BRL
+        const totalPnLCorrect = totalBalanceNow - totalBalanceInitial;  // PnL = Diferença
+        
+        // Atualizar stats com PnL correto
+        stats.totalPnL = totalPnLCorrect.toFixed(2);
+
+        // ===== RECUPERAR SELLs FALTANTES PARA BUYs PREENCHIDAS =====
+        await recoverMissingPairedSells(mid, spreadAmount, btcBalance);
+
         // ===== ATUALIZAR CASH MANAGEMENT STRATEGY =====
         if (cashManagementStrategy) {
             cashManagementStrategy.updatePrice(mid);
@@ -1549,9 +1819,15 @@ async function runCycle() {
             log('DEBUG', `[CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...`);
 
             // ✅ FIX: Calcular preços corretamente com spread
-            const spreadAmount = mid * SPREAD_PCT;
             const cashMgmtBuyPrice = mid - spreadAmount;    // Comprar ABAIXO do mid
             const cashMgmtSellPrice = mid + spreadAmount;   // Vender ACIMA do mid
+
+            if (!cashManagementStrategy.lastTradePrice && mid > 0) {
+                cashManagementStrategy.lastTradePrice = mid;
+                cashManagementStrategy.lastBuyPrice = mid;
+                cashManagementStrategy.lastSellPrice = mid;
+                log('DEBUG', `[CASH_MGT] Preco base inicializado em R$ ${mid.toFixed(2)}.`);
+            }
 
             // Buscar último preço de compra do histórico para melhor decisão
             const recentBuyOrders = Array.from(activeOrders.values()).filter(o => o.side === 'buy');
@@ -1559,7 +1835,13 @@ async function runCycle() {
                 Math.min(...recentBuyOrders.map(o => o.price)) : 
                 null;
 
-            const sellSignalCash = cashManagementStrategy.shouldSell(mid, btcBalance, pred.trend, lastBuyPrice);
+            const avgBuyPrice = btcPosition > 0 ? (totalCost / btcPosition) : null;
+            const minProfitPct = MIN_SPREAD_PCT;
+            const sellSignalCash = cashManagementStrategy.shouldSell(mid, btcBalance, pred.trend, avgBuyPrice, minProfitPct);
+            if (avgBuyPrice) {
+                const minSellPrice = avgBuyPrice * (1 + minProfitPct);
+                log('DEBUG', `[CASH_MGT] AvgBuy=R$${avgBuyPrice.toFixed(2)} | MinSell=R$${minSellPrice.toFixed(2)} | Mid=R$${mid.toFixed(2)}`);
+            }
 
             // ⚠️ SELL-FIRST DESABILITADO! Causava pairs invertidas
             // Only proceed with normal logic:
@@ -1590,6 +1872,7 @@ async function runCycle() {
             
             // Verificar sinal de COMPRA
             const buySignalCash = cashManagementStrategy.shouldBuy(mid, brlBalance, btcBalance, pred.trend);
+            log('DEBUG', `[CASH_MGT] shouldBuy=${buySignalCash.shouldBuy}, reason=${buySignalCash.reason}, hasActiveBuy=${activeOrders.has('buy')}`);
             if (buySignalCash.shouldBuy && !activeOrders.has('buy')) {
                 const buyQty = Math.min(0.0002, (brlBalance * buySignalCash.qty) / cashMgmtBuyPrice);
                 if (buyQty > MIN_ORDER_SIZE && brlBalance >= buyQty * cashMgmtBuyPrice) {
@@ -1603,7 +1886,10 @@ async function runCycle() {
             
             // Verificar sinal de VENDA
             if (sellSignalCash.shouldSell && !activeOrders.has('sell')) {
-                const sellQty = Math.min(btcBalance, btcBalance * sellSignalCash.qty);
+                let sellQty = Math.min(btcBalance, btcBalance * sellSignalCash.qty);
+                if (sellSignalCash.minReserve && btcBalance - sellQty < sellSignalCash.minReserve) {
+                    sellQty = btcBalance - sellSignalCash.minReserve;
+                }
                 if (sellQty > MIN_ORDER_SIZE) {
                     log('SUCCESS', `[CASH_MGT_SELL] ${sellSignalCash.reason}`);
                     await placeOrder('sell', cashMgmtSellPrice, sellQty);
@@ -1612,8 +1898,8 @@ async function runCycle() {
                 }
             }
             
-            // Micro-trades
-            const microTradeSignals = cashManagementStrategy.shouldMicroTrade(cycleCount, mid, btcBalance, brlBalance);
+            // Micro trades (pequenas operações para aproveitar volatilidade)
+            const microTradeSignals = cashManagementStrategy.shouldMicroTrade(cycleCount, mid, btcBalance, brlBalance, avgBuyPrice, minProfitPct);
             if (microTradeSignals.buy && !activeOrders.has('buy')) {
                 const microBuyQty = Math.min(0.00006, (brlBalance * microTradeSignals.buy.qty) / cashMgmtBuyPrice);
                 if (microBuyQty > MIN_ORDER_SIZE) {
@@ -1622,7 +1908,10 @@ async function runCycle() {
                 }
             }
             if (microTradeSignals.sell && !activeOrders.has('sell') && btcBalance > 0.00001) {
-                const microSellQty = btcBalance * microTradeSignals.sell.qty;
+                let microSellQty = btcBalance * microTradeSignals.sell.qty;
+                if (microTradeSignals.sell.minReserve && btcBalance - microSellQty < microTradeSignals.sell.minReserve) {
+                    microSellQty = btcBalance - microTradeSignals.sell.minReserve;
+                }
                 if (microSellQty > MIN_ORDER_SIZE) {
                     log('INFO', `[CASH_MGT_MICRO] ${microTradeSignals.sell.reason}`);
                     await placeOrder('sell', cashMgmtSellPrice, microSellQty);

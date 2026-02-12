@@ -35,6 +35,7 @@ const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // 0.00005 B
 const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% - ALTERADO
 const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // 20 fills - ALTERADO
 const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // 0.7 - ALTERADO
+const CONTRIBUTIONS_FILE = path.join(__dirname, '.contributions.json');
 
 // Logging
 const log = (level, message, data) => {
@@ -285,6 +286,26 @@ async function loadPnlHistory() {
     }
 }
 
+function loadContributions() {
+    try {
+        if (!fs.existsSync(CONTRIBUTIONS_FILE)) return [];
+        const raw = fs.readFileSync(CONTRIBUTIONS_FILE, 'utf8');
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+        log('WARN', `Falha ao carregar aportes: ${err.message}. Usando lista vazia.`);
+        return [];
+    }
+}
+
+function saveContributions(entries) {
+    try {
+        fs.writeFileSync(CONTRIBUTIONS_FILE, JSON.stringify(entries, null, 2), 'utf8');
+    } catch (err) {
+        log('WARN', `Falha ao salvar aportes: ${err.message}`);
+    }
+}
+
 async function savePnlHistory() {
     try {
         // O PnL agora é salvo diretamente pelo bot.js no banco de dados
@@ -492,11 +513,25 @@ async function getLiveData() {
         // realizedPnL = dbStats.total_pnl || 0; // REMOVIDO - estava somando incorretamente
         
         // IMPORTANTE: Capital inicial FIXO de R$ 220,00 para cálculo de ROI
-        const INITIAL_CAPITAL = 220.00; // Capital inicial fixo para cálculo de performance
+        // ✅ MODIFICADO: Tentar ler do arquivo que o bot salva, senão usar padrão
+        let INITIAL_CAPITAL = 220.00;
+        try {
+            const initialBalanceFile = path.join(__dirname, '.initial_balance.json');
+            if (fs.existsSync(initialBalanceFile)) {
+                const initialData = JSON.parse(fs.readFileSync(initialBalanceFile, 'utf8'));
+                INITIAL_CAPITAL = parseFloat(initialData.total) || 220.00;
+            }
+        } catch (e) {
+            log('DEBUG', `Usando INITIAL_CAPITAL padrão (220), arquivo não disponível: ${e.message}`);
+        }
         const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.total || 0);
         const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.total || 0);
         const currentBalance = brlBalance + (btcBalance * mid); // Saldo atual em BRL
-        const initialCapitalInvested = INITIAL_CAPITAL; // Sempre usar R$ 220,00 como base
+
+        const contributions = loadContributions();
+        const netContributions = contributions.reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
+        const baseCapital = INITIAL_CAPITAL + netContributions;
+        const initialCapitalInvested = baseCapital;
         
         log('DEBUG', `Database PnL: ${realizedPnL}, Capital Base: R$ ${INITIAL_CAPITAL.toFixed(2)}, Saldo Atual: R$ ${currentBalance.toFixed(2)}`);
 
@@ -548,10 +583,17 @@ async function getLiveData() {
         const unrealizedPnL = btcPosition > 0 && totalCost > 0 ? 
             (btcPosition * mid) - totalCost : 0;
         
-        // PnL total = realizado + não realizado (mesma lógica do bot.js)
-        const totalPnL = realizedPnL + unrealizedPnL;
+        // ✅ FIX CRÍTICO: PnL total = Saldo Atual - Capital Inicial
+        // Método CORRETO: usar saldo total (incluindo BRL + BTC em BRL)
+        // Isso captura TODOS os ganhos/perdas, não apenas trades fechados
+        const currentTotalBalance = brlBalance + (btcBalance * mid);
+        const totalPnLCorrect = currentTotalBalance - baseCapital;
         
-        log('DEBUG', `PnL Correto: Realizado=${realizedPnL.toFixed(2)} + Não Realizado=${unrealizedPnL.toFixed(2)} = Total=${totalPnL.toFixed(2)} | Position=${btcPosition.toFixed(8)} BTC | Cost Basis=${totalCost.toFixed(2)} BRL`);
+        // Usar PnL correto (baseado em saldo) ao invés de realizado + não realizado
+        const totalPnL = totalPnLCorrect;
+        
+        log('DEBUG', `PnL Correto (Saldo): Saldo Atual R$${currentTotalBalance.toFixed(2)} - Base R$${baseCapital.toFixed(2)} = R$${totalPnL.toFixed(2)} | BRL=${brlBalance.toFixed(2)} + BTC=${btcBalance.toFixed(8)} @ R$${mid.toFixed(2)}`);
+        log('DEBUG', `PnL Histórico (FIFO): Realizado=${realizedPnL.toFixed(2)} + Não Realizado=${unrealizedPnL.toFixed(2)} = ${(realizedPnL + unrealizedPnL).toFixed(2)} (Apenas ordens preenchidas)`);
 
         const lastTimestamp = pnlTimestamps.length > 0 ? new Date(pnlTimestamps[pnlTimestamps.length - 1]) : null;
         const currentTime = new Date(now);
@@ -638,7 +680,7 @@ async function getLiveData() {
                 volatility: volatilityPct.toFixed(2),
                 tendency: pred
             },
-            balances: {
+            balance: {
                 brl: balances.find(b => b.symbol === 'BRL')?.total || 0,
                 btc: balances.find(b => b.symbol === 'BTC')?.total || 0,
                 total: balances.reduce((sum, b) => sum + parseFloat(b.total) * (b.symbol === 'BRL' ? 1 : (b.symbol === 'BTC' ? parseFloat(ticker.last) : 0)), 0).toFixed(2),
@@ -665,6 +707,8 @@ async function getLiveData() {
                 totalOrders: orders.length,
                 cancels: orders.filter(o => o.status === 'cancelled').length,
                 totalPnL,
+                realizedPnL: parseFloat(realizedPnL.toFixed(8)),
+                unrealizedPnL: parseFloat(unrealizedPnL.toFixed(8)),
                 monthlyPnL: getMonthlyPnL(pnlHistory, pnlTimestamps).toFixed(8),
                 pnlHistory: [...pnlHistory],
                 pnlTimestamps: [...pnlTimestamps],
@@ -688,7 +732,9 @@ async function getLiveData() {
                 volatility: parseFloat(pred.volatility.toFixed(2)),
                 regime: pred.regime,
                 roi: initialCapitalInvested > 0 ? parseFloat(((totalPnL / initialCapitalInvested) * 100).toFixed(4)) : 0,
-                initialCapital: parseFloat(initialCapitalInvested.toFixed(2)),
+                initialCapital: parseFloat(INITIAL_CAPITAL.toFixed(2)),
+                baseCapital: parseFloat(baseCapital.toFixed(2)),
+                netContributions: parseFloat(netContributions.toFixed(2)),
                 totalInvestedInOrders: totalInvested,
                 debugCapital: initialCapitalInvested
             },
@@ -714,6 +760,7 @@ async function getLiveData() {
                 takeProfit: (parseFloat(process.env.TAKE_PROFIT_PCT || '0.001')).toFixed(3),
                 minVolume: MIN_VOLUME,
                 volatilityLimit: parseFloat(process.env.VOLATILITY_LIMIT || 0.05),
+                minRepriceAgeSec: parseInt(process.env.MIN_REPRICE_AGE_SEC || '86400'),
                 feeRateMaker: FEE_RATE_MAKER, // ADICIONADO
                 feeRateTaker: FEE_RATE_TAKER // ADICIONADO
             },
@@ -799,12 +846,51 @@ app.get('/api/data', async (req, res) => {
     res.json(cache.data);
 });
 
+app.get('/api/contributions', (req, res) => {
+    const entries = loadContributions();
+    const net = entries.reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
+    res.json({entries, net});
+});
+
+app.post('/api/contributions', (req, res) => {
+    try {
+        const amountRaw = parseFloat(req.body?.amount || 0);
+        const type = (req.body?.type || '').toLowerCase();
+        const note = String(req.body?.note || '').slice(0, 120);
+
+        if (!amountRaw || amountRaw <= 0) {
+            return res.status(400).json({error: 'amount_invalido'});
+        }
+        if (!['deposit', 'withdraw'].includes(type)) {
+            return res.status(400).json({error: 'type_invalido'});
+        }
+
+        const signedAmount = type === 'withdraw' ? -amountRaw : amountRaw;
+        const entries = loadContributions();
+        const entry = {
+            amount: parseFloat(signedAmount.toFixed(2)),
+            type,
+            note,
+            createdAt: new Date().toISOString()
+        };
+        entries.push(entry);
+        saveContributions(entries);
+        const net = entries.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+        res.json({ok: true, entry, net});
+    } catch (err) {
+        log('ERROR', 'Erro ao salvar aporte:', err.message);
+        res.status(500).json({error: 'erro_ao_salvar'});
+    }
+});
+
 // Endpoint de momentum removido (2025-01-21)
 
 // ========== ENDPOINT DE PARES (UNIFICADO) ==========
 // INCLUINDO ORDENS ATIVAS ENRIQUECIDAS + HISTÓRICO
 app.get('/api/pairs', async (req, res) => {
     try {
+        const COMPLETED_PAIR_TTL_MS = parseInt(process.env.PAIRS_COMPLETED_TTL_MS || '300000');
+        const now = Date.now();
         // Obter dados do /api/data que inclui ordens ativas enriquecidas em memória
         const dashData = cache.data || {};
         const memoryActiveOrders = (dashData.activeOrders || []).map(o => ({
@@ -813,7 +899,8 @@ app.get('/api/pairs', async (req, res) => {
             price: parseFloat(o.price),
             qty: parseFloat(o.qty),
             status: o.status,
-            pair_id: o.pair_id || null
+            pair_id: o.pair_id || null,
+            timestamp: o.timestamp || null
         }));
         
         // Consultar todas as ordens do banco
@@ -844,10 +931,35 @@ app.get('/api/pairs', async (req, res) => {
                         id: order.id,
                         price: parseFloat(order.price),
                         qty: parseFloat(order.qty),
-                        status: order.status
+                        status: order.status,
+                        timestamp: order.timestamp || null
                     };
                 } else {
                     pairMap[pairId].sellOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status,
+                        timestamp: order.timestamp || null
+                    };
+                }
+                processedOrders.add(order.id);
+            } else if (!order.pair_id || order.pair_id.trim() === '') {
+                // ✅ ADICIONAR: Ordens ativas SEM pair_id também (aguardando colocação)
+                const orphanPairId = `PAIR_ORPHAN_${order.side.toUpperCase()}_${order.id.substring(0, 15)}`;
+                if (!pairMap[orphanPairId]) {
+                    pairMap[orphanPairId] = { buyOrder: null, sellOrder: null, isOrphan: true };
+                }
+                
+                if (order.side.toLowerCase() === 'buy') {
+                    pairMap[orphanPairId].buyOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                } else {
+                    pairMap[orphanPairId].sellOrder = {
                         id: order.id,
                         price: parseFloat(order.price),
                         qty: parseFloat(order.qty),
@@ -879,10 +991,35 @@ app.get('/api/pairs', async (req, res) => {
                         id: order.id,
                         price: parseFloat(order.price),
                         qty: parseFloat(order.qty),
-                        status: order.status
+                        status: order.status,
+                        timestamp: order.timestamp || null
                     };
                 } else {
                     pairMap[pairId].sellOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status,
+                        timestamp: order.timestamp || null
+                    };
+                }
+                processedOrders.add(order.id);
+            } else if (!order.pair_id || order.pair_id.trim() === '') {
+                // ✅ ADICIONAR: Ordens ativas do banco SEM pair_id também (aguardando colocação)
+                const orphanPairId = `PAIR_ORPHAN_${order.side.toUpperCase()}_${order.id.substring(0, 15)}`;
+                if (!pairMap[orphanPairId]) {
+                    pairMap[orphanPairId] = { buyOrder: null, sellOrder: null, isOrphan: true };
+                }
+                
+                if (order.side.toLowerCase() === 'buy') {
+                    pairMap[orphanPairId].buyOrder = {
+                        id: order.id,
+                        price: parseFloat(order.price),
+                        qty: parseFloat(order.qty),
+                        status: order.status
+                    };
+                } else {
+                    pairMap[orphanPairId].sellOrder = {
                         id: order.id,
                         price: parseFloat(order.price),
                         qty: parseFloat(order.qty),
@@ -907,14 +1044,16 @@ app.get('/api/pairs', async (req, res) => {
                         id: order.id,
                         price: parseFloat(order.price),
                         qty: parseFloat(order.qty),
-                        status: order.status
+                        status: order.status,
+                        timestamp: order.timestamp || null
                     };
                 } else {
                     pairMap[pairId].sellOrder = {
                         id: order.id,
                         price: parseFloat(order.price),
                         qty: parseFloat(order.qty),
-                        status: order.status
+                        status: order.status,
+                        timestamp: order.timestamp || null
                     };
                 }
                 processedOrders.add(order.id);
@@ -930,13 +1069,17 @@ app.get('/api/pairs', async (req, res) => {
             const hasSell = pair.sellOrder !== null;
             
             // Remover APENAS se ambas as ordens estiverem preenchidas (filled)
-            const buyOrderFilled = hasBuy && pair.buyOrder.status === 'filled';
-            const sellOrderFilled = hasSell && pair.sellOrder.status === 'filled';
+                const buyOrderFilled = hasBuy && pair.buyOrder.status === 'filled';
+                const sellOrderFilled = hasSell && pair.sellOrder.status === 'filled';
             const bothOrdersFilled = buyOrderFilled && sellOrderFilled;
+                const buyTs = hasBuy ? (pair.buyOrder.timestamp ? new Date(pair.buyOrder.timestamp).getTime() : 0) : 0;
+                const sellTs = hasSell ? (pair.sellOrder.timestamp ? new Date(pair.sellOrder.timestamp).getTime() : 0) : 0;
+                const completedAt = Math.max(buyTs, sellTs);
+                const shouldExpire = completedAt > 0 && (now - completedAt) > COMPLETED_PAIR_TTL_MS;
             
             // Se ambas estão filled, remover par (ciclo completado)
-            if (bothOrdersFilled) {
-                log('DEBUG', `✅ Par ${pairId.substring(0, 20)}... removido (ambas orders filled)`);
+            if (bothOrdersFilled && shouldExpire) {
+                log('DEBUG', `✅ Par ${pairId.substring(0, 20)}... removido (ambas orders filled + TTL)`);
                 pairedCompletedThisCycle++;
                 delete pairMap[pairId];
             }
@@ -1137,11 +1280,15 @@ app.get('/api/pairs', async (req, res) => {
             activeOrdersIncluded: memoryActiveOrders.length,
             historicalOrdersIncluded: historicalOrders.length,
             pairs: pairs.sort((a, b) => {
-                // Ordenar: completos primeiro, depois ativos, depois históricos
-                const aStatus = a.status === 'COMPLETO' ? 0 : (a.buyOrder?.status === 'open' || a.sellOrder?.status === 'open' ? 1 : 2);
-                const bStatus = b.status === 'COMPLETO' ? 0 : (b.buyOrder?.status === 'open' || b.sellOrder?.status === 'open' ? 1 : 2);
-                if (aStatus !== bStatus) return aStatus - bStatus;
-                return parseFloat(b.roi) - parseFloat(a.roi);
+                const aTs = Math.max(
+                    a.buyOrder?.timestamp ? new Date(a.buyOrder.timestamp).getTime() : 0,
+                    a.sellOrder?.timestamp ? new Date(a.sellOrder.timestamp).getTime() : 0
+                );
+                const bTs = Math.max(
+                    b.buyOrder?.timestamp ? new Date(b.buyOrder.timestamp).getTime() : 0,
+                    b.sellOrder?.timestamp ? new Date(b.sellOrder.timestamp).getTime() : 0
+                );
+                return bTs - aTs;
             })
         };
         

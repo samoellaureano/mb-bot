@@ -172,7 +172,7 @@ class BTCAccumulator {
 // ═══════════════════════════════════════════════════════════════
 // CASH MANAGEMENT STRATEGY OTIMIZADO v2 - Ultra agressivo
 // ═══════════════════════════════════════════════════════════════
-function testCashManagementStrategy(prices, testName) {
+function testCashManagementStrategy(prices, testName, params = {}) {
     const initialBRL = 200;
     const initialBTC = 0.0001;
     
@@ -194,23 +194,110 @@ function testCashManagementStrategy(prices, testName) {
     let buyCount = 0;
     let sellCount = 0;
     
-    // Parâmetros v1.9 PROFIT OPTIMIZED (CORRIGIDO)
-    const BUY_THRESHOLD = 0.0002; // 0.02% (mais sensível aos dips)
-    const SELL_THRESHOLD = 0.00025; // 0.025% (mais agressivo venda)
-    const BUY_MICRO_THRESHOLD = 0.00008; // 0.008% (micro-compras sensivelíssimas)
-    const SELL_MICRO_THRESHOLD = 0.00015; // 0.015% (micro-vendas agressivo)
-    const MICRO_TRADE_INTERVAL = 2; // A cada 2 candles (mais frequente)
-    const MAX_BUY_COUNT = 6; // Máximo 6 compras (reduzir over-exposure)
+    // Parâmetros base (ajustados dinamicamente com score preditivo)
+    const BASE_BUY_THRESHOLD = params.baseBuyThreshold ?? 0.00040; // 0.040% (compras mais seletivas)
+    const BASE_SELL_THRESHOLD = params.baseSellThreshold ?? 0.00060; // 0.060% (margem maior por venda)
+    const BASE_BUY_MICRO_THRESHOLD = params.baseBuyMicroThreshold ?? 0.00020; // 0.020% (micro-compras só em dips reais)
+    const BASE_SELL_MICRO_THRESHOLD = params.baseSellMicroThreshold ?? 0.00032; // 0.032% (micro-vendas com spread melhor)
+    const BASE_MICRO_TRADE_INTERVAL = params.baseMicroTradeInterval ?? 6; // A cada 6 candles (menos overtrading)
+    const MAX_BUY_COUNT = params.maxBuyCount ?? 4; // Máximo 4 compras (controle de exposição)
+    const MIN_BTC_RESERVE = params.minBtcReserve ?? 0.000015; // Mantém uma reserva mínima para não sair totalmente do mercado
+    const BUY_BRL_MIN = params.buyBrlMin ?? 60;
+    const MICRO_BUY_BRL_MIN = params.microBuyBrlMin ?? 50;
+    const SELL_PCT_BASE = params.sellPctBase ?? 0.60;
+    const BUY_PCT_BASE = params.buyPctBase ?? 0.25;
+    const SELL_PCT_MIN = params.sellPctMin ?? 0.45;
+    const SELL_PCT_MAX = params.sellPctMax ?? 0.95;
+    const BUY_PCT_MIN = params.buyPctMin ?? 0.10;
+    const BUY_PCT_MAX = params.buyPctMax ?? 0.55;
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    const calcEMA = (values, period) => {
+        if (values.length < period) return values[values.length - 1] || 0;
+        const k = 2 / (period + 1);
+        let ema = values[values.length - period];
+        for (let i = values.length - period + 1; i < values.length; i++) {
+            ema = values[i] * k + ema * (1 - k);
+        }
+        return ema;
+    };
+    const calcRSI = (values, period = 14) => {
+        if (values.length < period + 1) return 50;
+        let gains = 0;
+        let losses = 0;
+        for (let i = values.length - period - 1; i < values.length - 1; i++) {
+            const change = values[i + 1] - values[i];
+            if (change > 0) gains += change; else losses -= change;
+        }
+        const avgGain = gains / period;
+        const avgLoss = losses / period;
+        if (avgLoss === 0) return 100;
+        const rs = avgGain / avgLoss;
+        return 100 - (100 / (1 + rs));
+    };
+    const calcVolatilityPct = (values) => {
+        if (values.length < 2) return 0;
+        const returns = values.slice(1).map((p, i) => {
+            const prev = values[i];
+            return prev > 0 ? Math.log(p / prev) : 0;
+        }).filter(r => r !== 0 && !isNaN(r));
+        if (returns.length < 2) return 0;
+        const mean = returns.reduce((s, r) => s + r, 0) / returns.length;
+        const variance = returns.reduce((s, r) => s + Math.pow(r - mean, 2), 0) / returns.length;
+        return Math.sqrt(variance) * Math.sqrt(24 * 60) * 100;
+    };
     
     // Loop de execução
     for (let i = 1; i < prices.length; i++) {
         const price = prices[i];
         const priceDiffPct = (price - lastTradePrice) / lastTradePrice;
+
+        const windowStart = Math.max(0, i - 30);
+        const windowPrices = prices.slice(windowStart, i + 1);
+        const emaShort = calcEMA(windowPrices, 8);
+        const emaLong = calcEMA(windowPrices, 20);
+        const rsi = calcRSI(windowPrices, 14);
+        const volPct = calcVolatilityPct(windowPrices);
+        const trendScore = clamp(((emaShort - emaLong) / (emaLong || 1)) * 50, -1, 1);
+        const rsiScore = clamp((rsi - 50) / 50, -1, 1);
+        const score = clamp((0.6 * trendScore) + (0.4 * rsiScore), -1, 1);
+        const volScore = clamp(volPct / 2, 0, 1);
+        const volAdjust = 1 + (volScore * 0.25);
+
+        const buyThreshold = clamp(
+            BASE_BUY_THRESHOLD * volAdjust * (score < 0 ? 1.2 : 0.9),
+            BASE_BUY_THRESHOLD * 0.7,
+            BASE_BUY_THRESHOLD * 1.6
+        );
+        const sellThreshold = clamp(
+            BASE_SELL_THRESHOLD * volAdjust * (score > 0 ? 1.2 : 0.9),
+            BASE_SELL_THRESHOLD * 0.7,
+            BASE_SELL_THRESHOLD * 1.6
+        );
+        const buyMicroThreshold = clamp(
+            BASE_BUY_MICRO_THRESHOLD * volAdjust * (score < 0 ? 1.15 : 0.9),
+            BASE_BUY_MICRO_THRESHOLD * 0.7,
+            BASE_BUY_MICRO_THRESHOLD * 1.6
+        );
+        const sellMicroThreshold = clamp(
+            BASE_SELL_MICRO_THRESHOLD * volAdjust * (score > 0 ? 1.15 : 0.9),
+            BASE_SELL_MICRO_THRESHOLD * 0.7,
+            BASE_SELL_MICRO_THRESHOLD * 1.6
+        );
+        const microInterval = BASE_MICRO_TRADE_INTERVAL + (volScore > 0.6 ? 1 : 0) + (score < 0 ? 1 : 0);
+        const sellPct = clamp(SELL_PCT_BASE + (score * 0.20) + ((rsi - 50) / 100) * 0.2, SELL_PCT_MIN, SELL_PCT_MAX);
+        const buyPct = clamp(BUY_PCT_BASE + (-score * 0.20) + ((50 - rsi) / 100) * 0.2, BUY_PCT_MIN, BUY_PCT_MAX);
         
         // ═══ SE SOBE > SELL_THRESHOLD: VENDER (v1.9 - PROFIT OPTIMIZED) ═══
-        if (priceDiffPct > SELL_THRESHOLD && btc > 0.00001) {
-            brl += btc * price; // Vender 100% do BTC (SELL_AMOUNT_PCT = 1.0)
-            btc = 0;
+        if (priceDiffPct > sellThreshold && btc > MIN_BTC_RESERVE) {
+            let sellQty = btc * sellPct;
+            if (btc - sellQty < MIN_BTC_RESERVE) {
+                sellQty = btc - MIN_BTC_RESERVE;
+            }
+            if (sellQty > 0.00001) {
+                brl += sellQty * price;
+                btc -= sellQty;
+            }
             trades++;
             sellCount++;
             if ((price - lastTradePrice) / lastTradePrice > 0) profitableTrades++;
@@ -218,8 +305,8 @@ function testCashManagementStrategy(prices, testName) {
         }
         
         // ═══ SE DESCE > BUY_THRESHOLD: COMPRAR v1.9 (PROFIT OPTIMIZED) ═══
-        if (priceDiffPct < -BUY_THRESHOLD && brl > 50 && buyCount < MAX_BUY_COUNT) {
-            const buyQty = Math.min(0.0001, brl / price * 0.60); // 60% (BUY_AMOUNT_PCT)
+        if (priceDiffPct < -buyThreshold && brl > BUY_BRL_MIN && buyCount < MAX_BUY_COUNT) {
+            const buyQty = Math.min(0.0001, brl / price * buyPct);
             if (buyQty > 0.00001) {
                 brl -= buyQty * price;
                 btc += buyQty;
@@ -230,10 +317,13 @@ function testCashManagementStrategy(prices, testName) {
         }
         
         // ═══ MICRO-TRADES v1.9: A cada 2 candles (mais frequente) ═══
-        if (i % MICRO_TRADE_INTERVAL === 0) {
+        if (i % microInterval === 0) {
             // Se temos BTC E subiu SELL_MICRO_THRESHOLD (0.015%)
-            if (btc > 0.00002 && (price - lastTradePrice) / lastTradePrice > SELL_MICRO_THRESHOLD) {
-                const sellQty = btc * 0.60; // Vender 60% (MICRO_SELL_PCT)
+            if (btc > 0.00002 && (price - lastTradePrice) / lastTradePrice > sellMicroThreshold) {
+                let sellQty = btc * Math.max(0.30, sellPct - 0.15);
+                if (btc - sellQty < MIN_BTC_RESERVE) {
+                    sellQty = btc - MIN_BTC_RESERVE;
+                }
                 if (sellQty > 0.00001) {
                     brl += sellQty * price;
                     btc -= sellQty;
@@ -244,8 +334,8 @@ function testCashManagementStrategy(prices, testName) {
             }
             
             // Se sem BTC E desceu BUY_MICRO_THRESHOLD (0.008%)
-            if (btc < 0.00001 && brl > 40 && (lastTradePrice - price) / lastTradePrice > BUY_MICRO_THRESHOLD) {
-                const buyQty = Math.min(0.00008, brl / price * 0.40); // 40% (MICRO_BUY_PCT)
+            if (btc < 0.00001 && brl > MICRO_BUY_BRL_MIN && (lastTradePrice - price) / lastTradePrice > buyMicroThreshold) {
+                const buyQty = Math.min(0.00008, brl / price * Math.min(0.50, buyPct + 0.10));
                 if (buyQty > 0.00001) {
                     brl -= buyQty * price;
                     btc += buyQty;
@@ -319,8 +409,71 @@ function testCashManagementStrategy(prices, testName) {
             yearlyRoi: projectedYearlyRoi.toFixed(2),
             monthlyBRL: projectedMonthlyBRL.toFixed(2),
             yearlyBRL: projectedYearlyBRL.toFixed(2)
+        },
+        params: {
+            baseBuyThreshold: BASE_BUY_THRESHOLD,
+            baseSellThreshold: BASE_SELL_THRESHOLD,
+            baseBuyMicroThreshold: BASE_BUY_MICRO_THRESHOLD,
+            baseSellMicroThreshold: BASE_SELL_MICRO_THRESHOLD,
+            baseMicroTradeInterval: BASE_MICRO_TRADE_INTERVAL,
+            minBtcReserve: MIN_BTC_RESERVE,
+            buyBrlMin: BUY_BRL_MIN,
+            microBuyBrlMin: MICRO_BUY_BRL_MIN,
+            sellPctBase: SELL_PCT_BASE,
+            buyPctBase: BUY_PCT_BASE,
+            sellPctMin: SELL_PCT_MIN,
+            sellPctMax: SELL_PCT_MAX,
+            buyPctMin: BUY_PCT_MIN,
+            buyPctMax: BUY_PCT_MAX
         }
     };
+}
+
+function buildCashManagementVariants() {
+    const base = {
+        baseBuyThreshold: 0.00040,
+        baseSellThreshold: 0.00060,
+        baseBuyMicroThreshold: 0.00020,
+        baseSellMicroThreshold: 0.00032,
+        baseMicroTradeInterval: 6,
+        minBtcReserve: 0.000015,
+        buyBrlMin: 60,
+        microBuyBrlMin: 50,
+        sellPctBase: 0.60,
+        buyPctBase: 0.25,
+        sellPctMin: 0.45,
+        sellPctMax: 0.95,
+        buyPctMin: 0.10,
+        buyPctMax: 0.55
+    };
+
+    return [
+        base,
+        { ...base, baseSellThreshold: 0.00066, baseSellMicroThreshold: 0.00035, sellPctBase: 0.62 },
+        { ...base, baseSellThreshold: 0.00070, baseMicroTradeInterval: 7, sellPctBase: 0.64 },
+        { ...base, baseSellThreshold: 0.00056, baseMicroTradeInterval: 5, sellPctBase: 0.58 },
+        { ...base, baseBuyThreshold: 0.00044, baseBuyMicroThreshold: 0.00022, buyPctBase: 0.23 },
+        { ...base, baseBuyThreshold: 0.00036, baseBuyMicroThreshold: 0.00018, buyPctBase: 0.28 },
+        { ...base, buyBrlMin: 65, microBuyBrlMin: 55, buyPctBase: 0.22 },
+        { ...base, buyBrlMin: 55, microBuyBrlMin: 45, buyPctBase: 0.30 },
+        { ...base, minBtcReserve: 0.00002, sellPctBase: 0.60, buyPctBase: 0.24 },
+        { ...base, minBtcReserve: 0.00001, sellPctBase: 0.59, buyPctBase: 0.26 }
+    ];
+}
+
+function runCashManagementSweep(prices) {
+    const variants = buildCashManagementVariants();
+    let best = null;
+    const results = variants.map((params, index) => {
+        const test = testCashManagementStrategy(prices, `Cash Management Strategy v${index + 1}`, params);
+        test.variantIndex = index + 1;
+        if (!best || parseFloat(test.pnlBRL) > parseFloat(best.pnlBRL)) {
+            best = test;
+        }
+        return test;
+    });
+
+    return { best, results };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -762,10 +915,16 @@ async function runTestBattery(hours = 24) {
             results.tests.push(accTestSecond);
         }
         
-        // Teste 4: Cash Management Strategy (Melhor em baixas)
-        console.log('[TEST_RUNNER] Executando teste: Cash Management Strategy...');
-        const cashMgmtTest = testCashManagementStrategy(prices, 'Cash Management Strategy');
-        results.tests.push(cashMgmtTest);
+        // Teste 4: Cash Management Strategy (melhor de 10 ajustes)
+        console.log('[TEST_RUNNER] Executando testes: Cash Management Strategy (10 ajustes)...');
+        const cashMgmtSweep = runCashManagementSweep(prices);
+        const bestCashMgmt = cashMgmtSweep.best;
+        if (bestCashMgmt) {
+            bestCashMgmt.testName = 'Cash Management Strategy (Best of 10)';
+            bestCashMgmt.variantsTried = cashMgmtSweep.results.length;
+            results.tests.push(bestCashMgmt);
+        }
+        results.cashManagementCandidates = cashMgmtSweep.results;
         
         // Calcular resumo
         results.tests.forEach(test => {

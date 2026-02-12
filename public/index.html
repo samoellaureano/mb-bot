@@ -51,6 +51,7 @@
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-blue-500">
             <p class="text-gray-400 text-xs sm:text-sm">Último Preço</p>
             <h2 id="lastPrice" class="text-lg sm:text-xl font-bold">Carregando...</h2>
+            <p id="bidAsk" class="text-xs sm:text-sm text-gray-400">Bid: -- | Ask: --</p>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p class="text-gray-400 text-xs sm:text-sm">Spread / Volatilidade</p>
@@ -58,9 +59,26 @@
             <p id="volatility" class="text-xs sm:text-sm text-gray-400">Vol: --</p>
         </div>
         <div id="pnlCard" class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-gray-500">
-            <p class="text-gray-400 text-xs sm:text-sm">Lucro Total (PnL)</p>
+            <p class="text-gray-400 text-xs sm:text-sm">Lucro/Prejuizo Total (PnL)</p>
             <h2 id="pnl" class="text-lg sm:text-xl font-bold">R$ 0,00</h2>
-            <p id="roi" class="text-xs sm:text-sm text-gray-400">ROI: 0,00%</p>
+            <p id="pnlStatus" class="text-xs sm:text-sm text-gray-400">Resultado: Neutro</p>
+            <p id="roiCard" class="text-xs sm:text-sm text-gray-400">ROI: 0,00%</p>
+            <p id="roiBase" class="text-xs text-gray-500">Base ROI: R$ 0,00</p>
+            <p id="netContrib" class="text-xs text-gray-500">Aportes liquido: R$ 0,00</p>
+            <div class="mt-2 flex flex-col gap-2">
+                <div class="flex flex-wrap gap-2">
+                    <input id="contribAmount" type="number" min="0" step="0.01" placeholder="Valor (R$)"
+                        class="w-28 sm:w-32 text-xs bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-200" />
+                    <input id="contribNote" type="text" maxlength="120" placeholder="Obs (opcional)"
+                        class="flex-1 min-w-[120px] text-xs bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-200" />
+                </div>
+                <div class="flex gap-2">
+                    <button id="contribAddBtn" onclick="submitContribution('deposit')"
+                        class="text-xs px-2 py-1 bg-green-700 hover:bg-green-600 rounded text-white">Aportar</button>
+                    <button id="contribWithdrawBtn" onclick="submitContribution('withdraw')"
+                        class="text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded text-white">Retirar</button>
+                </div>
+            </div>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-purple-500">
             <p class="text-gray-400 text-xs sm:text-sm">Saldo Total Est.</p>
@@ -116,6 +134,16 @@
             <h2 class="text-base sm:text-lg font-bold">🔗 Rastreamento de Pares BUY/SELL</h2>
             <div class="flex gap-2 items-center">
                 <span id="pairsRefreshBadge" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Atualizando...</span>
+                <button id="toggleCompletePairsBtn" onclick="toggleCompletePairs()"
+                    class="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white transition"
+                    title="Exibir apenas ciclos completos">
+                    ✅ Completos
+                </button>
+                <button id="downloadPairsBtn" onclick="downloadPairsJson()"
+                    class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white transition"
+                    title="Baixar JSON com todos os pares">
+                    ⬇️ JSON
+                </button>
                 <button id="clearAllOrdersBtn" onclick="clearAllOrders()" 
                     class="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 rounded text-white transition"
                     title="Cancelar TODAS as ordens abertas do sistema">
@@ -145,22 +173,23 @@
         </div>
 
         <!-- Tabela de Pares -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto max-h-96 overflow-y-auto">
             <table class="w-full text-xs">
                 <thead>
                 <tr class="text-gray-400 border-b border-gray-700">
                     <th class="text-left p-2">Pair ID</th>
                     <th class="text-left p-2">Status</th>
-                    <th class="text-center p-2">BUY</th>
-                    <th class="text-center p-2">SELL</th>
+                    <th class="text-center p-2">BUY<br><span class="text-xs text-gray-500">(Preço / Execução)</span></th>
+                    <th class="text-center p-2">SELL<br><span class="text-xs text-gray-500">(Preço / Execução)</span></th>
                     <th class="text-right p-2">Spread</th>
                     <th class="text-right p-2">ROI Líquido</th>
+                    <th class="text-center p-2">Ciclo</th>
                     <th class="text-center p-2">Ações</th>
                 </tr>
                 </thead>
                 <tbody id="pairsTableBody">
                 <tr>
-                    <td class="p-2 text-gray-400 text-center" colspan="7">Carregando pares...</td>
+                    <td class="p-2 text-gray-400 text-center" colspan="8">Carregando pares...</td>
                 </tr>
                 </tbody>
             </table>
@@ -439,8 +468,11 @@
                 <div>
                     <h3 class="text-sm font-semibold mb-2 text-gray-300">Posição e Resultados</h3>
                     <ul class="space-y-1 text-xs sm:text-sm">
-                        <li title="Lucro/prejuízo não realizado da posição atual" class="p-1 rounded pulse-green">
-                            PnL Não Realizado: <span id="unrealizedPnl">R$ 0.00 📈</span>
+                        <li title="Lucro/prejuízo não realizado da posição atual" class="p-1 rounded">
+                            PnL Não Realizado: <span id="unrealizedPnl">R$ 0.00 😐</span>
+                        </li>
+                        <li title="Lucro/prejuízo realizado (apenas SELL executadas)" class="p-1 rounded">
+                            PnL Realizado: <span id="realizedPnl">R$ 0.00 😐</span>
                         </li>
                         <li title="Quantidade de BTC em posição" class="p-1 rounded">
                             Posição BTC: <span id="btcPosition">0.00002000 BTC</span>
@@ -455,7 +487,10 @@
                             Uptime: <span id="uptime">23 minutos</span>
                         </li>
                         <li title="Retorno sobre investimento (ROI)" class="p-1 rounded pulse-green">
-                            ROI: <span id="roi">0.01% 📈</span>
+                            ROI: <span id="roiList">0.01% 📈</span>
+                        </li>
+                        <li title="Aportes e retiradas registrados no dashboard" class="p-1 rounded">
+                            Aportes liquido: <span id="netContribList">R$ 0.00</span>
                         </li>
                     </ul>
                 </div>
@@ -469,6 +504,8 @@
     let pnlChart;
     let btcChart;
     let residualPnlChart;
+    let showCompletedPairs = false;
+    let latestPairsData = null;
 
     document.addEventListener('DOMContentLoaded', () => {
         console.log('[Dashboard] 🔧 Initializing charts...');
@@ -652,10 +689,19 @@
         return num.toLocaleString('pt-BR', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
     };
 
-    async function loadData() {
+    function formatHms(totalSeconds) {
+        const safeSeconds = Math.max(0, Math.floor(totalSeconds || 0));
+        const hours = Math.floor(safeSeconds / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        const seconds = safeSeconds % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    async function loadData(forceRefresh = false) {
         try {
             console.log('[Dashboard] Fetching data from API...');
-            const res = await fetch(`/api/data?t=${Date.now()}`);
+            const refreshParam = forceRefresh ? '&refresh=true' : '';
+            const res = await fetch(`/api/data?t=${Date.now()}${refreshParam}`);
             
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
@@ -669,7 +715,7 @@
             console.log('[Dashboard] Data loaded:', {
                 roi: data.stats?.roi,
                 totalPnL: data.stats?.totalPnL || data.stats?.pnl_total,
-                balanceTotal: data.balances?.total
+                balanceTotal: data.balance?.total
             });
 
             // Função auxiliar para safe formatting
@@ -701,6 +747,15 @@
                 lastPriceEl.textContent = `R$ ${safeFormat(lastPrice, 2)}`;
             }
 
+            const bidAskEl = document.getElementById('bidAsk');
+            if (bidAskEl) {
+                const bid = parseFloat(data.market?.bid || 0);
+                const ask = parseFloat(data.market?.ask || 0);
+                const bidText = bid > 0 ? `R$ ${safeFormat(bid, 2)}` : '--';
+                const askText = ask > 0 ? `R$ ${safeFormat(ask, 2)}` : '--';
+                bidAskEl.textContent = `Bid: ${bidText} | Ask: ${askText}`;
+            }
+
             const spread = parseFloat(data.market?.spread || 0.06);
             const spreadEl = document.getElementById('spread');
             if (spreadEl) {
@@ -714,6 +769,8 @@
             }
 
             const totalPnL = parseFloat(data.stats?.totalPnL || data.stats?.pnl_total || 0);
+            const realizedPnL = parseFloat(data.stats?.realizedPnL || 0);
+            const unrealizedPnL = parseFloat(data.stats?.unrealizedPnL || 0);
             const pnlEl = document.getElementById('pnl');
             const pnlCard = document.getElementById('pnlCard');
             
@@ -745,14 +802,63 @@
             }
             
             const roi = parseFloat(data.stats?.roi || 0);
-            const roiEl = document.getElementById('roi');
-            if (roiEl) {
+            const roiEls = [document.getElementById('roiCard'), document.getElementById('roiList')];
+            roiEls.forEach((roiEl) => {
+                if (!roiEl) return;
                 roiEl.textContent = `${isFinite(roi) ? safeFormat(roi, 2) : '0.00'}%`;
                 if (roi > 0) {
                     roiEl.className = 'text-green-400';
                 } else if (roi < 0) {
                     roiEl.className = 'text-red-400';
+                } else {
+                    roiEl.className = 'text-gray-400';
                 }
+            });
+
+            const pnlStatusEl = document.getElementById('pnlStatus');
+            if (pnlStatusEl) {
+                if (totalPnL > 0) {
+                    pnlStatusEl.textContent = 'Resultado: Ganhando';
+                    pnlStatusEl.className = 'text-xs sm:text-sm text-green-400';
+                } else if (totalPnL < 0) {
+                    pnlStatusEl.textContent = 'Resultado: Perdendo';
+                    pnlStatusEl.className = 'text-xs sm:text-sm text-red-400';
+                } else {
+                    pnlStatusEl.textContent = 'Resultado: Neutro';
+                    pnlStatusEl.className = 'text-xs sm:text-sm text-gray-400';
+                }
+            }
+
+            const roiBaseEl = document.getElementById('roiBase');
+            if (roiBaseEl) {
+                const base = parseFloat(data.stats?.baseCapital || data.stats?.initialCapital || 0);
+                roiBaseEl.textContent = `Base ROI: R$ ${safeFormat(base, 2)}`;
+            }
+
+            const netContrib = parseFloat(data.stats?.netContributions || 0);
+            const netContribEl = document.getElementById('netContrib');
+            if (netContribEl) {
+                netContribEl.textContent = `Aportes liquido: R$ ${safeFormat(netContrib, 2)}`;
+                netContribEl.className = netContrib >= 0 ? 'text-xs text-gray-500' : 'text-xs text-red-400';
+            }
+            const netContribListEl = document.getElementById('netContribList');
+            if (netContribListEl) {
+                netContribListEl.textContent = `R$ ${safeFormat(netContrib, 2)}`;
+                netContribListEl.className = netContrib >= 0 ? 'text-green-400' : 'text-red-400';
+            }
+
+            const unrealizedEl = document.getElementById('unrealizedPnl');
+            if (unrealizedEl) {
+                const icon = unrealizedPnL > 0 ? '📈' : unrealizedPnL < 0 ? '📉' : '😐';
+                unrealizedEl.textContent = `R$ ${safeFormat(unrealizedPnL, 2)} ${icon}`;
+                unrealizedEl.className = unrealizedPnL > 0 ? 'text-green-400' : unrealizedPnL < 0 ? 'text-red-400' : 'text-gray-400';
+            }
+
+            const realizedEl = document.getElementById('realizedPnl');
+            if (realizedEl) {
+                const icon = realizedPnL > 0 ? '📈' : realizedPnL < 0 ? '📉' : '😐';
+                realizedEl.textContent = `R$ ${safeFormat(realizedPnL, 2)} ${icon}`;
+                realizedEl.className = realizedPnL > 0 ? 'text-green-400' : realizedPnL < 0 ? 'text-red-400' : 'text-gray-400';
             }
 
             const brlEl = document.getElementById('brl');
@@ -760,10 +866,10 @@
             const totalBalanceCard = document.getElementById('totalBalanceCard');
             const totalBalanceList = document.getElementById('totalBalanceList');
             
-            if (brlEl) brlEl.textContent = `R$ ${safeFormat(data.balances?.brl || 0, 2)}`;
-            if (btcEl) btcEl.textContent = `${(parseFloat(data.balances?.btc || 0) || 0).toFixed(8)} BTC`;
+            if (brlEl) brlEl.textContent = `R$ ${safeFormat(data.balance?.brl || 0, 2)}`;
+            if (btcEl) btcEl.textContent = `${(parseFloat(data.balance?.btc || 0) || 0).toFixed(8)} BTC`;
             
-            const total = parseFloat(data.balances?.total || 0) || 0;
+            const total = parseFloat(data.balance?.total || 0) || 0;
             const totalFormatted = `R$ ${safeFormat(total, 2)}`;
             if (totalBalanceCard) totalBalanceCard.textContent = totalFormatted;
             if (totalBalanceList) totalBalanceList.textContent = totalFormatted;
@@ -773,7 +879,14 @@
             (data.activeOrders || []).forEach(order => {
                 const age = order.ageSecMinHour || {ageHour: 0, ageMin: 0, ageSec: 0};
                 const ageStr = `${String(age.ageHour).padStart(2, '0')}:${String(age.ageMin % 60).padStart(2, '0')}:${String(age.ageSec % 60).padStart(2, '0')}`;
+                const minRepriceAgeSec = parseInt(data.config?.minRepriceAgeSec || 86400, 10);
+                const remainingSec = Math.max(0, (minRepriceAgeSec || 0) - (age.ageSec || 0));
+                const remainingStr = formatHms(remainingSec);
                 const priceFormatted = window.safeBRFormat(order.price || 0, 2);
+                const orderPrice = parseFloat(order.price || 0);
+                const priceVsLast = (order.side === 'buy' && orderPrice > lastPrice)
+                    ? '<span class="text-yellow-400" title="BUY acima do ultimo preco">▲</span>'
+                    : '';
                 const tr = document.createElement('tr');
                 const pairId = order.pair_id ? order.pair_id : '❌ Sem par';
                 
@@ -793,12 +906,12 @@
                     <td class="${order.side === 'buy' ? 'text-green-400' : 'text-red-400'} p-1 sm:p-2">${order.side || '--'}</td>
                     <td class="p-1 sm:p-2 font-mono text-xs truncate">${order.id || '--'}</td>
                     <td class="p-1 sm:p-2 text-yellow-300 font-mono text-xs truncate">${pairId}</td>
-                    <td class="p-1 sm:p-2">R$ ${priceFormatted}</td>
+                    <td class="p-1 sm:p-2">R$ ${priceFormatted} ${priceVsLast}</td>
                     <td class="p-1 sm:p-2">${parseFloat(order.qty || '0').toFixed(8)}</td>
                     <td class="p-1 sm:p-2">${order.status || '--'}</td>
                     <td class="p-1 sm:p-2">${exchangeStatusDisplay}</td>
                     <td class="p-1 sm:p-2">${order.drift || '--'}</td>
-                    <td class="p-1 sm:p-2">${ageStr}</td>
+                    <td class="p-1 sm:p-2">${ageStr} <span class="text-gray-500">| restante ${remainingStr}</span></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -810,9 +923,15 @@
                     data.stats?.pnlHistory?.length > 0 && data.stats?.pnlTimestamps?.length > 0) {
                     console.log('[Dashboard] Updating charts...');
                     
+                    const nowMs = Date.now();
+                    const cutoffMs = nowMs - (24 * 60 * 60 * 1000);
                     const validPnLData = data.stats.pnlHistory
                         .map((val, i) => ({value: parseFloat(val), timestamp: data.stats.pnlTimestamps[i]}))
-                        .filter(item => !isNaN(item.value) && item.value < 1e10 && item.timestamp);
+                        .filter(item => {
+                            if (isNaN(item.value) || item.value >= 1e10 || !item.timestamp) return false;
+                            const ts = new Date(item.timestamp).getTime();
+                            return !isNaN(ts) && ts >= cutoffMs;
+                        });
                     
                     // Carregar histórico de preço BTC do servidor
                     const validPriceData = (data.stats?.priceHistory || [])
@@ -1102,9 +1221,12 @@
             try {
                 const pairsRes = await fetch(`/api/pairs?t=${Date.now()}`);
                 const pairsData = await pairsRes.json();
+                latestPairsData = pairsData;
                 
                 if (pairsData && pairsData.pairs && Array.isArray(pairsData.pairs)) {
-                    const displayPairs = pairsData.pairs.filter(p => p.status !== 'COMPLETO');
+                    const displayPairs = showCompletedPairs
+                        ? pairsData.pairs
+                        : pairsData.pairs.filter(p => !(p.cycleComplete || p.executionIndicator === '✅ CICLO COMPLETO'));
 
                     // Atualizar contadores completos do backend
                     setElementText('totalPairsCount', pairsData.totalPairs || pairsData.pairs.length || 0);
@@ -1129,7 +1251,10 @@
                     tbody.innerHTML = '';
                     
                     if (displayPairs.length === 0) {
-                        tbody.innerHTML = '<tr><td class="p-2 text-gray-400 text-center" colspan="7">Nenhum par registrado</td></tr>';
+                        const emptyLabel = showCompletedPairs
+                            ? 'Nenhum par registrado'
+                            : 'Nenhum par pendente';
+                        tbody.innerHTML = `<tr><td class="p-2 text-gray-400 text-center" colspan="10">${emptyLabel}</td></tr>`;
                     } else {
                         displayPairs.forEach(pair => {
                             const tr = document.createElement('tr');
@@ -1161,17 +1286,20 @@
                                 <td class="p-2">
                                     <span class="${statusColor} font-semibold">${statusIcon} ${pair.status}</span>
                                 </td>
-                                <td class="p-2 text-center">
-                                    ${pair.buyOrder ? `🟢 R$ ${pair.buyOrder.price}` : '❌'}
+                                <td class="p-2 text-center text-sm">
+                                    ${pair.buyOrder ? `<div>🟢 R$ ${window.safeBRFormat(parseFloat(pair.buyOrder.price || 0), 2)}</div><div class="text-xs text-gray-400">${pair.buyExecutionIndicator || '⚪'}</div>` : '❌'}
                                 </td>
-                                <td class="p-2 text-center">
-                                    ${pair.sellOrder ? `🔴 R$ ${pair.sellOrder.price}` : '❌'}
+                                <td class="p-2 text-center text-sm">
+                                    ${pair.sellOrder ? `<div>🔴 R$ ${window.safeBRFormat(parseFloat(pair.sellOrder.price || 0), 2)}</div><div class="text-xs text-gray-400">${pair.sellExecutionIndicator || '⚪'}</div>` : '❌'}
                                 </td>
                                 <td class="p-2 text-right ${spreadNum >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
                                     ${spreadVal}
                                 </td>
                                 <td class="p-2 text-right ${roiNum >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
                                     ${roiVal}
+                                </td>
+                                <td class="p-2 text-center text-xs">
+                                    ${pair.executionIndicator || '⏳ AGUARDANDO'}
                                 </td>
                                 <td class="p-2 text-center">
                                     <button onclick="cancelPair('${pair.pairId}')" 
@@ -1470,6 +1598,73 @@
                 statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
             }
             testsLoading = false;
+        }
+    }
+
+    function toggleCompletePairs() {
+        showCompletedPairs = !showCompletedPairs;
+        const btn = document.getElementById('toggleCompletePairsBtn');
+        if (btn) {
+            btn.textContent = showCompletedPairs ? '✅ Completos (mostrar)' : '✅ Completos (ocultar)';
+            btn.className = showCompletedPairs
+                ? 'text-xs px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded text-white transition'
+                : 'text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white transition';
+        }
+        loadData();
+    }
+
+    function downloadPairsJson() {
+        const pairs = latestPairsData?.pairs || [];
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            totalPairs: latestPairsData?.totalPairs || pairs.length,
+            completePairs: latestPairsData?.completePairs || 0,
+            incompletePairs: latestPairsData?.incompletePairs || 0,
+            pairs
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pares_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    async function submitContribution(type) {
+        const amountInput = document.getElementById('contribAmount');
+        const noteInput = document.getElementById('contribNote');
+        const amount = parseFloat(amountInput?.value || '0');
+        const note = noteInput?.value || '';
+        if (!amount || amount <= 0) {
+            alert('Informe um valor valido.');
+            return;
+        }
+
+        const btn = type === 'withdraw'
+            ? document.getElementById('contribWithdrawBtn')
+            : document.getElementById('contribAddBtn');
+
+        if (btn) btn.disabled = true;
+        try {
+            const res = await fetch('/api/contributions', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({amount, type, note})
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'erro');
+            }
+            amountInput.value = '';
+            noteInput.value = '';
+            await loadData(true);
+        } catch (e) {
+            alert('Falha ao registrar aporte.');
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 
