@@ -204,7 +204,7 @@
                 <span id="testsStatus" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Carregando...</span>
                 <button id="runTestsBtn" onclick="runAutomatedTests()" 
                     class="text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded text-white transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    🔄 Refazer Testes (24h)
+                    🔄 Refazer Testes (83h)
                 </button>
             </div>
         </div>
@@ -378,6 +378,15 @@
                         <li title="Percentual alvo de diferença entre compra e venda" class="p-1 rounded pulse-green">
                             Spread alvo: <span id="targetSpread">0.02% ✅</span>
                         </li>
+                        <li title="Fator aplicado no spread de BUY e SELL" class="p-1 rounded">
+                            Fator BUY/SELL: <span id="configSpreadFactors">--</span>
+                        </li>
+                        <li title="Fonte usada para o ajuste do spread" class="p-1 rounded">
+                            Fonte do Ajuste: <span id="configSpreadSource">--</span>
+                        </li>
+                        <li title="Tendência e confiança usadas para ajustar o spread" class="p-1 rounded">
+                            Tendência/Confiança: <span id="configSpreadTrend">--</span>
+                        </li>
                         <li title="Intervalo entre ciclos de decisão do bot" class="p-1 rounded">
                             Intervalo ciclo: <span id="cycleSec">15s</span>
                         </li>
@@ -436,6 +445,15 @@
                         </li>
                         <li title="Score da tendência externa (-1 a 1)" class="p-1 rounded">
                             Score: <span id="externalScore">--</span>
+                        </li>
+                        <li title="Fator aplicado no spread de BUY" class="p-1 rounded">
+                            Fator BUY: <span id="externalBuyFactor">--</span>
+                        </li>
+                        <li title="Fator aplicado no spread de SELL" class="p-1 rounded">
+                            Fator SELL: <span id="externalSellFactor">--</span>
+                        </li>
+                        <li title="Fonte usada para ajuste do spread" class="p-1 rounded">
+                            Fonte do Ajuste: <span id="externalSpreadSource">--</span>
                         </li>
                         <li title="Status das fontes de dados externas" class="p-1 rounded">
                             Fontes: <span id="externalSources">--</span>
@@ -874,6 +892,13 @@
             if (totalBalanceCard) totalBalanceCard.textContent = totalFormatted;
             if (totalBalanceList) totalBalanceList.textContent = totalFormatted;
 
+            const monthlyPnlEl = document.getElementById('monthlyPnl');
+            if (monthlyPnlEl) {
+                const monthlyPnlValue = parseFloat(data.stats?.monthlyPnL || 0);
+                const monthlyIcon = monthlyPnlValue > 0 ? '📈' : monthlyPnlValue < 0 ? '📉' : '😐';
+                monthlyPnlEl.textContent = `Mensal: R$ ${safeFormat(monthlyPnlValue, 2)} ${monthlyIcon}`;
+            }
+
             const tbody = document.getElementById('ordersTable');
             tbody.innerHTML = '';
             (data.activeOrders || []).forEach(order => {
@@ -1104,7 +1129,8 @@
                     setElementText('externalTrend', '--');
                     setElementText('externalConfidence', '--');
                     setElementText('externalScore', '--');
-                    setElementText('externalSources', 'Offline');
+                    const errorDetail = data.externalTrend.error ? ` (${data.externalTrend.error})` : '';
+                    setElementText('externalSources', `Offline${errorDetail}`);
                     setElementText('botVsExternal', `Bot: ${data.externalTrend.botTrend || '--'} (${parseFloat(data.externalTrend.botConfidence || 0).toFixed(2)})`);
                 } else {
                     // Status de alinhamento
@@ -1130,6 +1156,8 @@
                     const sourcesStatus = [];
                     if (sources.coinGecko) sourcesStatus.push('CG✅');
                     if (sources.binance) sourcesStatus.push('BIN✅');
+                    if (sources.coinbase) sourcesStatus.push('CB✅');
+                    if (sources.kraken) sourcesStatus.push('KR✅');
                     if (sources.fearGreed) sourcesStatus.push('FG✅');
                     setElementText('externalSources', sourcesStatus.length > 0 ? sourcesStatus.join(' ') : 'Nenhuma ativa');
                     
@@ -1149,6 +1177,25 @@
                 setElementText('externalScore', '--');
                 setElementText('externalSources', '--');
                 setElementText('botVsExternal', '--');
+            }
+
+            if (data.externalSpread) {
+                const buyFactor = parseFloat(data.externalSpread.buyFactor || 0).toFixed(2);
+                const sellFactor = parseFloat(data.externalSpread.sellFactor || 0).toFixed(2);
+                const sourceLabel = data.externalSpread.source === 'external' ? 'externa' : 'bot';
+                setElementText('externalBuyFactor', `${buyFactor}x`);
+                setElementText('externalSellFactor', `${sellFactor}x`);
+                setElementText('externalSpreadSource', `${sourceLabel} (${data.externalSpread.trend || '--'} ${parseFloat(data.externalSpread.confidence || 0).toFixed(2)})`);
+                setElementText('configSpreadFactors', `${buyFactor}x / ${sellFactor}x`);
+                setElementText('configSpreadSource', sourceLabel);
+                setElementText('configSpreadTrend', `${data.externalSpread.trend || '--'} (${parseFloat(data.externalSpread.confidence || 0).toFixed(2)})`);
+            } else {
+                setElementText('externalBuyFactor', '--');
+                setElementText('externalSellFactor', '--');
+                setElementText('externalSpreadSource', '--');
+                setElementText('configSpreadFactors', '--');
+                setElementText('configSpreadSource', '--');
+                setElementText('configSpreadTrend', '--');
             }
 
             const unrealizedPnlEl = document.getElementById('unrealizedPnl');
@@ -1275,9 +1322,10 @@
                             }
                             
                             const spreadVal = pair.spread || '0.000%';
-                            const roiVal = pair.roi || '0.000%';
+                            const roiNetVal = pair.roiNet || pair.roi || '0.000%';
+                            const roiGrossVal = pair.roiGross || pair.spread || '0.000%';
                             const spreadNum = parseFloat(spreadVal.replace('%', ''));
-                            const roiNum = parseFloat(roiVal.replace('%', ''));
+                            const roiNum = parseFloat(roiNetVal.replace('%', ''));
                             
                             tr.innerHTML = `
                                 <td class="p-2 text-gray-300 font-mono text-xs truncate" title="${pair.pairId}">
@@ -1296,17 +1344,19 @@
                                     ${spreadVal}
                                 </td>
                                 <td class="p-2 text-right ${roiNum >= 0 ? 'text-green-400' : 'text-red-400'} font-semibold">
-                                    ${roiVal}
+                                    ${roiNetVal}
                                 </td>
                                 <td class="p-2 text-center text-xs">
                                     ${pair.executionIndicator || '⏳ AGUARDANDO'}
                                 </td>
                                 <td class="p-2 text-center">
-                                    <button onclick="cancelPair('${pair.pairId}')" 
-                                        class="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs transition" 
-                                        title="Cancelar todas as ordens deste par">
-                                        ❌ Cancelar
-                                    </button>
+                                    ${pair.cycleComplete || pair.executionIndicator === '✅ CICLO COMPLETO' ? '' : `
+                                        <button onclick="cancelPair('${pair.pairId}')" 
+                                            class="px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white text-xs transition" 
+                                            title="Cancelar todas as ordens deste par">
+                                            ❌ Cancelar
+                                        </button>
+                                    `}
                                 </td>
                             `;
                             tbody.appendChild(tr);
@@ -1560,7 +1610,7 @@
             const res = await fetch('/api/tests/run', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hours: 24 })
+                body: JSON.stringify({ hours: 83, dataSource: 'binance' })
             });
             
             const data = await res.json();
@@ -1578,7 +1628,7 @@
                         await loadTestResults();
                         if (btn) {
                             btn.disabled = false;
-                            btn.textContent = '🔄 Refazer Testes (24h)';
+                            btn.textContent = '🔄 Refazer Testes (83h)';
                         }
                         testsLoading = false;
                     }
@@ -1591,7 +1641,7 @@
             console.error('❌ Erro ao executar testes:', error);
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = '🔄 Refazer Testes (24h)';
+                btn.textContent = '🔄 Refazer Testes (83h)';
             }
             if (statusEl) {
                 statusEl.textContent = '❌ Erro';

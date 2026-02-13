@@ -13,6 +13,7 @@ const mbClient = require('./mb_client');
 const axios = require('axios');
 const db = require('./db');
 const AutomatedTestRunner = require('./automated_test_runner');
+const CashManagementStrategy = require('./cash_management_strategy_v2');
 
 // Config
 const SIMULATE = process.env.SIMULATE === 'true';
@@ -36,12 +37,39 @@ const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% - 
 const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // 20 fills - ALTERADO
 const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // 0.7 - ALTERADO
 const CONTRIBUTIONS_FILE = path.join(__dirname, '.contributions.json');
+const EXTERNAL_TREND_FILE = path.join(__dirname, '.external_trend.json');
+const EXTERNAL_TREND_MAX_AGE_MS = parseInt(process.env.EXTERNAL_TREND_MAX_AGE_MS || '1800000');
+const EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN_MAX || '0.35');
+const EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
+const EXTERNAL_TREND_DIVERGENCE_CONF = parseFloat(process.env.EXTERNAL_TREND_DIVERGENCE_CONF || '0.60');
+const EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLATILITY_DAMP || '0.50');
 
 // Logging
 const log = (level, message, data) => {
     if (!DEBUG && level === 'DEBUG') return;
     const timestamp = new Date().toISOString().substring(11, 19);
     console.log(`[${timestamp}] [DASHBOARD ${level}] ${message}`, data || '');
+};
+
+const getCurrentCashManagementParams = () => {
+    const strategy = new CashManagementStrategy();
+    return {
+        baseBuyThreshold: strategy.BASE_BUY_THRESHOLD,
+        baseSellThreshold: strategy.BASE_SELL_THRESHOLD,
+        baseBuyMicroThreshold: strategy.BASE_BUY_MICRO_THRESHOLD,
+        baseSellMicroThreshold: strategy.BASE_SELL_MICRO_THRESHOLD,
+        baseMicroTradeInterval: strategy.BASE_MICRO_TRADE_INTERVAL,
+        maxBuyCount: strategy.MAX_BUY_COUNT,
+        minBtcReserve: strategy.MIN_BTC_RESERVE,
+        buyBrlMin: strategy.BUY_BRL_MIN,
+        microBuyBrlMin: strategy.MICRO_BUY_BRL_MIN,
+        sellPctBase: strategy.SELL_PCT_BASE,
+        buyPctBase: strategy.BUY_PCT_BASE,
+        sellPctMin: strategy.SELL_PCT_MIN,
+        sellPctMax: strategy.SELL_PCT_MAX,
+        buyPctMin: strategy.BUY_PCT_MIN,
+        buyPctMax: strategy.BUY_PCT_MAX
+    };
 };
 
 // Função auxiliar para calcular idade
@@ -143,12 +171,34 @@ function calculateEMA(prices, period = 12) {
 }
 
 function calculateMACD(prices) {
-    const ema12 = calculateEMA(prices, 12);
-    const ema26 = calculateEMA(prices, 26);
-    const macd = ema12 - ema26;
-    const signal = calculateEMA(prices.slice(-9), 9);
+    if (!prices || prices.length < 2) {
+        return { macd: 0, signal: 0 };
+    }
+
+    const k12 = 2 / (12 + 1);
+    const k26 = 2 / (26 + 1);
+    const kSignal = 2 / (9 + 1);
+
+    let ema12 = prices[0];
+    let ema26 = prices[0];
+    let signal = 0;
+    const macdSeries = [];
+
+    for (const price of prices) {
+        ema12 = price * k12 + ema12 * (1 - k12);
+        ema26 = price * k26 + ema26 * (1 - k26);
+        const macd = ema12 - ema26;
+        macdSeries.push(macd);
+    }
+
+    signal = macdSeries[0];
+    for (const value of macdSeries) {
+        signal = value * kSignal + signal * (1 - kSignal);
+    }
+
+    const macd = macdSeries[macdSeries.length - 1];
     log('INFO', `MACD calculado: MACD=${macd.toFixed(2)}, Signal=${signal.toFixed(2)}.`);
-    return {macd, signal};
+    return { macd, signal };
 }
 
 function calculateVolatility(prices) {
@@ -253,6 +303,8 @@ function fetchPricePrediction(midPrice) {
         rsi,
         emaShort,
         emaLong,
+        macd,
+        signal,
         volatility,
         expectedProfit: normalizedExpectedProfit,
         histBias: histAnalysis.recentBias,
@@ -296,6 +348,79 @@ function loadContributions() {
         log('WARN', `Falha ao carregar aportes: ${err.message}. Usando lista vazia.`);
         return [];
     }
+}
+
+function loadExternalTrend() {
+    try {
+        if (!fs.existsSync(EXTERNAL_TREND_FILE)) return null;
+        const raw = fs.readFileSync(EXTERNAL_TREND_FILE, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.timestamp) return null;
+        const ageMs = Date.now() - new Date(parsed.timestamp).getTime();
+        if (Number.isNaN(ageMs) || ageMs > EXTERNAL_TREND_MAX_AGE_MS) return null;
+        return parsed;
+    } catch (err) {
+        log('WARN', `Falha ao carregar tendencia externa: ${err.message}`);
+        return null;
+    }
+}
+
+function getTrendSpreadFactors(trend, confidence) {
+    const normalizedTrend = trend || 'neutral';
+    const normalizedConfidence = Math.max(0, Math.min(1, confidence || 0));
+    const tightenMax = EXTERNAL_TREND_TIGHTEN_MAX;
+    const widenMax = EXTERNAL_TREND_WIDEN_MAX;
+
+    let buyFactor = 1.0;
+    let sellFactor = 1.0;
+
+    if (normalizedTrend === 'up') {
+        buyFactor = 1 - (tightenMax * normalizedConfidence);
+        sellFactor = 1 + (widenMax * normalizedConfidence);
+    } else if (normalizedTrend === 'down') {
+        buyFactor = 1 + (widenMax * normalizedConfidence);
+        sellFactor = 1 - (tightenMax * normalizedConfidence);
+    }
+
+    buyFactor = Math.min(1.5, Math.max(0.5, buyFactor));
+    sellFactor = Math.min(1.5, Math.max(0.5, sellFactor));
+
+    return { buyFactor, sellFactor };
+}
+
+function getExternalSpreadFactors(externalTrend, fallbackTrend, fallbackConfidence, volatilityPct) {
+    const hasExternal = !!(externalTrend && !externalTrend.error);
+    const externalTrendValue = externalTrend?.trend || 'neutral';
+    const externalConfidenceValue = externalTrend?.confidence ?? 0;
+    const internalTrendValue = fallbackTrend || 'neutral';
+    const internalConfidenceValue = fallbackConfidence ?? 0;
+
+    const isDivergent = hasExternal && internalTrendValue !== 'neutral' && externalTrendValue !== 'neutral'
+        && internalTrendValue !== externalTrendValue;
+    const shouldFallback = isDivergent
+        && externalConfidenceValue >= EXTERNAL_TREND_DIVERGENCE_CONF
+        && internalConfidenceValue >= EXTERNAL_TREND_DIVERGENCE_CONF;
+
+    const trend = shouldFallback ? internalTrendValue : (hasExternal ? externalTrendValue : internalTrendValue);
+    const confidence = shouldFallback ? internalConfidenceValue : (hasExternal ? externalConfidenceValue : internalConfidenceValue);
+    const source = shouldFallback || !hasExternal ? 'bot' : 'external';
+
+    const baseFactors = getTrendSpreadFactors(trend, confidence);
+    const volRatio = VOL_LIMIT_PCT > 0 ? Math.min(Math.max(volatilityPct || 0, 0) / VOL_LIMIT_PCT, 1) : 0;
+    const damp = Math.min(Math.max(EXTERNAL_TREND_VOLATILITY_DAMP, 0), 1);
+    const scale = Math.max(0.5, Math.min(1, 1 - (volRatio * damp)));
+    const buyFactor = 1 + (baseFactors.buyFactor - 1) * scale;
+    const sellFactor = 1 + (baseFactors.sellFactor - 1) * scale;
+
+    return {
+        buyFactor,
+        sellFactor,
+        trend,
+        confidence,
+        source,
+        divergent: isDivergent,
+        volatilityScale: scale
+    };
 }
 
 function saveContributions(entries) {
@@ -664,8 +789,9 @@ async function getLiveData() {
         const trendBias = pred.trend === 'up' ? pred.confidence * BIAS_FACTOR * 1.5
             : (pred.trend === 'down' ? -pred.confidence * BIAS_FACTOR * 1.5 : 0);
 
-        // Obter dados de tendência externa removido (módulo não disponível)
-        const externalTrend = null; // FIX: Definir como null para evitar erro "not defined"
+        // Obter dados de tendência externa do arquivo do bot
+        const externalTrend = loadExternalTrend();
+        const spreadFactors = getExternalSpreadFactors(externalTrend, pred.trend, pred.confidence, pred.volatility);
 
         return {
             timestamp: new Date().toISOString(),
@@ -770,13 +896,15 @@ async function getLiveData() {
                 activeOrdersCount: activeOrders.length,
                 totalOrdersCount: orders.length
             },
-            externalTrend: externalTrend ? {
+            externalTrend: externalTrend && !externalTrend.error ? {
                 trend: externalTrend.trend,
                 score: externalTrend.score,
                 confidence: externalTrend.confidence,
                 sources: {
                     coinGecko: externalTrend.sources?.coinGecko || null,
                     binance: externalTrend.sources?.binance || null,
+                    coinbase: externalTrend.sources?.coinbase || null,
+                    kraken: externalTrend.sources?.kraken || null,
                     fearGreed: externalTrend.sources?.fearGreed || null
                 },
                 timestamp: externalTrend.timestamp,
@@ -788,14 +916,25 @@ async function getLiveData() {
                     externalConfidence: externalTrend.confidence
                 }
             } : {
-                error: 'Dados externos não disponíveis',
+                error: externalTrend?.error || 'Dados externos nao disponiveis',
                 sources: {
-                    coinGecko: null,
-                    binance: null,
-                    fearGreed: null
+                    coinGecko: externalTrend?.sources?.coinGecko || null,
+                    binance: externalTrend?.sources?.binance || null,
+                    coinbase: externalTrend?.sources?.coinbase || null,
+                    kraken: externalTrend?.sources?.kraken || null,
+                    fearGreed: externalTrend?.sources?.fearGreed || null
                 },
                 botTrend: pred.trend,
                 botConfidence: pred.confidence
+            },
+            externalSpread: {
+                buyFactor: parseFloat(spreadFactors.buyFactor.toFixed(3)),
+                sellFactor: parseFloat(spreadFactors.sellFactor.toFixed(3)),
+                trend: spreadFactors.trend,
+                confidence: parseFloat(spreadFactors.confidence.toFixed(2)),
+                source: spreadFactors.source,
+                divergent: spreadFactors.divergent,
+                volatilityScale: parseFloat(spreadFactors.volatilityScale.toFixed(2))
             }
         };
     } catch (err) {
@@ -1235,10 +1374,10 @@ app.get('/api/pairs', async (req, res) => {
             const sellOrderOutOfActive = !hasSell || !memoryActiveOrders.some(o => o.id === pair.sellOrder?.id);
             const cycleComplete = bothOrdersExecuted && buyOrderOutOfActive && sellOrderOutOfActive;
             
-            let spread = 0, roi = 0;
+            let spread = 0, roiNet = 0;
             if (isComplete) {
                 spread = ((pair.sellOrder.price - pair.buyOrder.price) / pair.buyOrder.price) * 100;
-                roi = spread - (0.006 * 100); // Descontar 0.6% de fees
+                roiNet = spread - (FEE_RATE_MAKER * 2 * 100); // Descontar fees maker
             }
             
             pairs.push({
@@ -1266,7 +1405,9 @@ app.get('/api/pairs', async (req, res) => {
                     status: pair.sellOrder.status
                 } : null,
                 spread: spread.toFixed(3) + '%',
-                roi: roi.toFixed(3) + '%'
+                roi: roiNet.toFixed(3) + '%',
+                roiGross: spread.toFixed(3) + '%',
+                roiNet: roiNet.toFixed(3) + '%'
             });
         }
         
@@ -1355,11 +1496,17 @@ app.post('/api/tests/run', async (req, res) => {
         
         automatedTestRunning = true;
         const hours = parseInt(req.body?.hours) || 24;
+        const forceDataSource = req.body?.dataSource || 'binance';
+        const useCashManagement = process.env.USE_CASH_MANAGEMENT === 'true';
+        const testOptions = {
+            forceDataSource: forceDataSource === 'binance' ? 'binance' : null,
+            cashManagementParams: useCashManagement ? getCurrentCashManagementParams() : null
+        };
         
-        log('INFO', `Iniciando bateria de testes automatizados (${hours}h)...`);
+        log('INFO', `Iniciando bateria de testes automatizados (${hours}h, fonte: ${forceDataSource})...`);
         
         // Executar testes assincronamente
-        AutomatedTestRunner.runTestBattery(hours)
+        AutomatedTestRunner.runTestBattery(hours, testOptions)
             .then(results => {
                 automatedTestResults = results;
                 automatedTestRunning = false;

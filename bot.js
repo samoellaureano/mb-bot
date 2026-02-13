@@ -60,6 +60,7 @@ const SELL_FIRST_ENABLED = process.env.SELL_FIRST === 'true'; // Permite SELL se
 const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
 const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '86400'); // Máximo 86400s (1 dia) antes de cancelar - tempo generoso para preenchimento
 const MIN_REPRICE_AGE_SEC = parseInt(process.env.MIN_REPRICE_AGE_SEC || '86400'); // Aguardar 24h antes de repricing
+const BUY_REPRICE_AGE_SEC = parseInt(process.env.BUY_REPRICE_AGE_SEC || '900'); // 15 min para recolocar BUY
 const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
 const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Limitado a 2.5% máximo para evitar excessos
 const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% volume para filtrar
@@ -68,6 +69,14 @@ const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || 
 const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // Peso decrescente
 const ALERT_PNL_THRESHOLD = parseFloat(process.env.ALERT_PNL_THRESHOLD || '-50'); // Alerta se PnL < -50 BRL
 const ALERT_ROI_THRESHOLD = parseFloat(process.env.ALERT_ROI_THRESHOLD || '-5'); // Alerta se ROI < -5%
+const EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN_MAX || '0.35');
+const EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
+const EXTERNAL_TREND_DIVERGENCE_CONF = parseFloat(process.env.EXTERNAL_TREND_DIVERGENCE_CONF || '0.60');
+const EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLATILITY_DAMP || '0.50');
+const EXTERNAL_TREND_WEIGHT_BINANCE = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_BINANCE || '1.0');
+const EXTERNAL_TREND_WEIGHT_COINGECKO = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINGECKO || '0.7');
+const EXTERNAL_TREND_WEIGHT_COINBASE = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINBASE || '0.7');
+const EXTERNAL_TREND_WEIGHT_KRAKEN = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_KRAKEN || '0.7');
 const WARMUP_CANDLES = 50; // Velas para warmup
 const TEST_PHASE_CYCLES = 10; // Ciclos de fase teste
 const PARAM_ADJUST_FACTOR = 0.05; // 5% de ajuste
@@ -159,6 +168,7 @@ let confidenceSystem = new ConfidenceSystem();
 let adaptiveManager = null; // Será inicializado no startBot
 let lastExternalCheck = 0;
 let externalTrendData = null;
+const EXTERNAL_TREND_FILE = path.join(__dirname, '.external_trend.json');
 let currentSpreadPct = MIN_SPREAD_PCT;
 let currentBaseSize = ORDER_SIZE;
 let currentMaxPosition = MAX_POSITION;
@@ -509,6 +519,117 @@ function fetchPricePrediction(midPrice, orderbook) {
 }
 
 // ---------------- VALIDAÇÃO EXTERNA DE TENDÊNCIAS ----------------
+async function fetchBinanceTrend() {
+    const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=24';
+    const response = await axios.get(url, { timeout: 10000 });
+    const data = response.data;
+    if (!Array.isArray(data) || data.length < 2) {
+        throw new Error('Dados insuficientes da Binance');
+    }
+    const firstOpen = parseFloat(data[0][1]);
+    const lastClose = parseFloat(data[data.length - 1][4]);
+    if (!firstOpen || !lastClose) {
+        throw new Error('Dados invalidos da Binance');
+    }
+    const changePct = ((lastClose - firstOpen) / firstOpen) * 100;
+    return { changePct };
+}
+
+async function fetchCoinGeckoTrend() {
+    const url = 'https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false';
+    const response = await axios.get(url, { timeout: 10000 });
+    const changePct = response.data?.market_data?.price_change_percentage_24h;
+    if (typeof changePct !== 'number') {
+        throw new Error('Dados insuficientes do CoinGecko');
+    }
+    return { changePct };
+}
+
+async function fetchCoinbaseTrend() {
+    const url = 'https://api.exchange.coinbase.com/products/BTC-USD/stats';
+    const response = await axios.get(url, { timeout: 10000 });
+    const open = parseFloat(response.data?.open || response.data?.open_price);
+    const last = parseFloat(response.data?.last || response.data?.last_price);
+    if (!open || !last) {
+        throw new Error('Dados insuficientes da Coinbase');
+    }
+    const changePct = ((last - open) / open) * 100;
+    return { changePct };
+}
+
+async function fetchKrakenTrend() {
+    const url = 'https://api.kraken.com/0/public/Ticker?pair=XBTUSD';
+    const response = await axios.get(url, { timeout: 10000 });
+    const result = response.data?.result;
+    const pairKey = result ? Object.keys(result)[0] : null;
+    const stats = pairKey ? result[pairKey] : null;
+    const open = parseFloat(stats?.o?.[0]);
+    const last = parseFloat(stats?.c?.[0]);
+    if (!open || !last) {
+        throw new Error('Dados insuficientes da Kraken');
+    }
+    const changePct = ((last - open) / open) * 100;
+    return { changePct };
+}
+
+function getTrendSpreadFactors(trend, confidence) {
+    const normalizedTrend = trend || 'neutral';
+    const normalizedConfidence = Math.max(0, Math.min(1, confidence || 0));
+    const tightenMax = EXTERNAL_TREND_TIGHTEN_MAX;
+    const widenMax = EXTERNAL_TREND_WIDEN_MAX;
+
+    let buyFactor = 1.0;
+    let sellFactor = 1.0;
+
+    if (normalizedTrend === 'up') {
+        buyFactor = 1 - (tightenMax * normalizedConfidence);
+        sellFactor = 1 + (widenMax * normalizedConfidence);
+    } else if (normalizedTrend === 'down') {
+        buyFactor = 1 + (widenMax * normalizedConfidence);
+        sellFactor = 1 - (tightenMax * normalizedConfidence);
+    }
+
+    buyFactor = Math.min(1.5, Math.max(0.5, buyFactor));
+    sellFactor = Math.min(1.5, Math.max(0.5, sellFactor));
+
+    return { buyFactor, sellFactor };
+}
+
+function getExternalSpreadFactors(externalTrend, fallbackTrend, fallbackConfidence, volatilityPct) {
+    const hasExternal = !!(externalTrend && !externalTrend.error);
+    const externalTrendValue = externalTrend?.trend || 'neutral';
+    const externalConfidenceValue = externalTrend?.confidence ?? 0;
+    const internalTrendValue = fallbackTrend || 'neutral';
+    const internalConfidenceValue = fallbackConfidence ?? 0;
+
+    const isDivergent = hasExternal && internalTrendValue !== 'neutral' && externalTrendValue !== 'neutral'
+        && internalTrendValue !== externalTrendValue;
+    const shouldFallback = isDivergent
+        && externalConfidenceValue >= EXTERNAL_TREND_DIVERGENCE_CONF
+        && internalConfidenceValue >= EXTERNAL_TREND_DIVERGENCE_CONF;
+
+    const trend = shouldFallback ? internalTrendValue : (hasExternal ? externalTrendValue : internalTrendValue);
+    const confidence = shouldFallback ? internalConfidenceValue : (hasExternal ? externalConfidenceValue : internalConfidenceValue);
+    const source = shouldFallback || !hasExternal ? 'bot' : 'external';
+
+    const baseFactors = getTrendSpreadFactors(trend, confidence);
+    const volRatio = VOL_LIMIT_PCT > 0 ? Math.min(Math.max(volatilityPct || 0, 0) / VOL_LIMIT_PCT, 1) : 0;
+    const damp = Math.min(Math.max(EXTERNAL_TREND_VOLATILITY_DAMP, 0), 1);
+    const scale = Math.max(0.5, Math.min(1, 1 - (volRatio * damp)));
+    const buyFactor = 1 + (baseFactors.buyFactor - 1) * scale;
+    const sellFactor = 1 + (baseFactors.sellFactor - 1) * scale;
+
+    return {
+        buyFactor,
+        sellFactor,
+        trend,
+        confidence,
+        source,
+        divergent: isDivergent,
+        volatilityScale: scale
+    };
+}
+
 async function checkExternalTrends() {
     const now = Date.now();
     // Verificar tendências externas a cada 10 minutos (600000ms), mas sempre na primeira vez
@@ -516,12 +637,99 @@ async function checkExternalTrends() {
     if (!isFirstCheck && now - lastExternalCheck < 600000) {
         return externalTrendData;
     }
-    
-    // Tendências externas não disponíveis (módulo removido)
-    if (!externalTrendData) {
-        externalTrendData = { trend: 'NEUTRAL', score: 50, confidence: 50, sources: {} };
+
+    const sources = { binance: false, coinGecko: false, coinbase: false, kraken: false, fearGreed: false };
+    const changes = [];
+    const weightedChanges = [];
+    const errors = [];
+
+    try {
+        const binance = await fetchBinanceTrend();
+        sources.binance = true;
+        changes.push(binance.changePct);
+        weightedChanges.push({ value: binance.changePct, weight: EXTERNAL_TREND_WEIGHT_BINANCE });
+    } catch (e) {
+        errors.push(`Binance: ${e.message}`);
+        log('DEBUG', `[EXTERNAL] Binance indisponivel: ${e.message}`);
     }
-    
+
+    try {
+        const coinGecko = await fetchCoinGeckoTrend();
+        sources.coinGecko = true;
+        changes.push(coinGecko.changePct);
+        weightedChanges.push({ value: coinGecko.changePct, weight: EXTERNAL_TREND_WEIGHT_COINGECKO });
+    } catch (e) {
+        errors.push(`CoinGecko: ${e.message}`);
+        log('DEBUG', `[EXTERNAL] CoinGecko indisponivel: ${e.message}`);
+    }
+
+    try {
+        const coinbase = await fetchCoinbaseTrend();
+        sources.coinbase = true;
+        changes.push(coinbase.changePct);
+        weightedChanges.push({ value: coinbase.changePct, weight: EXTERNAL_TREND_WEIGHT_COINBASE });
+    } catch (e) {
+        errors.push(`Coinbase: ${e.message}`);
+        log('DEBUG', `[EXTERNAL] Coinbase indisponivel: ${e.message}`);
+    }
+
+    try {
+        const kraken = await fetchKrakenTrend();
+        sources.kraken = true;
+        changes.push(kraken.changePct);
+        weightedChanges.push({ value: kraken.changePct, weight: EXTERNAL_TREND_WEIGHT_KRAKEN });
+    } catch (e) {
+        errors.push(`Kraken: ${e.message}`);
+        log('DEBUG', `[EXTERNAL] Kraken indisponivel: ${e.message}`);
+    }
+
+    if (!changes.length) {
+        const errorMessage = errors.length ? errors.join(' | ') : 'Fontes externas indisponiveis';
+        externalTrendData = externalTrendData || {
+            trend: 'neutral',
+            score: 0,
+            confidence: 0,
+            sources: {}
+        };
+        externalTrendData = {
+            ...externalTrendData,
+            sources,
+            timestamp: new Date().toISOString(),
+            error: errorMessage
+        };
+        lastExternalCheck = now;
+        try {
+            fs.writeFileSync(EXTERNAL_TREND_FILE, JSON.stringify(externalTrendData), 'utf8');
+        } catch (e) {
+            log('WARN', `[EXTERNAL] Falha ao salvar tendencia externa: ${e.message}`);
+        }
+        return externalTrendData;
+    }
+
+    const totalWeight = weightedChanges.reduce((sum, entry) => sum + entry.weight, 0);
+    const avgChangePct = totalWeight > 0
+        ? weightedChanges.reduce((sum, entry) => sum + (entry.value * entry.weight), 0) / totalWeight
+        : changes.reduce((sum, value) => sum + value, 0) / changes.length;
+    const score = Math.max(-1, Math.min(1, avgChangePct / 1.5));
+    const confidence = Math.min(1, Math.abs(score));
+    const trend = score > 0.15 ? 'up' : score < -0.15 ? 'down' : 'neutral';
+
+    externalTrendData = {
+        trend,
+        score: parseFloat(score.toFixed(3)),
+        confidence: parseFloat(confidence.toFixed(2)),
+        sources,
+        timestamp: new Date().toISOString()
+    };
+
+    lastExternalCheck = now;
+
+    try {
+        fs.writeFileSync(EXTERNAL_TREND_FILE, JSON.stringify(externalTrendData), 'utf8');
+    } catch (e) {
+        log('WARN', `[EXTERNAL] Falha ao salvar tendencia externa: ${e.message}`);
+    }
+
     return externalTrendData;
 }
 
@@ -1294,6 +1502,28 @@ async function checkOrders(mid, volatility, pred, orderbook, sellSignal) {
         // O bot irá aguardar MAX_ORDER_AGE (20 minutos) antes de cancelar qualquer ordem
         const isStuck = false; // Desabilitado - não há "stuck" real, apenas mercado dinâmico
         
+        if (order.side === 'buy' && timeAge > BUY_REPRICE_AGE_SEC) {
+            log('INFO', `🔄 BUY ${order.id} com ${timeAge.toFixed(1)}s sem execução. Recolocando...`);
+
+            const oldPairId = order.pairId;
+            await tryCancel(key);
+
+            if (oldPairId && pairMapping.has(oldPairId)) {
+                const pair = pairMapping.get(oldPairId);
+                pair.buyOrder = null;
+                if (!pair.sellOrder) {
+                    pairMapping.delete(oldPairId);
+                }
+            }
+
+            const newBuyPrice = targetPrice;
+            if (newBuyPrice > 0 && order.qty > MIN_ORDER_SIZE) {
+                await placeOrder('buy', newBuyPrice, order.qty, null, oldPairId);
+                log('SUCCESS', `✅ BUY recolocada: ${order.qty.toFixed(8)} BTC @ R$${newBuyPrice.toFixed(2)}`);
+            }
+            continue;
+        }
+
         if (timeAge > MAX_ORDER_AGE) {
             log('WARN', `⏰ Ordem ${key.toUpperCase()} com idade ${timeAge.toFixed(1)}s > MAX_ORDER_AGE ${MAX_ORDER_AGE}s. CANCELANDO.`);
             await tryCancel(key);
@@ -1556,12 +1786,17 @@ async function runCycle() {
                     if (!order.pair_id) continue;
                     const entry = pairIndex.get(order.pair_id);
                     if (!entry) continue;
+
                     const isBuy = order.side === 'buy';
                     const hasOppositeAny = isBuy ? entry.sellAny : entry.buyAny;
                     const hasOppositeFilled = isBuy ? entry.sellFilled : entry.buyFilled;
 
-                    if (!hasOppositeAny && !hasOppositeFilled) {
-                        log('WARN', `[ORPHAN_CANCEL] Ordem ${order.side.toUpperCase()} ${order.id} sem correspondente no par ${order.pair_id.substring(0, 20)}...`);
+                    // Ignorar se o correspondente ja foi executado
+                    if (hasOppositeFilled) continue;
+
+                    // Cancelar apenas SELL orfa (sem BUY algum). BUY sem SELL permanece.
+                    if (!isBuy && !hasOppositeAny) {
+                        log('WARN', `[ORPHAN_CANCEL] SELL ${order.id} sem BUY correspondente no par ${order.pair_id.substring(0, 20)}...`);
                         try {
                             if (SIMULATE) {
                                 await db.saveOrderSafe({
@@ -1709,6 +1944,8 @@ async function runCycle() {
         const mid = (bestBid + bestAsk) / 2;
         const spreadPct = ((bestAsk - bestBid) / mid) * 100;
         const spreadAmount = mid * SPREAD_PCT;
+        let buySpreadAmount = spreadAmount;
+        let sellSpreadAmount = spreadAmount;
 
         // Atualizar priceHistory com o preço atual
         priceHistory.push(mid);
@@ -1722,6 +1959,10 @@ async function runCycle() {
         // Calcular indicadores básicos
         const pred = fetchPricePrediction(mid, orderbook);
         marketTrend = pred.trend;
+        const externalSpread = getExternalSpreadFactors(externalTrendData, pred.trend, pred.confidence, pred.volatility);
+        buySpreadAmount = spreadAmount * externalSpread.buyFactor;
+        sellSpreadAmount = spreadAmount * externalSpread.sellFactor;
+        log('INFO', `[SPREAD_TREND] source=${externalSpread.source} trend=${externalSpread.trend} conf=${externalSpread.confidence.toFixed(2)} buyFactor=${externalSpread.buyFactor.toFixed(2)} sellFactor=${externalSpread.sellFactor.toFixed(2)} diverge=${externalSpread.divergent} volScale=${externalSpread.volatilityScale.toFixed(2)}`);
 
         // ===== NOVOS MÓDULOS DE ANÁLISE E OTIMIZAÇÃO =====
         const marketData = {
@@ -1819,8 +2060,8 @@ async function runCycle() {
             log('DEBUG', `[CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...`);
 
             // ✅ FIX: Calcular preços corretamente com spread
-            const cashMgmtBuyPrice = mid - spreadAmount;    // Comprar ABAIXO do mid
-            const cashMgmtSellPrice = mid + spreadAmount;   // Vender ACIMA do mid
+            const cashMgmtBuyPrice = mid - buySpreadAmount;    // Comprar ABAIXO do mid
+            const cashMgmtSellPrice = mid + sellSpreadAmount;  // Vender ACIMA do mid
 
             if (!cashManagementStrategy.lastTradePrice && mid > 0) {
                 cashManagementStrategy.lastTradePrice = mid;
@@ -1921,8 +2162,8 @@ async function runCycle() {
             // ===== LÓGICA PADRÃO DE ENTRADA/SAÍDA (FALLBACK quando cash management desativado) =====
             // Calcular spread para colocação correta de ordens
             const spreadAmount = mid * SPREAD_PCT;
-            const marketMakingBuyPrice = mid - spreadAmount;   // Compra ABAIXO do mid
-            const marketMakingSellPrice = mid + spreadAmount;  // Venda ACIMA do mid
+            const marketMakingBuyPrice = mid - buySpreadAmount;   // Compra ABAIXO do mid
+            const marketMakingSellPrice = mid + sellSpreadAmount; // Venda ACIMA do mid
             
             if (buySignal.shouldEnter && !activeOrders.has('buy')) {
                 const { isValid, errors } = improvedEntryExit.validateOrderPlacement('buy', marketMakingBuyPrice, marketData);

@@ -815,9 +815,13 @@ function testIntegratedSystemOptimized(prices, testName) {
 /**
  * Executa bateria completa de testes
  */
-async function runTestBattery(hours = 24) {
+async function runTestBattery(hours = 24, options = {}) {
     console.log(`\n[TEST_RUNNER] Iniciando bateria de testes com dados das últimas ${hours}h...`);
-    
+
+    const resolvedOptions = options || {};
+    const forceDataSource = resolvedOptions.forceDataSource || null;
+    const cashManagementParams = resolvedOptions.cashManagementParams || null;
+
     const results = {
         timestamp: new Date().toISOString(),
         hours,
@@ -836,28 +840,33 @@ async function runTestBattery(hours = 24) {
         let prices = [];
         let dataSource = null;
         
-        try {
-            const db = require('./db');
-            console.log(`[TEST_RUNNER] 🔍 Tentando carregar dados históricos do banco de dados...`);
-            
-            // Buscar histórico local
-            const priceHistory = await Promise.race([
-                db.getPriceHistory(hours, 500), // 500 pontos nas últimas X horas
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-            ]);
-            
-            if (priceHistory && priceHistory.length >= 10) {
-                prices = priceHistory.map(p => parseFloat(p.price));
-                dataSource = 'Local DB';
-                console.log(`[TEST_RUNNER] ✅ ${prices.length} preços carregados do banco local`);
+        if (forceDataSource !== 'binance') {
+            try {
+                const db = require('./db');
+                console.log(`[TEST_RUNNER] 🔍 Tentando carregar dados históricos do banco de dados...`);
+                
+                // Buscar histórico local
+                const priceHistory = await Promise.race([
+                    db.getPriceHistory(hours, 500), // 500 pontos nas últimas X horas
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                ]);
+                
+                if (priceHistory && priceHistory.length >= 10) {
+                    prices = priceHistory.map(p => parseFloat(p.price));
+                    dataSource = 'Local DB';
+                    console.log(`[TEST_RUNNER] ✅ ${prices.length} preços carregados do banco local`);
+                }
+            } catch (DBError) {
+                console.warn(`[TEST_RUNNER] ⚠️ Erro ao carregar banco local: ${DBError.message}`);
             }
-        } catch (DBError) {
-            console.warn(`[TEST_RUNNER] ⚠️ Erro ao carregar banco local: ${DBError.message}`);
         }
         
         // ===== FALLBACK: BUSCAR DA BINANCE SE NÃO HOUVER DADOS LOCAIS =====
         if (!prices || prices.length < 10) {
-            console.log(`[TEST_RUNNER] 📡 Dados insuficientes localmente, buscando da Binance...`);
+            const binanceReason = forceDataSource === 'binance'
+                ? 'Fonte forçada: Binance.'
+                : 'Dados insuficientes localmente, buscando da Binance...';
+            console.log(`[TEST_RUNNER] 📡 ${binanceReason}`);
             
             const limit = Math.min(Math.floor((hours * 60) / 5), 1000);
             console.log(`[TEST_RUNNER] Buscando ${limit} candles de 5m da Binance...`);
@@ -915,7 +924,14 @@ async function runTestBattery(hours = 24) {
             results.tests.push(accTestSecond);
         }
         
-        // Teste 4: Cash Management Strategy (melhor de 10 ajustes)
+        // Teste 4: Cash Management Strategy (parâmetros atuais)
+        if (cashManagementParams) {
+            console.log('[TEST_RUNNER] Executando teste: Cash Management Strategy (parâmetros atuais)...');
+            const cashMgmtCurrent = testCashManagementStrategy(prices, 'Cash Management Strategy (Current)', cashManagementParams);
+            results.tests.push(cashMgmtCurrent);
+        }
+
+        // Teste 5: Cash Management Strategy (melhor de 10 ajustes)
         console.log('[TEST_RUNNER] Executando testes: Cash Management Strategy (10 ajustes)...');
         const cashMgmtSweep = runCashManagementSweep(prices);
         const bestCashMgmt = cashMgmtSweep.best;
