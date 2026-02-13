@@ -1,0 +1,11 @@
+{
+  "name": "mb-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MB Bot - Market Making Framework",
+  "scripts": {
+    "bot": "node bot.js",
+    "dashboard": "node dashboard.js",
+    "dev": "node bot.js & node dashboard.js"
+  }
+}
