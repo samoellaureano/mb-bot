@@ -73,7 +73,6 @@ const EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN
 const EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
 const EXTERNAL_TREND_DIVERGENCE_CONF = parseFloat(process.env.EXTERNAL_TREND_DIVERGENCE_CONF || '0.60');
 const EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLATILITY_DAMP || '0.50');
-const EXTERNAL_TREND_WEIGHT_BINANCE = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_BINANCE || '1.0');
 const EXTERNAL_TREND_WEIGHT_COINGECKO = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINGECKO || '0.7');
 const EXTERNAL_TREND_WEIGHT_COINBASE = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINBASE || '0.7');
 const EXTERNAL_TREND_WEIGHT_KRAKEN = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_KRAKEN || '0.7');
@@ -569,22 +568,6 @@ function fetchPricePrediction(midPrice, orderbook) {
 }
 
 // ---------------- VALIDAÇÃO EXTERNA DE TENDÊNCIAS ----------------
-async function fetchBinanceTrend() {
-    const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=24';
-    const response = await axios.get(url, { timeout: 10000 });
-    const data = response.data;
-    if (!Array.isArray(data) || data.length < 2) {
-        throw new Error('Dados insuficientes da Binance');
-    }
-    const firstOpen = parseFloat(data[0][1]);
-    const lastClose = parseFloat(data[data.length - 1][4]);
-    if (!firstOpen || !lastClose) {
-        throw new Error('Dados invalidos da Binance');
-    }
-    const changePct = ((lastClose - firstOpen) / firstOpen) * 100;
-    return { changePct };
-}
-
 async function fetchCoinGeckoTrend() {
     const url = 'https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false';
     const response = await axios.get(url, { timeout: 10000 });
@@ -692,16 +675,6 @@ async function checkExternalTrends() {
     const changes = [];
     const weightedChanges = [];
     const errors = [];
-
-    try {
-        const binance = await fetchBinanceTrend();
-        sources.binance = true;
-        changes.push(binance.changePct);
-        weightedChanges.push({ value: binance.changePct, weight: EXTERNAL_TREND_WEIGHT_BINANCE });
-    } catch (e) {
-        errors.push(`Binance: ${e.message}`);
-        log('DEBUG', `[EXTERNAL] Binance indisponivel: ${e.message}`);
-    }
 
     try {
         const coinGecko = await fetchCoinGeckoTrend();
