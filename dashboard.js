@@ -28,6 +28,7 @@ const FEE_RATE_TAKER = 0.007; // 0,70% - ADICIONADO
 const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.0006'); // 0.06% - ALTERADO
 const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.05'); // 5% - ALTERADO
 const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.0003'); // 0.03% - ALTERADO
+const DRIFT_TARGET_PCT = parseFloat(process.env.DRIFT_TARGET_PCT || '1.0'); // 1.0% - alvo para proximidade
 const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.0001'); // 0.01 BTC - ALTERADO
 const INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002'); // 0.02% - ALTERADO
 const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // 0.015% - ALTERADO
@@ -793,6 +794,8 @@ async function getLiveData() {
         const externalTrend = loadExternalTrend();
         const spreadFactors = getExternalSpreadFactors(externalTrend, pred.trend, pred.confidence, pred.volatility);
 
+        const buySpreadPctTrend = dynamicSpreadPct * spreadFactors.buyFactor * 100;
+
         return {
             timestamp: new Date().toISOString(),
             mode: SIMULATE ? 'SIMULATE' : 'LIVE',
@@ -803,6 +806,10 @@ async function getLiveData() {
                 ask: bestAsk,
                 mid: ((bestAsk + bestBid) / 2).toFixed(2),
                 spread: spreadPct.toFixed(2),
+                buySpread: buySpreadPctTrend.toFixed(2),
+                buySpreadTrend: spreadFactors.trend,
+                buySpreadSource: spreadFactors.source,
+                buySpreadConfidence: parseFloat(spreadFactors.confidence.toFixed(2)),
                 volatility: volatilityPct.toFixed(2),
                 tendency: pred
             },
@@ -881,6 +888,7 @@ async function getLiveData() {
                 minOrderSize: MIN_ORDER_SIZE,
                 emergencyStopPnL: process.env.EMERGENCY_STOP_PNL || '-50',
                 priceDrift: (PRICE_DRIFT * 100).toFixed(2),
+                driftTargetPct: parseFloat(DRIFT_TARGET_PCT.toFixed(2)),
                 priceDriftBoost: (parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0') * 100).toFixed(2),
                 stopLoss: (parseFloat(process.env.STOP_LOSS_PCT || '0.008')).toFixed(3),
                 takeProfit: (parseFloat(process.env.TAKE_PROFIT_PCT || '0.001')).toFixed(3),
@@ -976,7 +984,12 @@ app.get('/api/data', async (req, res) => {
         cache.data.stats.cycles = cycles;
         if (cache.data.activeOrders) {
             const mid = parseFloat(cache.data.market.mid);
-            cache.data.activeOrders.forEach(o => o.drift = o.side === 'buy' ? (mid - o.price).toFixed(2) : (o.price - mid).toFixed(2));
+            cache.data.activeOrders.forEach(o => {
+                const diff = o.side === 'buy' ? (mid - o.price) : (o.price - mid);
+                const base = o.side === 'buy' ? o.price : mid;
+                const driftPct = base > 0 ? (diff / base) * 100 : 0;
+                o.drift = `${driftPct.toFixed(2)}%`;
+            });
         }
     }
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');

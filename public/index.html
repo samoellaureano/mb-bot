@@ -56,6 +56,7 @@
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p class="text-gray-400 text-xs sm:text-sm">Spread / Volatilidade</p>
             <h2 id="spread" class="text-lg sm:text-xl font-bold">--</h2>
+            <p id="buySpreadTrend" class="text-xs sm:text-sm text-gray-400">Spread BUY (tendência): --</p>
             <p id="volatility" class="text-xs sm:text-sm text-gray-400">Vol: --</p>
         </div>
         <div id="pnlCard" class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-gray-500">
@@ -97,6 +98,7 @@
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow md:col-span-3">
             <h2 class="text-base sm:text-lg font-bold mb-2">Ordens Ativas</h2>
+            <p class="text-xs text-gray-400 mb-2">Prox. execucao = 0% longe e 100% no alvo (baseado no drift vs alvo configurado).</p>
             <div class="overflow-x-auto">
                 <table class="w-full text-xs sm:text-sm">
                     <thead>
@@ -108,7 +110,7 @@
                         <th class="text-left p-1 sm:p-2">Qtd</th>
                         <th class="text-left p-1 sm:p-2">Status</th>
                         <th class="text-left p-1 sm:p-2">Exchange</th>
-                        <th class="text-left p-1 sm:p-2">Drift</th>
+                        <th class="text-left p-1 sm:p-2" title="0% longe, 100% no alvo; calculado a partir do drift">Prox. Exec (%)</th>
                         <th class="text-left p-1 sm:p-2">Age</th>
                     </tr>
                     </thead>
@@ -697,6 +699,35 @@
         return `${value}%${desc}`;
     }
 
+    function formatDriftBadge(driftRaw, orderPrice, midPrice, targetPct) {
+        if (!driftRaw) return '--';
+        const num = parseFloat(String(driftRaw).replace('%', ''));
+        if (!isFinite(num)) return '--';
+        const absNum = Math.abs(num);
+        const safeTarget = Math.max(0.01, parseFloat(targetPct || 1));
+        const progress = Math.max(0, 100 - Math.min(100, (absNum / safeTarget) * 100));
+        const trendDelta = (midPrice || 0) - (orderPrice || 0);
+        const arrow = trendDelta > 0 ? '▲' : trendDelta < 0 ? '▼' : '•';
+        const trendText = trendDelta > 0
+            ? 'Preco medio acima da ordem'
+            : trendDelta < 0
+                ? 'Preco medio abaixo da ordem'
+                : 'Preco medio igual a ordem';
+
+        let color = 'text-emerald-300';
+        let bg = 'bg-emerald-900/30';
+        if (progress < 40) {
+            color = 'text-red-300';
+            bg = 'bg-red-900/30';
+        } else if (progress < 70) {
+            color = 'text-yellow-300';
+            bg = 'bg-yellow-900/30';
+        }
+
+        const tooltip = `${trendText} | Drift atual: ${absNum.toFixed(2)}% | Alvo: ${safeTarget.toFixed(2)}%`;
+        return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded ${bg} ${color} font-mono text-xs" title="${tooltip}">${Math.round(progress)}% ${arrow}</span>`;
+    }
+
     // Função global de formatação segura
     window.safeBRFormat = function(value, decimals = 2) {
         const num = parseFloat(value) || 0;
@@ -778,6 +809,18 @@
             const spreadEl = document.getElementById('spread');
             if (spreadEl) {
                 spreadEl.textContent = isFinite(spread) ? `${spread.toFixed(2)}%` : '-';
+            }
+
+            const buySpreadTrendEl = document.getElementById('buySpreadTrend');
+            if (buySpreadTrendEl) {
+                const buySpread = parseFloat(data.market?.buySpread || 0);
+                const buyTrend = data.market?.buySpreadTrend || 'neutral';
+                const buyConf = parseFloat(data.market?.buySpreadConfidence || 0);
+                const trendIcon = buyTrend === 'up' ? '🔥' : buyTrend === 'down' ? '❄️' : '➡️';
+                const confText = isFinite(buyConf) ? buyConf.toFixed(2) : '0.00';
+                buySpreadTrendEl.textContent = isFinite(buySpread)
+                    ? `Spread BUY (tendência): ${buySpread.toFixed(2)}% ${trendIcon} (${confText})`
+                    : 'Spread BUY (tendência): --';
             }
             
             const volatility = parseFloat(data.market?.volatility || data.market?.tendency?.volatility || 0.26);
@@ -914,6 +957,8 @@
                     : '';
                 const tr = document.createElement('tr');
                 const pairId = order.pair_id ? order.pair_id : '❌ Sem par';
+                const driftTargetPct = parseFloat(data.config?.driftTargetPct || 1);
+                const driftBadge = formatDriftBadge(order.drift, orderPrice, lastPrice, driftTargetPct);
                 
                 // Status do Exchange: mostrar ID ou "Aguardando colocação"
                 let exchangeStatusDisplay = '❓';
@@ -935,7 +980,7 @@
                     <td class="p-1 sm:p-2">${parseFloat(order.qty || '0').toFixed(8)}</td>
                     <td class="p-1 sm:p-2">${order.status || '--'}</td>
                     <td class="p-1 sm:p-2">${exchangeStatusDisplay}</td>
-                    <td class="p-1 sm:p-2">${order.drift || '--'}</td>
+                    <td class="p-1 sm:p-2">${driftBadge}</td>
                     <td class="p-1 sm:p-2">${ageStr} <span class="text-gray-500">| restante ${remainingStr}</span></td>
                 `;
                 tbody.appendChild(tr);
