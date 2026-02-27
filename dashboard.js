@@ -660,20 +660,22 @@ async function getLiveData() {
             // Sincronizar status no DB quando a exchange diverge do local
             for (const order of orders) {
                 const local = localOrderMap.get(order.id);
-                if (local && local.status !== order.status) {
-                    const normalizedStatus = order.status === 'working' ? 'open' : order.status;
-                    if (local.status === 'open' && normalizedStatus !== 'open') {
-                        try {
-                            await new Promise((res, rej) => db.db.run(
-                                'UPDATE orders SET status = ? WHERE id = ?',
-                                [normalizedStatus, order.id],
-                                err => err ? rej(err) : res()
-                            ));
-                        } catch (e) {
-                            log('DEBUG', `Falha ao sincronizar status da ordem ${order.id}: ${e.message}`);
+                    if (local && local.status !== order.status) {
+                        const normalizedStatus = order.status === 'working' ? 'open' : order.status;
+                        if (local.status === 'open' && normalizedStatus !== 'open') {
+                            try {
+                                await db.saveOrderSafe({
+                                    ...local,
+                                    status: normalizedStatus,
+                                    filledQty: local.filledQty || 0,
+                                    sessionId: local.session_id || null,
+                                    pairId: local.pair_id || null
+                                }, 'exchange_status_sync');
+                            } catch (e) {
+                                log('DEBUG', `Falha ao sincronizar status da ordem ${order.id}: ${e.message}`);
+                            }
                         }
                     }
-                }
             }
 
             // Adicionar ordens locais aguardando colocação

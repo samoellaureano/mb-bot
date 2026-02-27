@@ -16,6 +16,8 @@
   "scripts": {
     "bot": "node scripts/start-bot.js",
     "dashboard": "node scripts/start-dashboard.js",
-    "dev": "node scripts/start-bot.js & node scripts/start-dashboard.js"
+    "dev": "node scripts/start-bot.js & node scripts/start-dashboard.js",
+    "migrate:orders": "node scripts/migrate-orders-to-supabase.js",
+    "migrate:orders:dry": "node scripts/migrate-orders-to-supabase.js --dry-run"
   }
 }

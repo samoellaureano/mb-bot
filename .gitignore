@@ -43,3 +43,7 @@ Thumbs.db
 # Build
 dist/
 build/
+
+# SQLite sidecar files
+database/*.db-wal
+database/*.db-shm

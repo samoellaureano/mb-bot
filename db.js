@@ -14,6 +14,8 @@ class Database {
         this.supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
         this.useSupabasePriceHistory = Boolean(this.supabaseUrl && this.supabaseKey);
         this.useSupabasePnlHistory = Boolean(this.supabaseUrl && this.supabaseKey);
+        this.useSupabaseOrders = Boolean(this.supabaseUrl && this.supabaseKey);
+        this.useSupabaseOnly = Boolean(this.supabaseUrl && this.supabaseKey);
     }
 
     assertSupabaseForHistory(kind) {
@@ -105,6 +107,10 @@ class Database {
     }
 
     async init() {
+        if (this.useSupabaseOnly) {
+            this.log('INFO', 'Modo Supabase-only ativo. SQLite desabilitado.');
+            return this;
+        }
         return new Promise((resolve, reject) => {
             const dbDir = path.dirname(this.dbPath);
             if (!fs.existsSync(dbDir)) {
@@ -307,10 +313,6 @@ class Database {
     }
 
     async saveOrderSafe(order, context, sessionId = null) {
-        if (!this.db) {
-            this.log('ERROR', 'Banco de dados não inicializado.');
-            throw new Error('Database not initialized');
-        }
         if (!order.id || !order.side || order.price <= 0 || order.qty <= 0) {
             this.log('ERROR', `Dados de ordem inválidos: ${JSON.stringify(order)}`);
             throw new Error('Invalid order data');
@@ -325,6 +327,41 @@ class Database {
     }
 
     async saveOrder(order) {
+        if (this.useSupabaseOrders) {
+            this.assertSupabaseConfigured('orders');
+            const rawTs = order.timestamp ? Number(order.timestamp) : Date.now();
+            const ts = rawTs > 1e12 ? Math.floor(rawTs / 1000) : Math.floor(rawTs);
+            const payload = {
+                id: String(order.id),
+                side: String(order.side || 'unknown'),
+                price: parseFloat(order.price),
+                qty: parseFloat(order.qty),
+                status: String(order.status || 'open'),
+                filled_qty: parseFloat(order.filledQty ?? order.filled_qty ?? 0),
+                timestamp: parseInt(ts, 10),
+                note: order.note || null,
+                external_id: order.external_id || null,
+                pnl: parseFloat(order.pnl || 0),
+                session_id: (order.sessionId ?? order.session_id) == null ? null : String(order.sessionId ?? order.session_id),
+                pair_id: order.pairId ?? order.pair_id ?? null
+            };
+            try {
+                const response = await axios.post(`${this.supabaseUrl}/rest/v1/orders`, payload, {
+                    params: { on_conflict: 'id' },
+                    headers: {
+                        apikey: this.supabaseKey,
+                        Authorization: `Bearer ${this.supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        Prefer: 'resolution=merge-duplicates,return=minimal'
+                    },
+                    timeout: 20000
+                });
+                return order;
+            } catch (err) {
+                this.log('ERROR', `Erro ao salvar ordem no Supabase: ${err.message}`);
+                throw err;
+            }
+        }
         return new Promise((resolve, reject) => {
             const stmt = this.db.prepare(`
                 INSERT OR REPLACE INTO orders 
@@ -360,6 +397,35 @@ class Database {
     }
 
     async getOrders({limit = 50, status = null, minAge = null} = {}) {
+        if (this.useSupabaseOrders) {
+            this.assertSupabaseConfigured('orders');
+            const params = {
+                select: 'id,side,price,qty,status,filled_qty,timestamp,note,external_id,pnl,session_id,pair_id',
+                order: 'timestamp.desc',
+                limit
+            };
+            if (status) params.status = `eq.${status}`;
+            if (minAge) {
+                const minTimestamp = Math.floor((Date.now() - minAge) / 1000);
+                params.timestamp = `lte.${minTimestamp}`;
+            }
+            const response = await this.getSupabaseWithRetry('orders', params, 'Carregar orders');
+            const rows = Array.isArray(response.data) ? response.data : [];
+            return rows.map((r) => ({
+                id: r.id,
+                side: r.side,
+                price: parseFloat(r.price),
+                qty: parseFloat(r.qty),
+                status: r.status,
+                filledQty: parseFloat(r.filled_qty || 0),
+                timestamp: Number(r.timestamp),
+                note: r.note,
+                external_id: r.external_id,
+                pnl: parseFloat(r.pnl || 0),
+                session_id: r.session_id,
+                pair_id: r.pair_id
+            }));
+        }
         let query = `
             SELECT 
                 id, side, price, qty, status, filledQty, 
@@ -401,9 +467,29 @@ class Database {
 
     // Carrega fills históricos (status='filled'), opcionalmente filtrando por sessão
     async loadHistoricalFills({ sessionId = null } = {}) {
-        if (!this.db) {
-            throw new Error('Database not initialized');
+        if (this.useSupabaseOrders) {
+            this.assertSupabaseConfigured('orders');
+            const params = {
+                select: 'side,qty,price,timestamp,session_id',
+                status: 'eq.filled',
+                order: 'timestamp.asc',
+                limit: 5000
+            };
+            if (sessionId !== null && sessionId !== undefined) {
+                params.session_id = `eq.${sessionId}`;
+            }
+            const response = await this.getSupabaseWithRetry('orders', params, 'Carregar fills históricos');
+            const rows = Array.isArray(response.data) ? response.data : [];
+            return rows.map((r) => ({
+                side: r.side,
+                qty: parseFloat(r.qty),
+                price: parseFloat(r.price),
+                limitPrice: parseFloat(r.price),
+                feeRate: null,
+                timestamp: Number(r.timestamp)
+            })).filter((f) => Number.isFinite(f.qty) && Number.isFinite(f.price));
         }
+        if (!this.db) throw new Error('Database not initialized');
         let query = `
             SELECT side, qty, price, timestamp, session_id
             FROM orders
@@ -461,6 +547,32 @@ class Database {
     }
 
     async getStats({hours = 24} = {}) {
+        if (this.useSupabaseOrders) {
+            const startTime = Math.floor((Date.now() - hours * 60 * 60 * 1000) / 1000);
+            const [allResp, filledResp, openResp] = await Promise.all([
+                this.getSupabaseWithRetry('orders', { select: 'id', timestamp: `gte.${startTime}`, limit: 10000 }, 'Stats totalOrders'),
+                this.getSupabaseWithRetry('orders', { select: 'qty,price,pnl', status: 'eq.filled', timestamp: `gte.${startTime}`, limit: 10000 }, 'Stats filled'),
+                this.getSupabaseWithRetry('orders', { select: 'id', status: 'eq.open', limit: 10000 }, 'Stats openOrders')
+            ]);
+            const allRows = Array.isArray(allResp.data) ? allResp.data : [];
+            const filledRows = Array.isArray(filledResp.data) ? filledResp.data : [];
+            const openRows = Array.isArray(openResp.data) ? openResp.data : [];
+
+            const totalVolume = filledRows.reduce((s, r) => s + (parseFloat(r.qty || 0) * parseFloat(r.price || 0)), 0);
+            const totalPnL = filledRows.reduce((s, r) => s + parseFloat(r.pnl || 0), 0);
+            const totalOrders = allRows.length;
+            const filledOrders = filledRows.length;
+            const openOrders = openRows.length;
+            return {
+                totalOrders,
+                filledOrders,
+                openOrders,
+                totalVolume,
+                totalPnL,
+                fillRate: totalOrders > 0 ? (filledOrders / totalOrders * 100) : 0,
+                avgOrderSize: filledOrders > 0 ? (totalVolume / filledOrders) : 0
+            };
+        }
         const startTime = Math.floor((Date.now() - hours * 60 * 60 * 1000) / 1000);
         
         return new Promise((resolve, reject) => {
@@ -630,6 +742,49 @@ class Database {
                 });
             });
         }
+    }
+
+    async updateOrderStatus(orderId, status) {
+        if (!orderId) throw new Error('orderId é obrigatório');
+        if (this.useSupabaseOrders) {
+            this.assertSupabaseConfigured('orders');
+            const response = await this.getSupabaseWithRetry(
+                'orders',
+                {
+                    select: 'id,side,price,qty,status,filled_qty,timestamp,note,external_id,pnl,session_id,pair_id',
+                    id: `eq.${orderId}`,
+                    limit: 1
+                },
+                'Carregar order por id'
+            );
+            const row = Array.isArray(response.data) ? response.data[0] : null;
+            if (!row) return null;
+            return this.saveOrder({
+                id: row.id,
+                side: row.side,
+                price: parseFloat(row.price),
+                qty: parseFloat(row.qty),
+                status,
+                filledQty: parseFloat(row.filled_qty || 0),
+                timestamp: Number(row.timestamp),
+                note: row.note,
+                external_id: row.external_id,
+                pnl: parseFloat(row.pnl || 0),
+                sessionId: row.session_id || null,
+                pairId: row.pair_id || null
+            });
+        }
+        if (!this.db) throw new Error('Database not initialized');
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                'UPDATE orders SET status = ? WHERE id = ?',
+                [status, orderId],
+                function(err) {
+                    if (err) return reject(err);
+                    resolve(this.changes || 0);
+                }
+            );
+        });
     }
 
     // Métodos relacionados a recovery sessions (mantidos do original)
