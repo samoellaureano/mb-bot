@@ -47,3 +47,7 @@ build/
 # SQLite sidecar files
 database/*.db-wal
 database/*.db-shm
+
+database/*.db
+database/*.db-wal
+database/*.db-shm
