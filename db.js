@@ -671,6 +671,218 @@ class Database {
         }
     }
 
+    async saveExternalTrend(externalTrend = {}, timestampMs = Date.now()) {
+        this.assertSupabaseConfigured('external_trend_history');
+        if (!externalTrend || typeof externalTrend !== 'object') {
+            throw new Error('externalTrend inválido: esperado objeto');
+        }
+
+        const trend = String(externalTrend.trend || 'neutral');
+        const score = Number(externalTrend.score ?? 0);
+        const confidence = Number(externalTrend.confidence ?? 0);
+        const sources = (externalTrend.sources && typeof externalTrend.sources === 'object')
+            ? externalTrend.sources
+            : {};
+        const ts = Math.floor((Number(timestampMs) || Date.now()) / 1000);
+
+        const payload = {
+            trend,
+            score: Number.isFinite(score) ? score : 0,
+            confidence: Number.isFinite(confidence) ? confidence : 0,
+            sources,
+            payload: externalTrend,
+            timestamp: ts
+        };
+
+        try {
+            await this.postSupabaseWithRetry('external_trend_history', payload, 'Salvar external_trend_history');
+            return { source: 'supabase', timestamp: ts };
+        } catch (err) {
+            this.log('ERROR', `Falha ao salvar external_trend_history no Supabase: ${err.message}`);
+            throw err;
+        }
+    }
+
+    async getLatestExternalTrend(maxAgeMs = 30 * 60 * 1000) {
+        this.assertSupabaseConfigured('external_trend_history');
+        try {
+            const response = await this.getSupabaseWithRetry(
+                'external_trend_history',
+                {
+                    select: 'trend,score,confidence,sources,payload,timestamp',
+                    order: 'timestamp.desc',
+                    limit: 1
+                },
+                'Carregar external_trend_history'
+            );
+
+            const row = Array.isArray(response.data) ? response.data[0] : null;
+            if (!row) return null;
+
+            const ts = parseInt(row.timestamp, 10);
+            const ageMs = Date.now() - (ts * 1000);
+            if (!Number.isFinite(ts) || Number.isNaN(ageMs) || ageMs > maxAgeMs) {
+                return null;
+            }
+
+            if (row.payload && typeof row.payload === 'object') {
+                return row.payload;
+            }
+
+            return {
+                trend: row.trend || 'neutral',
+                score: Number(row.score || 0),
+                confidence: Number(row.confidence || 0),
+                sources: (row.sources && typeof row.sources === 'object') ? row.sources : {},
+                timestamp: new Date(ts * 1000).toISOString()
+            };
+        } catch (err) {
+            this.log('ERROR', `Falha ao carregar external_trend_history: ${err.message}`);
+            throw err;
+        }
+    }
+
+    async listContributions(limit = 1000) {
+        this.assertSupabaseConfigured('bot_contributions');
+        const response = await this.getSupabaseWithRetry(
+            'bot_contributions',
+            {
+                select: 'amount,type,note,created_at',
+                order: 'created_at.asc',
+                limit
+            },
+            'Carregar bot_contributions'
+        );
+        const rows = Array.isArray(response.data) ? response.data : [];
+        return rows.map((r) => ({
+            amount: Number(parseFloat(r.amount || 0).toFixed(2)),
+            type: String(r.type || ''),
+            note: String(r.note || ''),
+            createdAt: r.created_at || new Date().toISOString()
+        }));
+    }
+
+    async saveContribution({ amount, type, note = '', createdAt = new Date().toISOString() }) {
+        this.assertSupabaseConfigured('bot_contributions');
+        const payload = {
+            amount: Number(parseFloat(amount || 0).toFixed(2)),
+            type: String(type || ''),
+            note: String(note || ''),
+            created_at: createdAt
+        };
+        await this.postSupabaseWithRetry('bot_contributions', payload, 'Salvar bot_contributions');
+        return {
+            amount: payload.amount,
+            type: payload.type,
+            note: payload.note,
+            createdAt: payload.created_at
+        };
+    }
+
+    async getInitialBalance(profile = 'production') {
+        this.assertSupabaseConfigured('bot_initial_balances');
+        const response = await this.getSupabaseWithRetry(
+            'bot_initial_balances',
+            {
+                select: 'profile,brl,btc,total,captured_at,captured_at_cycle,updated_at',
+                profile: `eq.${profile}`,
+                limit: 1
+            },
+            'Carregar bot_initial_balances'
+        );
+        const row = Array.isArray(response.data) ? response.data[0] : null;
+        if (!row) return null;
+        return {
+            profile: row.profile,
+            brl: parseFloat(row.brl || 0),
+            btc: parseFloat(row.btc || 0),
+            total: parseFloat(row.total || 0),
+            capturedAt: row.captured_at || null,
+            capturedAtCycle: row.captured_at_cycle == null ? null : Number(row.captured_at_cycle),
+            updatedAt: row.updated_at || null
+        };
+    }
+
+    async upsertInitialBalance(
+        { brl, btc, total, capturedAt = new Date().toISOString(), capturedAtCycle = null },
+        profile = 'production'
+    ) {
+        this.assertSupabaseConfigured('bot_initial_balances');
+        const payload = {
+            profile: String(profile),
+            brl: parseFloat(brl || 0),
+            btc: parseFloat(btc || 0),
+            total: parseFloat(total || 0),
+            captured_at: capturedAt,
+            captured_at_cycle: capturedAtCycle == null ? null : Number(capturedAtCycle)
+        };
+        const response = await axios.post(`${this.supabaseUrl}/rest/v1/bot_initial_balances`, payload, {
+            params: { on_conflict: 'profile' },
+            headers: {
+                apikey: this.supabaseKey,
+                Authorization: `Bearer ${this.supabaseKey}`,
+                'Content-Type': 'application/json',
+                Prefer: 'resolution=merge-duplicates,return=representation'
+            },
+            timeout: 20000
+        });
+        const row = Array.isArray(response.data) ? response.data[0] : null;
+        return row || null;
+    }
+
+    async clearInitialBalance(profile = 'production') {
+        this.assertSupabaseConfigured('bot_initial_balances');
+        await axios.delete(`${this.supabaseUrl}/rest/v1/bot_initial_balances`, {
+            params: { profile: `eq.${profile}` },
+            headers: {
+                apikey: this.supabaseKey,
+                Authorization: `Bearer ${this.supabaseKey}`,
+                Prefer: 'return=minimal'
+            },
+            timeout: 20000
+        });
+    }
+
+    async getMomentumCache(profile = 'production') {
+        this.assertSupabaseConfigured('bot_momentum_cache');
+        const response = await this.getSupabaseWithRetry(
+            'bot_momentum_cache',
+            {
+                select: 'profile,payload,updated_at',
+                profile: `eq.${profile}`,
+                limit: 1
+            },
+            'Carregar bot_momentum_cache'
+        );
+        const row = Array.isArray(response.data) ? response.data[0] : null;
+        if (!row) return null;
+        return {
+            profile: row.profile,
+            payload: (row.payload && typeof row.payload === 'object') ? row.payload : {},
+            updatedAt: row.updated_at || null
+        };
+    }
+
+    async upsertMomentumCache(payload = {}, profile = 'production') {
+        this.assertSupabaseConfigured('bot_momentum_cache');
+        const rowPayload = {
+            profile: String(profile),
+            payload: (payload && typeof payload === 'object') ? payload : {}
+        };
+        const response = await axios.post(`${this.supabaseUrl}/rest/v1/bot_momentum_cache`, rowPayload, {
+            params: { on_conflict: 'profile' },
+            headers: {
+                apikey: this.supabaseKey,
+                Authorization: `Bearer ${this.supabaseKey}`,
+                'Content-Type': 'application/json',
+                Prefer: 'resolution=merge-duplicates,return=representation'
+            },
+            timeout: 20000
+        });
+        const row = Array.isArray(response.data) ? response.data[0] : null;
+        return row || null;
+    }
+
     async getRuntimeConfig(profile = 'production') {
         this.assertSupabaseConfigured('runtime_config');
         try {

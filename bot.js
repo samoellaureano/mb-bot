@@ -107,6 +107,7 @@ let adaptiveParams = null; // Será calculado dinamicamente
 let lastAdaptiveUpdate = 0;
 const RUNTIME_CONFIG_PROFILE = process.env.BOT_CONFIG_PROFILE || 'production';
 const RUNTIME_CONFIG_REFRESH_SEC = Math.max(5, parseInt(process.env.RUNTIME_CONFIG_REFRESH_SEC || '10'));
+const STATE_PROFILE = process.env.BOT_CONFIG_PROFILE || 'production';
 
 // Validação configs
 if (!REST_BASE.startsWith('http')) {
@@ -116,18 +117,6 @@ if (!REST_BASE.startsWith('http')) {
 if (!PAIR.includes('-')) {
     log('ERROR', 'PAIR inválido. Use formato como BTC-BRL. Encerrando.');
     process.exit(1);
-}
-
-if (RESET_INITIAL_BALANCE_ON_START) {
-    try {
-        const initialBalanceFile = path.join(__dirname, '.initial_balance.json');
-        if (fs.existsSync(initialBalanceFile)) {
-            fs.unlinkSync(initialBalanceFile);
-        }
-        log('INFO', 'RESET_INITIAL_BALANCE_ON_START ativo. Base inicial sera recapturada no primeiro ciclo.');
-    } catch (e) {
-        log('WARN', `Falha ao resetar .initial_balance.json: ${e.message}`);
-    }
 }
 
 // ---------------- LOGGING ----------------
@@ -266,7 +255,6 @@ let confidenceSystem = new ConfidenceSystem();
 let adaptiveManager = null; // Será inicializado no startBot
 let lastExternalCheck = 0;
 let externalTrendData = null;
-const EXTERNAL_TREND_FILE = path.join(__dirname, '.external_trend.json');
 let currentSpreadPct = MIN_SPREAD_PCT;
 let currentBaseSize = ORDER_SIZE;
 let currentMaxPosition = MAX_POSITION;
@@ -763,6 +751,18 @@ function getExternalSpreadFactors(externalTrend, fallbackTrend, fallbackConfiden
 
 async function checkExternalTrends() {
     const now = Date.now();
+
+    if (!externalTrendData) {
+        try {
+            const cached = await db.getLatestExternalTrend(60 * 60 * 1000);
+            if (cached && typeof cached === 'object') {
+                externalTrendData = cached;
+            }
+        } catch (e) {
+            log('WARN', `[EXTERNAL] Falha ao carregar tendência externa do Supabase: ${e.message}`);
+        }
+    }
+
     // Verificar tendências externas a cada 10 minutos (600000ms), mas sempre na primeira vez
     const isFirstCheck = lastExternalCheck === 0;
     if (!isFirstCheck && now - lastExternalCheck < 600000) {
@@ -820,9 +820,9 @@ async function checkExternalTrends() {
         };
         lastExternalCheck = now;
         try {
-            fs.writeFileSync(EXTERNAL_TREND_FILE, JSON.stringify(externalTrendData), 'utf8');
+            await db.saveExternalTrend(externalTrendData, now);
         } catch (e) {
-            log('WARN', `[EXTERNAL] Falha ao salvar tendencia externa: ${e.message}`);
+            log('WARN', `[EXTERNAL] Falha ao salvar tendencia externa no Supabase: ${e.message}`);
         }
         return externalTrendData;
     }
@@ -846,9 +846,9 @@ async function checkExternalTrends() {
     lastExternalCheck = now;
 
     try {
-        fs.writeFileSync(EXTERNAL_TREND_FILE, JSON.stringify(externalTrendData), 'utf8');
+        await db.saveExternalTrend(externalTrendData, now);
     } catch (e) {
-        log('WARN', `[EXTERNAL] Falha ao salvar tendencia externa: ${e.message}`);
+        log('WARN', `[EXTERNAL] Falha ao salvar tendencia externa no Supabase: ${e.message}`);
     }
 
     return externalTrendData;
@@ -2111,23 +2111,17 @@ async function runCycle() {
             stats.initialBTC = parseFloat(initialBTCBalance.toFixed(8));
             stats.initialCapital = parseFloat((initialBRLBalance + (initialBTCBalance * mid)).toFixed(2));
             
-            // ✅ Salvar saldo inicial em arquivo para o dashboard usar
             try {
-                const initialBalanceFile = path.join(__dirname, '.initial_balance.json');
-                if (!RESET_INITIAL_BALANCE_ON_START && fs.existsSync(initialBalanceFile)) {
-                    log('INFO', 'Saldo inicial ja existe; mantendo .initial_balance.json atual.');
-                } else {
-                    fs.writeFileSync(initialBalanceFile, JSON.stringify({
-                        brl: stats.initialBRL,
-                        btc: stats.initialBTC,
-                        total: stats.initialCapital,
-                        capturedAt: new Date().toISOString(),
-                        capturedAtCycle: cycleCount
-                    }), 'utf8');
-                    log('DEBUG', `✅ Saldo inicial salvo em arquivo para dashboard`);
-                }
+                await db.upsertInitialBalance({
+                    brl: stats.initialBRL,
+                    btc: stats.initialBTC,
+                    total: stats.initialCapital,
+                    capturedAt: new Date().toISOString(),
+                    capturedAtCycle: cycleCount
+                }, STATE_PROFILE);
+                log('DEBUG', '✅ Saldo inicial salvo no Supabase para dashboard.');
             } catch (e) {
-                log('WARN', `Falha ao salvar saldo inicial em arquivo: ${e.message}`);
+                log('WARN', `Falha ao salvar saldo inicial no Supabase: ${e.message}`);
             }
         }
 
@@ -2381,6 +2375,27 @@ async function main() {
     // Carregar configurações e inicializar banco de dados
     await db.init();
     await refreshRuntimeConfig(true);
+
+    if (RESET_INITIAL_BALANCE_ON_START) {
+        try {
+            await db.clearInitialBalance(STATE_PROFILE);
+            log('INFO', '[STATE] RESET_INITIAL_BALANCE_ON_START ativo. Base inicial removida do Supabase.');
+        } catch (e) {
+            log('WARN', `[STATE] Falha ao resetar saldo inicial no Supabase: ${e.message}`);
+        }
+    } else {
+        try {
+            const savedInitial = await db.getInitialBalance(STATE_PROFILE);
+            if (savedInitial && Number.isFinite(savedInitial.brl) && Number.isFinite(savedInitial.btc)) {
+                initialBRLBalance = savedInitial.brl;
+                initialBTCBalance = savedInitial.btc;
+                initialBalanceCaptureCycle = savedInitial.capturedAtCycle ?? -1;
+                log('INFO', `[STATE] Saldo inicial restaurado do Supabase: BRL=${initialBRLBalance.toFixed(2)} BTC=${initialBTCBalance.toFixed(8)}`);
+            }
+        } catch (e) {
+            log('WARN', `[STATE] Falha ao carregar saldo inicial do Supabase: ${e.message}`);
+        }
+    }
 
     // Autenticar no modo LIVE antes de iniciar ciclos
     if (!SIMULATE) {

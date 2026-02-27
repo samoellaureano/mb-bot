@@ -39,8 +39,7 @@ const MAX_ACTIVE_BUYS = parseInt(process.env.MAX_ACTIVE_BUYS || '5');
 const MAX_CONCURRENT_PAIRS = parseInt(process.env.MAX_CONCURRENT_PAIRS || '10');
 const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // 20 fills - ALTERADO
 const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // 0.7 - ALTERADO
-const CONTRIBUTIONS_FILE = path.join(__dirname, '.contributions.json');
-const EXTERNAL_TREND_FILE = path.join(__dirname, '.external_trend.json');
+const STATE_PROFILE = process.env.BOT_CONFIG_PROFILE || 'production';
 const EXTERNAL_TREND_MAX_AGE_MS = parseInt(process.env.EXTERNAL_TREND_MAX_AGE_MS || '1800000');
 const EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN_MAX || '0.35');
 const EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
@@ -463,26 +462,19 @@ async function loadPnlHistory() {
     }
 }
 
-function loadContributions() {
+async function loadContributions() {
     try {
-        if (!fs.existsSync(CONTRIBUTIONS_FILE)) return [];
-        const raw = fs.readFileSync(CONTRIBUTIONS_FILE, 'utf8');
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
+        return await db.listContributions(2000);
     } catch (err) {
-        log('WARN', `Falha ao carregar aportes: ${err.message}. Usando lista vazia.`);
+        log('WARN', `Falha ao carregar aportes do Supabase: ${err.message}. Usando lista vazia.`);
         return [];
     }
 }
 
-function loadExternalTrend() {
+async function loadExternalTrend() {
     try {
-        if (!fs.existsSync(EXTERNAL_TREND_FILE)) return null;
-        const raw = fs.readFileSync(EXTERNAL_TREND_FILE, 'utf8');
-        const parsed = JSON.parse(raw);
+        const parsed = await db.getLatestExternalTrend(EXTERNAL_TREND_MAX_AGE_MS);
         if (!parsed || !parsed.timestamp) return null;
-        const ageMs = Date.now() - new Date(parsed.timestamp).getTime();
-        if (Number.isNaN(ageMs) || ageMs > EXTERNAL_TREND_MAX_AGE_MS) return null;
         return parsed;
     } catch (err) {
         log('WARN', `Falha ao carregar tendencia externa: ${err.message}`);
@@ -546,14 +538,6 @@ function getExternalSpreadFactors(externalTrend, fallbackTrend, fallbackConfiden
         divergent: isDivergent,
         volatilityScale: scale
     };
-}
-
-function saveContributions(entries) {
-    try {
-        fs.writeFileSync(CONTRIBUTIONS_FILE, JSON.stringify(entries, null, 2), 'utf8');
-    } catch (err) {
-        log('WARN', `Falha ao salvar aportes: ${err.message}`);
-    }
 }
 
 async function savePnlHistory() {
@@ -776,19 +760,18 @@ async function getLiveData() {
         // ✅ MODIFICADO: Tentar ler do arquivo que o bot salva, senão usar padrão
         let INITIAL_CAPITAL = 220.00;
         try {
-            const initialBalanceFile = path.join(__dirname, '.initial_balance.json');
-            if (fs.existsSync(initialBalanceFile)) {
-                const initialData = JSON.parse(fs.readFileSync(initialBalanceFile, 'utf8'));
+            const initialData = await db.getInitialBalance(STATE_PROFILE);
+            if (initialData && Number.isFinite(initialData.total)) {
                 INITIAL_CAPITAL = parseFloat(initialData.total) || 220.00;
             }
         } catch (e) {
-            log('DEBUG', `Usando INITIAL_CAPITAL padrão (220), arquivo não disponível: ${e.message}`);
+            log('DEBUG', `Usando INITIAL_CAPITAL padrão (220), estado Supabase indisponível: ${e.message}`);
         }
         const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.total || 0);
         const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.total || 0);
         const currentBalance = brlBalance + (btcBalance * mid); // Saldo atual em BRL
 
-        const contributions = loadContributions();
+        const contributions = await loadContributions();
         const netContributions = contributions.reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
         const baseCapital = INITIAL_CAPITAL + netContributions;
         const initialCapitalInvested = baseCapital;
@@ -977,7 +960,7 @@ async function getLiveData() {
             : (pred.trend === 'down' ? -pred.confidence * BIAS_FACTOR * 1.5 : 0);
 
         // Obter dados de tendência externa do arquivo do bot
-        const externalTrend = loadExternalTrend();
+        const externalTrend = await loadExternalTrend();
         const spreadFactors = getExternalSpreadFactors(externalTrend, pred.trend, pred.confidence, pred.volatility);
 
         const buySpreadPctTrend = dynamicSpreadPct * spreadFactors.buyFactor * 100;
@@ -1196,13 +1179,13 @@ app.get('/api/data', async (req, res) => {
     res.json(cache.data);
 });
 
-app.get('/api/contributions', (req, res) => {
-    const entries = loadContributions();
+app.get('/api/contributions', async (req, res) => {
+    const entries = await loadContributions();
     const net = entries.reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
     res.json({entries, net});
 });
 
-app.post('/api/contributions', (req, res) => {
+app.post('/api/contributions', async (req, res) => {
     try {
         const amountRaw = parseFloat(req.body?.amount || 0);
         const type = (req.body?.type || '').toLowerCase();
@@ -1216,15 +1199,14 @@ app.post('/api/contributions', (req, res) => {
         }
 
         const signedAmount = type === 'withdraw' ? -amountRaw : amountRaw;
-        const entries = loadContributions();
         const entry = {
             amount: parseFloat(signedAmount.toFixed(2)),
             type,
             note,
             createdAt: new Date().toISOString()
         };
-        entries.push(entry);
-        saveContributions(entries);
+        await db.saveContribution(entry);
+        const entries = await loadContributions();
         const net = entries.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
         res.json({ok: true, entry, net});
     } catch (err) {
