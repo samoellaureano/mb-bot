@@ -20,6 +20,7 @@ data/*.sqlite3
 # Logs
 logs/
 *.log
+bot.log
 exec-live.log
 exec-dashboard.log
 

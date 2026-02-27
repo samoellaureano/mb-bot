@@ -31,3 +31,27 @@
 19:07:44.695 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJG4S943TPY3E68Y969X1N2W: age=2.6s, MAX_ORDER_AGE=86400s
 19:07:45.054 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
 19:07:45.065 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Capital insuficiente, activeBuys=0/5
+19:08:46.537 [INFO]   [Bot] Iniciando ciclo 2.
+19:08:47.171 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772055825086_4... | BUY: ✗ | SELL: ✓
+19:08:47.188 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 1 incompleta(s), 0 órfã(s) removida(s)
+19:08:47.202 [DEBUG]  [Bot] Sincronização: Carregadas 1 ordens da BD (BUY: 0✓, SELL: 1✓). Pares no mapa: 1
+19:08:47.214 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 1 (BUY sem SELL ou vice-versa)
+19:08:47.239 [DEBUG]  [Bot]   → PAIR_1772055825086_4...: Só tem SELL
+19:08:47.716 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=335585.00, Best Ask=335849.00.
+19:08:47.730 [WARN]   [Bot] Histórico insuficiente para RSI (4/13). Retornando neutro (50).
+19:08:47.743 [WARN]   [Bot] Histórico insuficiente para EMA (4/8). Usando último preço.
+19:08:47.754 [WARN]   [Bot] Histórico insuficiente para EMA (4/20). Usando último preço.
+19:08:47.765 [WARN]   [Bot] Histórico insuficiente para EMA (4/12). Usando último preço.
+19:08:47.777 [WARN]   [Bot] Histórico insuficiente para EMA (4/26). Usando último preço.
+19:08:47.792 [WARN]   [Bot] Histórico insuficiente para EMA (4/9). Usando último preço.
+19:08:47.808 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=335717.00.
+19:08:47.823 [INFO]   [Bot] Volatilidade calculada: 0.00%.
+19:08:47.843 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+19:08:47.853 [WARN]   [Bot] Histórico insuficiente para ADX (4/28). Retornando força neutra (20).
+19:08:47.862 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.25","expectedProfit":"0.01","rsi":"50.00","emaShort":"335717.00","emaLong":"335717.00","volatility":"0.00","macd":"0.00","signal":"335717.00"}
+19:08:47.878 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.65 sellFactor=1.20 diverge=true volScale=1.00
+19:08:47.897 [WARN]   [Bot] Histórico insuficiente para ADX (4/28). Retornando força neutra (20).
+19:08:47.909 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 1 ordem(s) ativa(s).
+19:08:47.919 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJG4S943TPY3E68Y969X1N2W: age=65.8s, MAX_ORDER_AGE=86400s
+19:08:48.305 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+19:08:48.310 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Capital insuficiente, activeBuys=0/5
