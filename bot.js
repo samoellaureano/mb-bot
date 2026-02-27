@@ -37,45 +37,48 @@ let cashManagementStrategy = null; // Estratégia de gerenciamento de caixa - PR
 const orderLoadTimestamps = new Map(); // Armazena loadTimestamp de cada ordem para não resetar
 
 // ---------------- CONFIGURAÇÃO ----------------
-const SIMULATE = process.env.SIMULATE === 'true'; // Modo simulação
+let SIMULATE = process.env.SIMULATE === 'true'; // Modo simulação
 const REST_BASE = process.env.REST_BASE || 'https://api.mercadobitcoin.net/api/v4'; // Padrão API v4
 const PAIR = process.env.PAIR || 'BTC-BRL'; // Par padrão BTC-BRL
-const CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15')); // Mínimo 1s
+let CYCLE_SEC = Math.max(1, parseInt(process.env.CYCLE_SEC || '15')); // Mínimo 1s
 let SPREAD_PCT = parseFloat(process.env.SPREAD_PCT || '0.005'); // Spread maior = 0.5% (captura mais spread, menos sensível a fill)
 let ORDER_SIZE = parseFloat(process.env.ORDER_SIZE || '0.02'); // Reduzido para 2% (ordens menores = mais frequentes, menos perda/ordem)
 const PRICE_DRIFT = parseFloat(process.env.PRICE_DRIFT_PCT || '0.00005'); // Reduzido para 0.005% (menos sensível a drift)
 const PRICE_DRIFT_BOOST = parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0'); // Desativado por padrão
-const MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005'); // Atualizado para 0.05%
-const MAX_SPREAD_PCT = parseFloat(process.env.MAX_SPREAD_PCT || '0.040'); // Máximo 4.0%
+let MIN_SPREAD_PCT = parseFloat(process.env.MIN_SPREAD_PCT || '0.0005'); // Atualizado para 0.05%
+let MAX_SPREAD_PCT = parseFloat(process.env.MAX_SPREAD_PCT || '0.040'); // Máximo 4.0%
 let STOP_LOSS_PCT = parseFloat(process.env.STOP_LOSS_PCT || '0.008'); // Atualizado para 0.8%
-const TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.001'); // Atualizado para 0.1%
-const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // Limitado a 0.00005 BTC
-const MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.000005'); // Permitir micro-ordens
-const MAX_ORDER_SIZE = parseFloat(process.env.MAX_ORDER_SIZE || '0.0004'); // Limitado a 0.04 BTC
-const MAX_POSITION = parseFloat(process.env.MAX_POSITION || '0.0003'); // Posição máxima em BTC
-const DAILY_LOSS_LIMIT = parseFloat(process.env.DAILY_LOSS_LIMIT || '10'); // Limite de perda diária em BRL
-const INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002'); // Ajustado para 0.02%
-const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // Ajustado para 0.015%
-const SELL_FIRST_ENABLED = process.env.SELL_FIRST === 'true'; // Permite SELL sem BUY inicial
-const MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
-const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '86400'); // Máximo 86400s (1 dia) antes de cancelar - tempo generoso para preenchimento
-const MIN_REPRICE_AGE_SEC = parseInt(process.env.MIN_REPRICE_AGE_SEC || '86400'); // Aguardar 24h antes de repricing
-const BUY_REPRICE_AGE_SEC = parseInt(process.env.BUY_REPRICE_AGE_SEC || '900'); // 15 min para recolocar BUY
-const MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
-const MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Limitado a 2.5% máximo para evitar excessos
-const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% volume para filtrar
-const EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '-0.0005'); // Negativo = coloca ordem mesmo com pequena perda esperada
-const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // Últimos 20 fills
-const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // Peso decrescente
-const ALERT_PNL_THRESHOLD = parseFloat(process.env.ALERT_PNL_THRESHOLD || '-50'); // Alerta se PnL < -50 BRL
-const ALERT_ROI_THRESHOLD = parseFloat(process.env.ALERT_ROI_THRESHOLD || '-5'); // Alerta se ROI < -5%
-const EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN_MAX || '0.35');
-const EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
-const EXTERNAL_TREND_DIVERGENCE_CONF = parseFloat(process.env.EXTERNAL_TREND_DIVERGENCE_CONF || '0.60');
-const EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLATILITY_DAMP || '0.50');
-const EXTERNAL_TREND_WEIGHT_COINGECKO = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINGECKO || '0.7');
-const EXTERNAL_TREND_WEIGHT_COINBASE = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINBASE || '0.7');
-const EXTERNAL_TREND_WEIGHT_KRAKEN = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_KRAKEN || '0.7');
+let TAKE_PROFIT_PCT = parseFloat(process.env.TAKE_PROFIT_PCT || '0.001'); // Atualizado para 0.1%
+let MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // Limitado a 0.00005 BTC
+let MIN_ORDER_SIZE = parseFloat(process.env.MIN_ORDER_SIZE || '0.000005'); // Permitir micro-ordens
+let MAX_ORDER_SIZE = parseFloat(process.env.MAX_ORDER_SIZE || '0.0004'); // Limitado a 0.04 BTC
+let MAX_POSITION = parseFloat(process.env.MAX_POSITION || '0.0003'); // Posição máxima em BTC
+let DAILY_LOSS_LIMIT = parseFloat(process.env.DAILY_LOSS_LIMIT || '10'); // Limite de perda diária em BRL
+let INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002'); // Ajustado para 0.02%
+let BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // Ajustado para 0.015%
+let SELL_FIRST_ENABLED = process.env.SELL_FIRST === 'true'; // Permite SELL sem BUY inicial
+let MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
+let MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '86400'); // Máximo 86400s (1 dia) antes de cancelar - tempo generoso para preenchimento
+let MIN_REPRICE_AGE_SEC = parseInt(process.env.MIN_REPRICE_AGE_SEC || '86400'); // Aguardar 24h antes de repricing
+let BUY_REPRICE_AGE_SEC = Math.max(
+    MIN_REPRICE_AGE_SEC,
+    parseInt(process.env.BUY_REPRICE_AGE_SEC || String(MIN_REPRICE_AGE_SEC), 10)
+); // BUY respeita no mínimo o MIN_REPRICE_AGE_SEC
+let MIN_VOLATILITY_PCT = parseFloat(process.env.MIN_VOLATILITY_PCT || '0.1'); // Limitado a 0.1% mínimo para evitar pular ciclos
+let MAX_VOLATILITY_PCT = parseFloat(process.env.MAX_VOLATILITY_PCT || '2.5'); // Limitado a 2.5% máximo para evitar excessos
+let VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% volume para filtrar
+let EXPECTED_PROFIT_THRESHOLD = parseFloat(process.env.EXPECTED_PROFIT_THRESHOLD || '-0.0005'); // Negativo = coloca ordem mesmo com pequena perda esperada
+let HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // Últimos 20 fills
+let RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // Peso decrescente
+let ALERT_PNL_THRESHOLD = parseFloat(process.env.ALERT_PNL_THRESHOLD || '-50'); // Alerta se PnL < -50 BRL
+let ALERT_ROI_THRESHOLD = parseFloat(process.env.ALERT_ROI_THRESHOLD || '-5'); // Alerta se ROI < -5%
+let EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN_MAX || '0.35');
+let EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
+let EXTERNAL_TREND_DIVERGENCE_CONF = parseFloat(process.env.EXTERNAL_TREND_DIVERGENCE_CONF || '0.60');
+let EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLATILITY_DAMP || '0.50');
+let EXTERNAL_TREND_WEIGHT_COINGECKO = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINGECKO || '0.7');
+let EXTERNAL_TREND_WEIGHT_COINBASE = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINBASE || '0.7');
+let EXTERNAL_TREND_WEIGHT_KRAKEN = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_KRAKEN || '0.7');
 const WARMUP_CANDLES = 50; // Velas para warmup
 const TEST_PHASE_CYCLES = 10; // Ciclos de fase teste
 const PARAM_ADJUST_FACTOR = 0.05; // 5% de ajuste
@@ -89,19 +92,21 @@ const INITIAL_CAPITAL = 220.00; // Capital inicial em BRL (mesmo valor do dashbo
 const RESET_INITIAL_BALANCE_ON_START = process.env.RESET_INITIAL_BALANCE_ON_START === 'true';
 
 // -------- LIMITE DE PARES (DINÂMICO) --------
-const MAX_CONCURRENT_PAIRS = parseInt(process.env.MAX_CONCURRENT_PAIRS || '10');     // Máx pares simultâneos abertos
+let MAX_CONCURRENT_PAIRS = parseInt(process.env.MAX_CONCURRENT_PAIRS || '10');     // Máx pares simultâneos abertos
 const MAX_ACTIVE_BUYS = parseInt(process.env.MAX_ACTIVE_BUYS || '5');                // Máx BUYs simultâneas
-const MAX_PAIRS_PER_CYCLE = parseInt(process.env.MAX_PAIRS_PER_CYCLE || '1');        // Máx novos pares por ciclo
-const MIN_FILL_RATE_FOR_NEW = parseFloat(process.env.MIN_FILL_RATE_FOR_NEW || '30'); // Mínimo 30% taxa preenchimento
-const PAIRS_THROTTLE_CYCLES = parseInt(process.env.PAIRS_THROTTLE_CYCLES || '5');    // Mínimo ciclos entre novos pares
+let MAX_PAIRS_PER_CYCLE = parseInt(process.env.MAX_PAIRS_PER_CYCLE || '1');        // Máx novos pares por ciclo
+let MIN_FILL_RATE_FOR_NEW = parseFloat(process.env.MIN_FILL_RATE_FOR_NEW || '30'); // Mínimo 30% taxa preenchimento
+let PAIRS_THROTTLE_CYCLES = parseInt(process.env.PAIRS_THROTTLE_CYCLES || '5');    // Mínimo ciclos entre novos pares
 let lastNewPairCycle = -PAIRS_THROTTLE_CYCLES; // Allowing immediate pair creation
 let pairsCreatedThisCycle = 0; // Counter para pares criados no ciclo atual
 
 // -------- ESTRATÉGIA ADAPTATIVA --------
 // Ativa/desativa ajuste automático de parâmetros conforme tendência
-const ADAPTIVE_STRATEGY_ENABLED = process.env.ADAPTIVE_STRATEGY !== 'false'; // Default: true
+let ADAPTIVE_STRATEGY_ENABLED = process.env.ADAPTIVE_STRATEGY !== 'false'; // Default: true
 let adaptiveParams = null; // Será calculado dinamicamente
 let lastAdaptiveUpdate = 0;
+const RUNTIME_CONFIG_PROFILE = process.env.BOT_CONFIG_PROFILE || 'production';
+const RUNTIME_CONFIG_REFRESH_SEC = Math.max(5, parseInt(process.env.RUNTIME_CONFIG_REFRESH_SEC || '10'));
 
 // Validação configs
 if (!REST_BASE.startsWith('http')) {
@@ -142,6 +147,99 @@ function log(level, message, data = null) {
     const styledMessage = colorFn(logLine);
     console.log(styledMessage, data ? `| ${JSON.stringify(data).slice(0, 120)}${JSON.stringify(data).length > 120 ? '...' : ''}` : '');
     fs.appendFileSync('bot.log', logLine + (data ? ` | ${JSON.stringify(data)}` : '') + '\n');
+}
+
+function parseBool(value, fallback = false) {
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'boolean') return value;
+    const normalized = String(value).trim().toLowerCase();
+    return normalized === 'true' || normalized === '1' || normalized === 'yes';
+}
+
+function parseNum(value, fallback) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function parseIntSafe(value, fallback) {
+    const n = parseInt(value, 10);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+let runtimeConfigVersion = '';
+let lastRuntimeConfigSyncTs = 0;
+
+function applyRuntimeConfig(envConfig = {}) {
+    const prevCycleSec = CYCLE_SEC;
+
+    SIMULATE = parseBool(envConfig.SIMULATE, SIMULATE);
+    CYCLE_SEC = Math.max(1, parseIntSafe(envConfig.CYCLE_SEC, CYCLE_SEC));
+    SPREAD_PCT = parseNum(envConfig.SPREAD_PCT, SPREAD_PCT);
+    MIN_SPREAD_PCT = parseNum(envConfig.MIN_SPREAD_PCT, MIN_SPREAD_PCT);
+    MAX_SPREAD_PCT = parseNum(envConfig.MAX_SPREAD_PCT, MAX_SPREAD_PCT);
+    ORDER_SIZE = parseNum(envConfig.ORDER_SIZE, ORDER_SIZE);
+    STOP_LOSS_PCT = parseNum(envConfig.STOP_LOSS_PCT, STOP_LOSS_PCT);
+    TAKE_PROFIT_PCT = parseNum(envConfig.TAKE_PROFIT_PCT, TAKE_PROFIT_PCT);
+    MIN_VOLUME = parseNum(envConfig.MIN_VOLUME, MIN_VOLUME);
+    MIN_ORDER_SIZE = parseNum(envConfig.MIN_ORDER_SIZE, MIN_ORDER_SIZE);
+    MAX_ORDER_SIZE = parseNum(envConfig.MAX_ORDER_SIZE, MAX_ORDER_SIZE);
+    MAX_POSITION = parseNum(envConfig.MAX_POSITION, MAX_POSITION);
+    DAILY_LOSS_LIMIT = parseNum(envConfig.DAILY_LOSS_LIMIT, DAILY_LOSS_LIMIT);
+    INVENTORY_THRESHOLD = parseNum(envConfig.INVENTORY_THRESHOLD, INVENTORY_THRESHOLD);
+    BIAS_FACTOR = parseNum(envConfig.BIAS_FACTOR, BIAS_FACTOR);
+    SELL_FIRST_ENABLED = parseBool(envConfig.SELL_FIRST, SELL_FIRST_ENABLED);
+    MIN_ORDER_CYCLES = parseIntSafe(envConfig.MIN_ORDER_CYCLES, MIN_ORDER_CYCLES);
+    MAX_ORDER_AGE = parseIntSafe(envConfig.MAX_ORDER_AGE, MAX_ORDER_AGE);
+    MIN_REPRICE_AGE_SEC = parseIntSafe(envConfig.MIN_REPRICE_AGE_SEC, MIN_REPRICE_AGE_SEC);
+    BUY_REPRICE_AGE_SEC = Math.max(
+        MIN_REPRICE_AGE_SEC,
+        parseIntSafe(envConfig.BUY_REPRICE_AGE_SEC, BUY_REPRICE_AGE_SEC)
+    );
+    MIN_VOLATILITY_PCT = parseNum(envConfig.MIN_VOLATILITY_PCT, MIN_VOLATILITY_PCT);
+    MAX_VOLATILITY_PCT = parseNum(envConfig.MAX_VOLATILITY_PCT, MAX_VOLATILITY_PCT);
+    VOL_LIMIT_PCT = parseNum(envConfig.VOL_LIMIT_PCT, VOL_LIMIT_PCT);
+    EXPECTED_PROFIT_THRESHOLD = parseNum(envConfig.EXPECTED_PROFIT_THRESHOLD, EXPECTED_PROFIT_THRESHOLD);
+    HISTORICAL_FILLS_WINDOW = parseIntSafe(envConfig.HISTORICAL_FILLS_WINDOW, HISTORICAL_FILLS_WINDOW);
+    RECENT_WEIGHT_FACTOR = parseNum(envConfig.RECENT_WEIGHT_FACTOR, RECENT_WEIGHT_FACTOR);
+    ALERT_PNL_THRESHOLD = parseNum(envConfig.ALERT_PNL_THRESHOLD, ALERT_PNL_THRESHOLD);
+    ALERT_ROI_THRESHOLD = parseNum(envConfig.ALERT_ROI_THRESHOLD, ALERT_ROI_THRESHOLD);
+    EXTERNAL_TREND_TIGHTEN_MAX = parseNum(envConfig.EXTERNAL_TREND_TIGHTEN_MAX, EXTERNAL_TREND_TIGHTEN_MAX);
+    EXTERNAL_TREND_WIDEN_MAX = parseNum(envConfig.EXTERNAL_TREND_WIDEN_MAX, EXTERNAL_TREND_WIDEN_MAX);
+    EXTERNAL_TREND_DIVERGENCE_CONF = parseNum(envConfig.EXTERNAL_TREND_DIVERGENCE_CONF, EXTERNAL_TREND_DIVERGENCE_CONF);
+    EXTERNAL_TREND_VOLATILITY_DAMP = parseNum(envConfig.EXTERNAL_TREND_VOLATILITY_DAMP, EXTERNAL_TREND_VOLATILITY_DAMP);
+    EXTERNAL_TREND_WEIGHT_COINGECKO = parseNum(envConfig.EXTERNAL_TREND_WEIGHT_COINGECKO, EXTERNAL_TREND_WEIGHT_COINGECKO);
+    EXTERNAL_TREND_WEIGHT_COINBASE = parseNum(envConfig.EXTERNAL_TREND_WEIGHT_COINBASE, EXTERNAL_TREND_WEIGHT_COINBASE);
+    EXTERNAL_TREND_WEIGHT_KRAKEN = parseNum(envConfig.EXTERNAL_TREND_WEIGHT_KRAKEN, EXTERNAL_TREND_WEIGHT_KRAKEN);
+    MAX_CONCURRENT_PAIRS = parseIntSafe(envConfig.MAX_CONCURRENT_PAIRS, MAX_CONCURRENT_PAIRS);
+    MAX_PAIRS_PER_CYCLE = parseIntSafe(envConfig.MAX_PAIRS_PER_CYCLE, MAX_PAIRS_PER_CYCLE);
+    MIN_FILL_RATE_FOR_NEW = parseNum(envConfig.MIN_FILL_RATE_FOR_NEW, MIN_FILL_RATE_FOR_NEW);
+    PAIRS_THROTTLE_CYCLES = parseIntSafe(envConfig.PAIRS_THROTTLE_CYCLES, PAIRS_THROTTLE_CYCLES);
+    ADAPTIVE_STRATEGY_ENABLED = parseBool(envConfig.ADAPTIVE_STRATEGY, ADAPTIVE_STRATEGY_ENABLED);
+
+    currentSpreadPct = Math.max(MIN_SPREAD_PCT, Math.min(currentSpreadPct, MAX_SPREAD_PCT));
+    currentBaseSize = Math.max(MIN_ORDER_SIZE, Math.min(currentBaseSize, MAX_ORDER_SIZE));
+    currentMaxPosition = MAX_POSITION;
+    currentStopLoss = STOP_LOSS_PCT;
+
+    if (prevCycleSec !== CYCLE_SEC) {
+        log('INFO', `[RUNTIME_CONFIG] CYCLE_SEC atualizado: ${prevCycleSec}s -> ${CYCLE_SEC}s`);
+    }
+}
+
+async function refreshRuntimeConfig(force = false) {
+    const now = Date.now();
+    if (!force && (now - lastRuntimeConfigSyncTs) < RUNTIME_CONFIG_REFRESH_SEC * 1000) return;
+    lastRuntimeConfigSyncTs = now;
+
+    const row = await db.getRuntimeConfig(RUNTIME_CONFIG_PROFILE);
+    if (!row || !row.env_config || typeof row.env_config !== 'object') return;
+
+    const nextVersion = JSON.stringify(row.env_config);
+    if (nextVersion === runtimeConfigVersion) return;
+
+    applyRuntimeConfig(row.env_config);
+    runtimeConfigVersion = nextVersion;
+    log('SUCCESS', `[RUNTIME_CONFIG] Configuração aplicada em tempo real (profile=${RUNTIME_CONFIG_PROFILE}).`);
 }
 
 // ---------------- GLOBAL STATE ----------------
@@ -836,7 +934,7 @@ async function managePrices(mid, volatility, spreadPct) {
             // ✅ FIX: Converter timestamp se necessário (pode ser segundos ou milissegundos)
             const effectiveTimestamp = order.loadTimestamp || (order.timestamp < 1e11 ? order.timestamp * 1000 : order.timestamp);
             const ageMs = now - effectiveTimestamp;
-            if (ageMs < MIN_REPRICE_AGE_SEC * 1000) {
+            if (ageMs < BUY_REPRICE_AGE_SEC * 1000) {
                 continue;
             }
 
@@ -1200,9 +1298,12 @@ async function createPairedSellOrder(buyOrderData, currentMid, pairId) {
         log('INFO', `  - Target SELL: R$${targetSellPrice.toFixed(2)} (spread ${(((targetSellPrice - buyPrice) / buyPrice) * 100).toFixed(3)}%)`);
         
         // Chamar placeOrder com pairId para associar ao BUY
-        await placeOrder('sell', targetSellPrice, sellQty, null, pairId);
-        
-        log('SUCCESS', `[AUTO_SELL] ✅ SELL pareada criada com sucesso para pair ${pairId.substring(0, 20)}...`);
+        const created = await placeOrder('sell', targetSellPrice, sellQty, null, pairId);
+        if (created) {
+            log('SUCCESS', `[AUTO_SELL] ✅ SELL pareada criada com sucesso para pair ${pairId.substring(0, 20)}...`);
+        } else {
+            log('WARN', `[AUTO_SELL] SELL pareada não criada para pair ${pairId.substring(0, 20)}... (bloqueada por validação).`);
+        }
     } catch (e) {
         log('ERROR', `[AUTO_SELL] Falha ao criar SELL pareada: ${e.message}`);
     }
@@ -1258,13 +1359,16 @@ async function recoverMissingPairedSells(mid, spreadAmount, btcBalance) {
             const targetSellPrice = Math.max((mid + spreadAmount) || mid, minSellPrice);
             if (targetSellPrice <= 0) continue;
 
-            await placeOrder('sell', targetSellPrice, qty, null, pairId);
-            log('SUCCESS', `[AUTO_SELL_RECOVERY] ✅ SELL recuperada criada: ${qty.toFixed(8)} BTC @ R$${targetSellPrice.toFixed(2)} | pair ${pairId.substring(0, 20)}...`);
-
-            autoSellRecoveryAttempts.set(pairId, Date.now());
-            availableBtc -= qty;
-            created++;
-            if (created >= AUTO_SELL_RECOVERY_LIMIT) break;
+            const ok = await placeOrder('sell', targetSellPrice, qty, null, pairId);
+            if (ok) {
+                log('SUCCESS', `[AUTO_SELL_RECOVERY] ✅ SELL recuperada criada: ${qty.toFixed(8)} BTC @ R$${targetSellPrice.toFixed(2)} | pair ${pairId.substring(0, 20)}...`);
+                autoSellRecoveryAttempts.set(pairId, Date.now());
+                availableBtc -= qty;
+                created++;
+                if (created >= AUTO_SELL_RECOVERY_LIMIT) break;
+            } else {
+                log('WARN', `[AUTO_SELL_RECOVERY] SELL não criada para pair ${pairId.substring(0, 20)}... (bloqueada por validação).`);
+            }
         }
     } catch (e) {
         log('WARN', `[AUTO_SELL_RECOVERY] Falha ao recuperar SELLs: ${e.message}`);
@@ -1505,27 +1609,18 @@ async function checkOrders(mid, volatility, pred, orderbook, sellSignal) {
         const priceDrift = Math.abs(targetPrice - order.price) / order.price;
         const hasInterest = orderbook.bids[0][1] > order.qty * 2 || orderbook.asks[0][1] > order.qty * 2;
 
-        const stopPrice = order.side === 'buy' ? order.price * (1 - dynamicStopLoss) : order.price * (1 + dynamicStopLoss);
-        const takePrice = order.side === 'buy' ? order.price * (1 + dynamicTakeProfit) : order.price * (1 - dynamicTakeProfit);
-
-        if ((order.side === 'buy' && mid <= stopPrice) || (order.side === 'sell' && mid >= stopPrice)) {
-            await tryCancel(key);
-            log('ALERT', `Stop-loss acionado para ordem ${order.side.toUpperCase()} ${order.id}.`);
-            continue;
-        }
-        if ((order.side === 'buy' && mid >= takePrice) || (order.side === 'sell' && mid <= takePrice)) {
-            await tryCancel(key);
-            log('SUCCESS', `Take-profit acionado para ordem ${order.side.toUpperCase()} ${order.id}.`);
-            continue;
-        }
+        // IMPORTANTE:
+        // Stop-loss / take-profit não devem cancelar ordens LIMIT abertas de market making.
+        // Essas regras se aplicam ao gerenciamento de posição (após execução), não à ordem pendente no book.
+        // Mantemos aqui apenas os critérios de idade/reprice para evitar churn e sumiço de ordens ativas no dashboard.
         // SISTEMA SIMPLIFICADO: Cancelar APENAS por IDADE
         // A lógica de drift/stuck foi removida porque causava churn desnecessário
         // em mercados dinâmicos com spreads que mudam a cada ciclo
         // O bot irá aguardar MAX_ORDER_AGE (20 minutos) antes de cancelar qualquer ordem
         const isStuck = false; // Desabilitado - não há "stuck" real, apenas mercado dinâmico
         
-        if (order.side === 'buy' && timeAge > BUY_REPRICE_AGE_SEC) {
-            log('INFO', `🔄 BUY ${order.id} com ${timeAge.toFixed(1)}s sem execução. Recolocando...`);
+        if (timeAge > BUY_REPRICE_AGE_SEC) {
+            log('INFO', `🔄 ${order.side.toUpperCase()} ${order.id} com ${timeAge.toFixed(1)}s sem execução. Recolocando...`);
 
             const oldPairId = order.pairId;
             await tryCancel(key);
@@ -1538,10 +1633,10 @@ async function checkOrders(mid, volatility, pred, orderbook, sellSignal) {
                 }
             }
 
-            const newBuyPrice = targetPrice;
-            if (newBuyPrice > 0 && order.qty > MIN_ORDER_SIZE) {
-                await placeOrder('buy', newBuyPrice, order.qty, null, oldPairId);
-                log('SUCCESS', `✅ BUY recolocada: ${order.qty.toFixed(8)} BTC @ R$${newBuyPrice.toFixed(2)}`);
+            const newPrice = targetPrice;
+            if (newPrice > 0 && order.qty > MIN_ORDER_SIZE) {
+                await placeOrder(order.side, newPrice, order.qty, null, oldPairId);
+                log('SUCCESS', `✅ ${order.side.toUpperCase()} recolocada: ${order.qty.toFixed(8)} BTC @ R$${newPrice.toFixed(2)}`);
             }
             continue;
         }
@@ -2285,7 +2380,7 @@ async function main() {
     
     // Carregar configurações e inicializar banco de dados
     await db.init();
-    // await loadConfigFromDB(); // Usar configurações do .env
+    await refreshRuntimeConfig(true);
 
     // Autenticar no modo LIVE antes de iniciar ciclos
     if (!SIMULATE) {
@@ -2319,8 +2414,19 @@ async function main() {
     
     // Iniciar ciclo principal
     log('SUCCESS', `Bot iniciado em modo ${SIMULATE ? 'SIMULAÇÃO' : 'PRODUÇÃO'}. Ciclo a cada ${CYCLE_SEC}s.`);
-    setInterval(runCycle, CYCLE_SEC * 1000);
-    runCycle(); // Executa imediatamente na primeira vez
+
+    const runLoop = async () => {
+        try {
+            await refreshRuntimeConfig(false);
+            await runCycle();
+        } catch (e) {
+            log('ERROR', `[LOOP] Erro no ciclo principal: ${e.message}`);
+        } finally {
+            setTimeout(runLoop, Math.max(1, CYCLE_SEC) * 1000);
+        }
+    };
+
+    runLoop();
 }
 
 // ================== EXECUÇÃO PRINCIPAL ==================

@@ -371,11 +371,7 @@ function testCashManagementStrategy(prices, testName, params = {}) {
     const holdPnL = holdValue - initialValue;
     const vsHold = pnl - holdPnL;
     
-    const lossToleranceBrl = 1.0; // permitir pequeno prejuízo dentro de R$ 1
-    const profitableTradeRate = trades > 0 ? (profitableTrades / trades) : 0;
-    const smallLossAllowed = pnl >= -lossToleranceBrl;
-    const beatMarket = roi > priceChange;
-    const passed = beatMarket || pnl >= 0 || (smallLossAllowed && profitableTradeRate >= 0.35);
+    const passed = pnl > 0 && vsHold > 0;
     
     // Calcular projeção (em 24h)
     const hoursInTest = prices.length * 5 / 60; // 5m candles
@@ -474,6 +470,124 @@ function runCashManagementSweep(prices) {
     });
 
     return { best, results };
+}
+
+function computeEMA(values, period) {
+    if (!Array.isArray(values) || values.length === 0) return 0;
+    if (values.length < period) return values[values.length - 1] || 0;
+    const k = 2 / (period + 1);
+    let ema = values[values.length - period];
+    for (let i = values.length - period + 1; i < values.length; i++) {
+        ema = values[i] * k + ema * (1 - k);
+    }
+    return ema;
+}
+
+function computeRSI(values, period = 14) {
+    if (!Array.isArray(values) || values.length < period + 1) return 50;
+    let gains = 0;
+    let losses = 0;
+    for (let i = values.length - period - 1; i < values.length - 1; i++) {
+        const change = values[i + 1] - values[i];
+        if (change > 0) gains += change;
+        else losses -= change;
+    }
+    const avgGain = gains / period;
+    const avgLoss = losses / period;
+    if (avgLoss === 0) return 100;
+    const rs = avgGain / avgLoss;
+    return 100 - (100 / (1 + rs));
+}
+
+function testCurrentBotRuntimeStrategy(prices, runtimeConfig = {}, testName = 'Bot Strategy (Runtime Config)') {
+    const cfg = {
+        SPREAD_PCT: Number(runtimeConfig.SPREAD_PCT ?? 0.008),
+        MIN_SPREAD_PCT: Number(runtimeConfig.MIN_SPREAD_PCT ?? 0.005),
+        ORDER_SIZE: Number(runtimeConfig.ORDER_SIZE ?? 0.00005),
+        MIN_ORDER_SIZE: Number(runtimeConfig.MIN_ORDER_SIZE ?? 0.00005),
+        STOP_LOSS_PCT: Number(runtimeConfig.STOP_LOSS_PCT ?? 0.025),
+        TAKE_PROFIT_PCT: Number(runtimeConfig.TAKE_PROFIT_PCT ?? 0.040),
+        MIN_VOLUME: Number(runtimeConfig.MIN_VOLUME ?? 0.00003)
+    };
+
+    let brl = 200;
+    let btc = 0.0001;
+    let openPosition = null; // {entryPrice, qty}
+    let trades = 0;
+    let wins = 0;
+    let losses = 0;
+    const initialValue = brl + btc * prices[0];
+
+    for (let i = 20; i < prices.length; i++) {
+        const price = prices[i];
+        const window = prices.slice(Math.max(0, i - 30), i + 1);
+        const ema20 = computeEMA(window, 20);
+        const rsi = computeRSI(window, 14);
+        const spreadTarget = Math.max(cfg.SPREAD_PCT, cfg.MIN_SPREAD_PCT);
+
+        if (!openPosition) {
+            const qty = Math.max(cfg.MIN_ORDER_SIZE, cfg.ORDER_SIZE);
+            const cost = qty * price;
+            const buySignal = price < ema20 && rsi < 55;
+            if (buySignal && brl >= cost && cost >= cfg.MIN_VOLUME) {
+                brl -= cost;
+                btc += qty;
+                openPosition = { entryPrice: price, qty };
+                trades++;
+            }
+        } else {
+            const qty = openPosition.qty;
+            const stop = openPosition.entryPrice * (1 - cfg.STOP_LOSS_PCT);
+            const take = openPosition.entryPrice * (1 + cfg.TAKE_PROFIT_PCT);
+            const spreadTake = openPosition.entryPrice * (1 + spreadTarget);
+            const target = Math.min(take, Math.max(spreadTake, openPosition.entryPrice));
+
+            const shouldStop = price <= stop;
+            const shouldTake = price >= target;
+
+            if (shouldStop || shouldTake) {
+                brl += qty * price;
+                btc = Math.max(0, btc - qty);
+                const pnl = (price - openPosition.entryPrice) * qty;
+                if (pnl >= 0) wins++;
+                else losses++;
+                openPosition = null;
+                trades++;
+            }
+        }
+    }
+
+    const finalValue = brl + btc * prices[prices.length - 1];
+    const pnl = finalValue - initialValue;
+    const roi = (pnl / initialValue) * 100;
+    const holdValue = 200 + 0.0001 * prices[prices.length - 1];
+    const holdPnl = holdValue - initialValue;
+    const vsHold = pnl - holdPnl;
+    const hoursInTest = prices.length * 5 / 60;
+    const monthlyBRL = (pnl / hoursInTest) * (24 * 30);
+    const yearlyBRL = monthlyBRL * 12;
+    const monthlyRoi = (roi / hoursInTest) * (24 * 30);
+    const yearlyRoi = monthlyRoi * 12;
+
+    return {
+        testName,
+        passed: pnl > 0 && vsHold > 0,
+        pnlBRL: pnl.toFixed(2),
+        holdPnlBRL: holdPnl.toFixed(2),
+        vsHoldBRL: vsHold.toFixed(2),
+        roi: roi.toFixed(2),
+        trades,
+        profitableTrades: wins,
+        losingTrades: losses,
+        projection: {
+            hoursInTest: hoursInTest.toFixed(1),
+            monthlyRoi: monthlyRoi.toFixed(2),
+            yearlyRoi: yearlyRoi.toFixed(2),
+            monthlyBRL: monthlyBRL.toFixed(2),
+            yearlyBRL: yearlyBRL.toFixed(2)
+        },
+        strategySource: 'runtime_config'
+    };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -668,15 +782,10 @@ function testAccumulatorWithPrices(prices, testName) {
     const projectedYearlyRoi = projectedMonthlyRoi * 12;
     const projectedYearlyBRL = projectedMonthlyBRL * 12;
     
-    // CRITÉRIO MELHORADO: 
-    // 1. Acumulou BTC positivamente (objetivo principal), OU
-    // 2. ROI superou a variação do mercado (fez melhor que hold), OU
-    // 3. Em mercado de queda forte (>2%), protegeu capital pausando compras
     const beatMarket = roi > priceChange;
     const accumulatedBTC = btcGained > 0;
     const protectedCapital = priceChange < -2 && buysPaused > 0 && roi > (priceChange * 0.8);
-    
-    const passed = accumulatedBTC || beatMarket || protectedCapital;
+    const passed = pnl > 0 && vsHold > 0;
     
     return {
         testName,
@@ -796,12 +905,16 @@ function testIntegratedSystemOptimized(prices, testName) {
     const roi = (pnl / initialValue) * 100;
     const priceChange = ((priceN - price0) / price0) * 100;
     const winRate = trades > 0 ? (profits / trades * 100) : 0;
+    const holdValue = initialBRL + initialBTC * priceN;
+    const holdPnl = holdValue - initialValue;
+    const vsHold = pnl - holdPnl;
     
     return {
         testName,
-        passed: roi > priceChange, // Passou se melhor que HOLD
+        passed: pnl > 0 && vsHold > 0,
         roi: roi.toFixed(2),
         priceChange: priceChange.toFixed(2),
+        vsHoldBRL: vsHold.toFixed(2),
         trades,
         profits,
         losses,
@@ -831,38 +944,59 @@ async function runTestBattery(hours = 24, options = {}) {
             total: 0,
             passed: 0,
             failed: 0,
-            dataSource: null
+            dataSource: null,
+            requestedDataSource: forceDataSource || 'auto',
+            actualDataSource: null,
+            runtimeConfigProfile: resolvedOptions.runtimeConfigProfile || 'production',
+            runtimeConfigApplied: false,
+            runtimeConfigSource: null,
+            runtimeStrategyTested: false
         }
     };
     
     try {
         // ===== TENTAR BUSCAR DADOS LOCAIS DO BANCO PRIMEIRO =====
         let prices = [];
+        let pricePoints = [];
         let dataSource = null;
+        let runtimeConfig = null;
         
         if (forceDataSource !== 'binance') {
             try {
                 const db = require('./db');
                 console.log(`[TEST_RUNNER] 🔍 Tentando carregar dados históricos do banco de dados...`);
+                const runtimeRow = await db.getRuntimeConfig(resolvedOptions.runtimeConfigProfile || 'production');
+                runtimeConfig = runtimeRow?.env_config || null;
+                if (runtimeConfig) {
+                    results.summary.runtimeConfigApplied = true;
+                    results.summary.runtimeConfigSource = 'Supabase';
+                }
                 
-                // Buscar histórico local
+                // Buscar histórico do Supabase via db.getPriceHistory
                 const priceHistory = await Promise.race([
                     db.getPriceHistory(hours, 500), // 500 pontos nas últimas X horas
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
                 ]);
                 
                 if (priceHistory && priceHistory.length >= 10) {
-                    prices = priceHistory.map(p => parseFloat(p.price));
-                    dataSource = 'Local DB';
-                    console.log(`[TEST_RUNNER] ✅ ${prices.length} preços carregados do banco local`);
+                    pricePoints = priceHistory.map((p) => ({
+                        price: parseFloat(p.price),
+                        timestampMs: Number(p.timestamp) * 1000
+                    })).filter((p) => Number.isFinite(p.price) && Number.isFinite(p.timestampMs));
+                    prices = pricePoints.map((p) => p.price);
+                    dataSource = 'Supabase';
+                    console.log(`[TEST_RUNNER] ✅ ${prices.length} preços carregados do Supabase`);
                 }
             } catch (DBError) {
-                console.warn(`[TEST_RUNNER] ⚠️ Erro ao carregar banco local: ${DBError.message}`);
+                console.warn(`[TEST_RUNNER] ⚠️ Erro ao carregar Supabase: ${DBError.message}`);
             }
         }
         
         // ===== FALLBACK: BUSCAR DA BINANCE SE NÃO HOUVER DADOS LOCAIS =====
         if (!prices || prices.length < 10) {
+            if (forceDataSource === 'supabase') {
+                throw new Error('Fonte Supabase foi solicitada, mas não há histórico suficiente em price_history.');
+            }
             const binanceReason = forceDataSource === 'binance'
                 ? 'Fonte forçada: Binance.'
                 : 'Dados insuficientes localmente, buscando da Binance...';
@@ -880,7 +1014,11 @@ async function runTestBattery(hours = 24, options = {}) {
             }
             
             if (binanceData && binanceData.length >= 10) {
-                prices = binanceData.map(c => c.close);
+                pricePoints = binanceData.map((c) => ({
+                    price: Number(c.close),
+                    timestampMs: Number(c.timestamp)
+                })).filter((p) => Number.isFinite(p.price) && Number.isFinite(p.timestampMs));
+                prices = pricePoints.map((p) => p.price);
                 dataSource = 'Binance';
                 console.log(`[TEST_RUNNER] ✅ ${prices.length} candles obtidos da Binance`);
             }
@@ -892,6 +1030,7 @@ async function runTestBattery(hours = 24, options = {}) {
         }
         
         results.summary.dataSource = dataSource || 'Desconhecido';
+        results.summary.actualDataSource = dataSource || 'Desconhecido';
         results.summary.dataPoints = prices.length;
         results.summary.priceRange = {
             min: Math.min(...prices).toFixed(2),
@@ -899,6 +1038,16 @@ async function runTestBattery(hours = 24, options = {}) {
             start: prices[0].toFixed(2),
             end: prices[prices.length - 1].toFixed(2),
             change: (((prices[prices.length - 1] - prices[0]) / prices[0]) * 100).toFixed(2)
+        };
+        const startTs = pricePoints.length > 0 ? pricePoints[0].timestampMs : null;
+        const endTs = pricePoints.length > 0 ? pricePoints[pricePoints.length - 1].timestampMs : null;
+        const hoursReal = (startTs && endTs && endTs >= startTs)
+            ? (endTs - startTs) / 3600000
+            : null;
+        results.summary.timeWindow = {
+            startIso: startTs ? new Date(startTs).toISOString() : null,
+            endIso: endTs ? new Date(endTs).toISOString() : null,
+            hoursReal: hoursReal == null ? null : Number(hoursReal.toFixed(1))
         };
         
         console.log(`[TEST_RUNNER] ✅ ${prices.length} preços obtidos da fonte: ${dataSource}. Range: R$${results.summary.priceRange.min} - R$${results.summary.priceRange.max}`);
@@ -931,7 +1080,15 @@ async function runTestBattery(hours = 24, options = {}) {
             results.tests.push(cashMgmtCurrent);
         }
 
-        // Teste 5: Cash Management Strategy (melhor de 10 ajustes)
+        // Teste 5: Estratégia atual do bot com runtime config
+        if (runtimeConfig) {
+            console.log('[TEST_RUNNER] Executando teste: Estratégia atual do bot (runtime config)...');
+            const botRuntimeTest = testCurrentBotRuntimeStrategy(prices, runtimeConfig, 'Bot Strategy (Runtime Config)');
+            results.tests.push(botRuntimeTest);
+            results.summary.runtimeStrategyTested = true;
+        }
+
+        // Teste 6: Cash Management Strategy (melhor de 10 ajustes)
         console.log('[TEST_RUNNER] Executando testes: Cash Management Strategy (10 ajustes)...');
         const cashMgmtSweep = runCashManagementSweep(prices);
         const bestCashMgmt = cashMgmtSweep.best;

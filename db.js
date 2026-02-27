@@ -2,6 +2,7 @@ const sqlite3 = require('sqlite3');
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const axios = require('axios');
 
 const DB_PATH = path.join(__dirname, 'database', 'orders.db');
 
@@ -9,6 +10,87 @@ class Database {
     constructor() {
         this.dbPath = DB_PATH;
         this.db = null;
+        this.supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+        this.supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+        this.useSupabasePriceHistory = Boolean(this.supabaseUrl && this.supabaseKey);
+        this.useSupabasePnlHistory = Boolean(this.supabaseUrl && this.supabaseKey);
+    }
+
+    assertSupabaseForHistory(kind) {
+        if (!this.supabaseUrl || !this.supabaseKey) {
+            throw new Error(`Supabase não configurado para ${kind}. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.`);
+        }
+    }
+
+    assertSupabaseConfigured(kind = 'operação') {
+        if (!this.supabaseUrl || !this.supabaseKey) {
+            throw new Error(`Supabase não configurado para ${kind}. Defina SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY.`);
+        }
+    }
+
+    isRetryableSupabaseError(err) {
+        const status = err?.response?.status;
+        const code = err?.code;
+        const message = String(err?.message || '').toLowerCase();
+        if ([408, 409, 425, 429, 500, 502, 503, 504].includes(status)) return true;
+        if (code === 'ECONNABORTED' || code === 'ETIMEDOUT' || code === 'ECONNRESET' || code === 'ENOTFOUND') return true;
+        if (message.includes('timeout') || message.includes('network error') || message.includes('socket hang up')) return true;
+        return false;
+    }
+
+    async postSupabaseWithRetry(pathname, payload, contextLabel = 'operação', maxAttempts = 3) {
+        let lastErr = null;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            const timeoutMs = 7000 + (attempt * 4000); // 11s, 15s, 19s
+            try {
+                await axios.post(`${this.supabaseUrl}/rest/v1/${pathname}`, payload, {
+                    headers: {
+                        apikey: this.supabaseKey,
+                        Authorization: `Bearer ${this.supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=minimal'
+                    },
+                    timeout: timeoutMs
+                });
+                return;
+            } catch (err) {
+                lastErr = err;
+                if (!this.isRetryableSupabaseError(err) || attempt === maxAttempts) {
+                    throw err;
+                }
+                const waitMs = attempt * 700;
+                this.log('WARN', `${contextLabel} falhou (tentativa ${attempt}/${maxAttempts}) [timeout=${timeoutMs}ms]: ${err.message}. Repetindo em ${waitMs}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, waitMs));
+            }
+        }
+        throw lastErr;
+    }
+
+    async getSupabaseWithRetry(pathname, params = {}, contextLabel = 'operação', maxAttempts = 3) {
+        let lastErr = null;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            const timeoutMs = 10000 + (attempt * 5000); // 15s, 20s, 25s
+            try {
+                const response = await axios.get(`${this.supabaseUrl}/rest/v1/${pathname}`, {
+                    params,
+                    headers: {
+                        apikey: this.supabaseKey,
+                        Authorization: `Bearer ${this.supabaseKey}`
+                    },
+                    timeout: timeoutMs
+                });
+                return response;
+            } catch (err) {
+                lastErr = err;
+                if (!this.isRetryableSupabaseError(err) || attempt === maxAttempts) {
+                    throw err;
+                }
+                const waitMs = attempt * 1000;
+                this.log('WARN', `${contextLabel} falhou (tentativa ${attempt}/${maxAttempts}) [timeout=${timeoutMs}ms]: ${err.message}. Repetindo em ${waitMs}ms...`);
+                await new Promise((resolve) => setTimeout(resolve, waitMs));
+            }
+        }
+        throw lastErr;
     }
 
     log(level, message) {
@@ -169,58 +251,59 @@ class Database {
 
     // Novo método para salvar PnL (compatível com bot.js e dashboard)
     async savePnL(pnlValue, timestamp = null, sessionId = null) {
-        if (!this.db) {
-            throw new Error('Database not initialized');
-        }
+        const rawTs = timestamp == null ? Date.now() : Number(timestamp);
+        const ts = rawTs > 1e12 ? Math.floor(rawTs / 1000) : Math.floor(rawTs);
+        this.assertSupabaseForHistory('pnl_history');
 
-        const ts = timestamp ? Math.floor(timestamp / 1000) : Math.floor(Date.now() / 1000);
-        
-        return new Promise((resolve, reject) => {
-            const stmt = this.db.prepare(`
-                INSERT OR REPLACE INTO pnl_history (pnl_value, timestamp, session_id)
-                VALUES (?, ?, ?)
-            `);
-            
-            stmt.run(parseFloat(pnlValue), ts, sessionId, function(err) {
-                if (err) {
-                    return reject(err);
-                }
-                resolve({ id: this.lastID, timestamp: ts });
-            });
-            
-            stmt.finalize();
-        });
+        try {
+            const payload = {
+                pnl_value: parseFloat(pnlValue),
+                timestamp: parseInt(ts, 10),
+                session_id: sessionId == null ? null : String(sessionId)
+            };
+            await this.postSupabaseWithRetry('pnl_history', payload, 'Salvar pnl_history');
+
+            return { source: 'supabase', timestamp: ts };
+        } catch (err) {
+            this.log('ERROR', `Falha ao salvar pnl_history no Supabase: ${err.message}`);
+            throw err;
+        }
     }
 
     // Novo método para buscar histórico de PnL (compatível com dashboard)
     async getPnLHistory(hoursBack = 24, limit = 500) {
-        if (!this.db) {
-            throw new Error('Database not initialized');
-        }
-
         const cutoffTs = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+        this.assertSupabaseForHistory('pnl_history');
 
-        return new Promise((resolve, reject) => {
-            this.db.all(`
-                SELECT pnl_value as value, timestamp 
-                FROM pnl_history
-                WHERE timestamp >= ?
-                ORDER BY timestamp ASC
-                LIMIT ?
-            `, [cutoffTs, limit], (err, rows) => {
-                if (err) {
-                    return reject(err);
-                }
-                
-                const history = (rows || []).map(row => ({
-                    value: parseFloat(row.value),
-                    timestamp: row.timestamp,
-                    iso: new Date(row.timestamp * 1000).toISOString()
-                }));
-                
-                resolve(history);
+        try {
+            const response = await axios.get(`${this.supabaseUrl}/rest/v1/pnl_history`, {
+                params: {
+                    select: 'pnl_value,timestamp,session_id',
+                    timestamp: `gte.${cutoffTs}`,
+                    order: 'timestamp.asc',
+                    limit
+                },
+                headers: {
+                    apikey: this.supabaseKey,
+                    Authorization: `Bearer ${this.supabaseKey}`
+                },
+                timeout: 7000
             });
-        });
+
+            const rows = Array.isArray(response.data) ? response.data : [];
+            return rows.map((row) => {
+                const ts = parseInt(row.timestamp, 10);
+                return {
+                    value: parseFloat(row.pnl_value),
+                    timestamp: ts,
+                    iso: new Date(ts * 1000).toISOString(),
+                    sessionId: row.session_id ?? null
+                };
+            }).filter((p) => Number.isFinite(p.timestamp) && Number.isFinite(p.value));
+        } catch (err) {
+            this.log('ERROR', `Falha ao carregar pnl_history do Supabase: ${err.message}`);
+            throw err;
+        }
     }
 
     async saveOrderSafe(order, context, sessionId = null) {
@@ -422,27 +505,22 @@ class Database {
     }
 
     async savePrice(price, timestamp = null) {
-        if (!this.db) {
-            throw new Error('Database not initialized');
-        }
-
         const ts = timestamp || Math.floor(Date.now() / 1000);
-        
-        return new Promise((resolve, reject) => {
-            const stmt = this.db.prepare(`
-                INSERT OR REPLACE INTO price_history (btc_price, timestamp, pair)
-                VALUES (?, ?, 'BTC-BRL')
-            `);
-            
-            stmt.run(price, ts, function(err) {
-                stmt.finalize();
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(this);
-                }
-            });
-        });
+        this.assertSupabaseForHistory('price_history');
+
+        try {
+            const payload = {
+                btc_price: parseFloat(price),
+                timestamp: parseInt(ts, 10),
+                pair: 'BTC-BRL'
+            };
+            await this.postSupabaseWithRetry('price_history', payload, 'Salvar price_history');
+
+            return { source: 'supabase', timestamp: ts };
+        } catch (err) {
+            this.log('ERROR', `Falha ao salvar price_history no Supabase: ${err.message}`);
+            throw err;
+        }
     }
 
     // Alias para compatibilidade com código existente
@@ -451,33 +529,92 @@ class Database {
     }
 
     async getPriceHistory(hoursBack = 24, limit = 500) {
-        if (!this.db) {
-            throw new Error('Database not initialized');
+        const cutoffTs = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+        this.assertSupabaseForHistory('price_history');
+
+        try {
+            const response = await axios.get(`${this.supabaseUrl}/rest/v1/price_history`, {
+                params: {
+                    select: 'btc_price,timestamp',
+                    pair: 'eq.BTC-BRL',
+                    timestamp: `gte.${cutoffTs}`,
+                    order: 'timestamp.asc',
+                    limit
+                },
+                headers: {
+                    apikey: this.supabaseKey,
+                    Authorization: `Bearer ${this.supabaseKey}`
+                },
+                timeout: 7000
+            });
+
+            const rows = Array.isArray(response.data) ? response.data : [];
+            return rows.map((row) => ({
+                timestamp: parseInt(row.timestamp, 10),
+                price: parseFloat(row.btc_price)
+            })).filter((p) => Number.isFinite(p.timestamp) && Number.isFinite(p.price));
+        } catch (err) {
+            this.log('ERROR', `Falha ao carregar price_history do Supabase: ${err.message}`);
+            throw err;
+        }
+    }
+
+    async getRuntimeConfig(profile = 'production') {
+        this.assertSupabaseConfigured('runtime_config');
+        try {
+            const response = await this.getSupabaseWithRetry(
+                'bot_runtime_configs',
+                {
+                    select: 'id,profile,env_config,is_active,updated_at,created_at',
+                    profile: `eq.${profile}`,
+                    is_active: 'eq.true',
+                    order: 'updated_at.desc',
+                    limit: 1
+                },
+                'Carregar bot_runtime_configs'
+            );
+
+            const row = Array.isArray(response.data) ? response.data[0] : null;
+            if (!row) return null;
+            return row;
+        } catch (err) {
+            this.log('ERROR', `Falha ao carregar bot_runtime_configs: ${err.message}`);
+            throw err;
+        }
+    }
+
+    async upsertRuntimeConfig(profile = 'production', envConfig = {}, isActive = true) {
+        this.assertSupabaseConfigured('runtime_config');
+        if (!envConfig || typeof envConfig !== 'object' || Array.isArray(envConfig)) {
+            throw new Error('envConfig inválido: esperado objeto JSON');
         }
 
-        const cutoffTs = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+        try {
+            const payload = {
+                profile,
+                env_config: envConfig,
+                is_active: !!isActive
+            };
 
-        return new Promise((resolve, reject) => {
-            this.db.all(`
-                SELECT btc_price, timestamp
-                FROM price_history
-                WHERE timestamp >= ?
-                ORDER BY timestamp ASC
-                LIMIT ?
-            `, [cutoffTs, limit], (err, rows) => {
-                if (err) {
-                    return reject(err);
-                }
-                
-                // Converter para formato esperado (timestamp em segundos)
-                const history = rows.map(row => ({
-                    timestamp: row.timestamp,
-                    price: row.btc_price
-                }));
-                
-                resolve(history);
+            const response = await axios.post(`${this.supabaseUrl}/rest/v1/bot_runtime_configs`, payload, {
+                params: {
+                    on_conflict: 'profile'
+                },
+                headers: {
+                    apikey: this.supabaseKey,
+                    Authorization: `Bearer ${this.supabaseKey}`,
+                    'Content-Type': 'application/json',
+                    Prefer: 'resolution=merge-duplicates,return=representation'
+                },
+                timeout: 7000
             });
-        });
+
+            const row = Array.isArray(response.data) ? response.data[0] : null;
+            return row || null;
+        } catch (err) {
+            this.log('ERROR', `Falha ao salvar bot_runtime_configs: ${err.message}`);
+            throw err;
+        }
     }
 
     async close() {

@@ -56,8 +56,11 @@
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-yellow-500">
             <p class="text-gray-400 text-xs sm:text-sm">Spread / Volatilidade</p>
             <h2 id="spread" class="text-lg sm:text-xl font-bold">--</h2>
+            <p id="spreadExplain" class="text-xs sm:text-sm text-gray-500">Spread do book: --</p>
             <p id="buySpreadTrend" class="text-xs sm:text-sm text-gray-400">Spread BUY (tendência): --</p>
+            <p id="buySpreadExplain" class="text-xs sm:text-sm text-gray-500">Ajuste BUY: --</p>
             <p id="volatility" class="text-xs sm:text-sm text-gray-400">Vol: --</p>
+            <p id="volatilityExplain" class="text-xs sm:text-sm text-gray-500">Leitura de risco: --</p>
         </div>
         <div id="pnlCard" class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-gray-500">
             <p class="text-gray-400 text-xs sm:text-sm">Lucro/Prejuizo Total (PnL)</p>
@@ -82,21 +85,18 @@
             </div>
         </div>
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow border-l-4 border-purple-500">
-            <p class="text-gray-400 text-xs sm:text-sm">Saldo Total Est.</p>
-            <h2 id="totalBalanceCard" class="text-lg sm:text-xl font-bold">Carregando...</h2>
-            <p id="monthlyPnl" class="text-xs sm:text-sm text-gray-400">Mensal: R$ 0,00</p>
+            <p class="text-gray-400 text-xs sm:text-sm">Resumo de Saldos</p>
+            <h2 id="totalBalanceCard" class="text-lg sm:text-xl font-bold">R$ 0,00</h2>
+            <div class="mt-2 space-y-1 text-xs sm:text-sm text-gray-300">
+                <p>BRL: <span id="brl">Carregando...</span></p>
+                <p>BTC: <span id="btc">Carregando...</span></p>
+                <p>Total: <span id="totalBalanceList">R$ 0,00</span></p>
+                <p id="monthlyPnl" class="text-gray-400">Mensal: R$ 0,00</p>
+            </div>
         </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
-            <h2 class="text-base sm:text-lg font-bold mb-2">Saldos</h2>
-            <ul class="space-y-1 text-xs sm:text-sm">
-                <li>BRL: <span id="brl">Carregando...</span></li>
-                <li>BTC: <span id="btc">Carregando...</span></li>
-                <li>Total: <span id="totalBalanceList">Carregando...</span></li>
-            </ul>
-        </div>
-        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow md:col-span-3">
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow md:col-span-4">
             <h2 class="text-base sm:text-lg font-bold mb-2">Ordens Ativas</h2>
             <p class="text-xs text-gray-400 mb-2">Prox. execucao = 0% longe e 100% no alvo (baseado no drift vs alvo configurado).</p>
             <div class="overflow-x-auto">
@@ -203,10 +203,11 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-base sm:text-lg font-bold" style="color: #f59e0b;">🧪 Testes Automatizados (Dados Reais)</h2>
             <div class="flex gap-2 items-center">
-                <span id="testsStatus" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Carregando...</span>
+                <span id="testsStrictMode" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Modo estrito Supabase: aguardando 1ª execução</span>
+                <span id="testsStatus" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">ℹ️ Sem execução ainda</span>
                 <button id="runTestsBtn" onclick="runAutomatedTests()" 
                     class="text-xs px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded text-white transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    🔄 Refazer Testes (83h)
+                    🔄 Refazer Testes
                 </button>
             </div>
         </div>
@@ -227,11 +228,23 @@
             </div>
             <div class="bg-gray-700 p-3 rounded-lg text-center">
                 <div class="text-2xl font-bold text-yellow-400" id="testsPassRate">-%</div>
-                <div class="text-xs text-gray-400 mt-1">Taxa de Sucesso</div>
+                <div class="text-xs text-gray-400 mt-1">Taxa (Lucro + vs HOLD)</div>
             </div>
             <div class="bg-gray-700 p-3 rounded-lg text-center">
                 <div class="text-lg font-bold text-purple-400" id="testsDataSource">-</div>
                 <div class="text-xs text-gray-400 mt-1">Fonte de Dados</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4" id="testsValidationBadges">
+            <div id="testsBadgeSource" class="bg-gray-700 p-2 rounded text-xs text-gray-300">
+                Fonte: aguardando...
+            </div>
+            <div id="testsBadgeStrategy" class="bg-gray-700 p-2 rounded text-xs text-gray-300">
+                Estratégia: aguardando...
+            </div>
+            <div id="testsBadgeWindow" class="bg-gray-700 p-2 rounded text-xs text-gray-300">
+                Janela real: aguardando...
             </div>
         </div>
 
@@ -295,7 +308,7 @@
                 <thead>
                 <tr class="text-gray-400 border-b border-gray-700">
                     <th class="text-left p-2">Teste</th>
-                    <th class="text-center p-2">Status</th>
+                    <th class="text-center p-2">Status<br><span class="text-xs text-gray-500">(Lucro + vs HOLD)</span></th>
                     <th class="text-right p-2">PnL (R$)</th>
                     <th class="text-right p-2">vs HOLD</th>
                     <th class="text-right p-2">ROI</th>
@@ -368,9 +381,9 @@
                 <canvas id="residualPnlChart"></canvas>
             </div>
         </div>
-        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
+        <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow lg:col-span-2">
             <h2 class="text-base sm:text-lg font-bold mb-4">Config & Tendência</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 <div>
                     <h3 class="text-sm font-semibold mb-2 text-gray-300">Configurações do Bot</h3>
                     <ul class="space-y-1 text-xs sm:text-sm">
@@ -509,6 +522,15 @@
                         <li title="Retorno sobre investimento (ROI)" class="p-1 rounded pulse-green">
                             ROI: <span id="roiList">0.01% 📈</span>
                         </li>
+                        <li title="Situação geral de lucro ou prejuízo no momento" class="p-1 rounded">
+                            Situação de Lucro: <span id="profitSummary">--</span>
+                        </li>
+                        <li title="Motivo atual para não abrir nova BUY, quando aplicável" class="p-1 rounded">
+                            Motivo sem BUY: <span id="buyBlockReason">--</span>
+                        </li>
+                        <li title="Motivo atual para não abrir nova SELL, quando aplicável" class="p-1 rounded">
+                            Motivo sem SELL: <span id="sellBlockReason">--</span>
+                        </li>
                         <li title="Aportes e retiradas registrados no dashboard" class="p-1 rounded">
                             Aportes liquido: <span id="netContribList">R$ 0.00</span>
                         </li>
@@ -516,6 +538,19 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="mt-4 bg-gray-800 p-3 sm:p-4 rounded-xl shadow">
+        <div class="flex justify-between items-center mb-2 gap-2 flex-wrap">
+            <h2 class="text-base sm:text-lg font-bold">⚙️ Configuração Runtime do Bot (Supabase)</h2>
+            <div class="flex gap-2 items-center">
+                <span id="runtimeConfigStatus" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Carregando...</span>
+                <button onclick="loadRuntimeConfig()" class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white transition">Recarregar</button>
+                <button id="saveRuntimeConfigBtn" onclick="saveRuntimeConfig()" class="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white transition">Salvar</button>
+            </div>
+        </div>
+        <p class="text-xs text-gray-400 mb-2">Altere os campos e salve. O bot aplica as mudanças automaticamente em tempo real.</p>
+        <div id="runtimeConfigForm" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
     </div>
 </div>
 
@@ -526,6 +561,49 @@
     let residualPnlChart;
     let showCompletedPairs = false;
     let latestPairsData = null;
+    let runtimeConfigProfile = 'production';
+    let runtimeConfigRaw = {};
+    const runtimeConfigFields = [
+        {key: 'API_KEY', label: 'API Key', desc: 'Chave pública da API da exchange.', type: 'text'},
+        {key: 'API_SECRET', label: 'API Secret', desc: 'Chave secreta da API da exchange.', type: 'text'},
+        {key: 'PAIR', label: 'Par de Mercado', desc: 'Par negociado pelo bot.', type: 'text'},
+        {key: 'SIMULATE', label: 'Modo Simulação', desc: 'Se ativo, não envia ordens reais.', type: 'boolean'},
+        {key: 'USE_CASH_MANAGEMENT', label: 'Usar Gestão de Caixa', desc: 'Ativa decisões baseadas em caixa/saldo.', type: 'boolean'},
+        {key: 'SELL_FIRST', label: 'Permitir Sell First', desc: 'Permite iniciar ciclo por SELL.', type: 'boolean'},
+        {key: 'DEBUG', label: 'Debug', desc: 'Aumenta verbosidade dos logs.', type: 'boolean'},
+        {key: 'CYCLE_SEC', label: 'Intervalo do Ciclo (s)', desc: 'Tempo entre ciclos do bot.', type: 'number'},
+        {key: 'SPREAD_PCT', label: 'Spread Base', desc: 'Spread alvo usado nas ordens.', type: 'number'},
+        {key: 'MIN_SPREAD_PCT', label: 'Spread Mínimo', desc: 'Limite inferior de spread.', type: 'number'},
+        {key: 'MAX_SPREAD_PCT', label: 'Spread Máximo', desc: 'Limite superior de spread.', type: 'number'},
+        {key: 'ORDER_SIZE', label: 'Tamanho Base da Ordem', desc: 'Quantidade base por ordem.', type: 'number'},
+        {key: 'MIN_ORDER_SIZE', label: 'Tamanho Mínimo da Ordem', desc: 'Quantidade mínima permitida.', type: 'number'},
+        {key: 'MAX_ORDER_SIZE', label: 'Tamanho Máximo da Ordem', desc: 'Quantidade máxima permitida.', type: 'number'},
+        {key: 'MAX_POSITION', label: 'Posição Máxima', desc: 'Exposição máxima em BTC.', type: 'number'},
+        {key: 'INVENTORY_THRESHOLD', label: 'Threshold de Inventário', desc: 'Gatilho para ajustar viés de inventário.', type: 'number'},
+        {key: 'BIAS_FACTOR', label: 'Fator de Viés', desc: 'Intensidade do ajuste de viés.', type: 'number'},
+        {key: 'STOP_LOSS_PCT', label: 'Stop Loss', desc: 'Perda máxima antes de saída.', type: 'number'},
+        {key: 'TAKE_PROFIT_PCT', label: 'Take Profit', desc: 'Ganho alvo para saída.', type: 'number'},
+        {key: 'PRICE_DRIFT_PCT', label: 'Drift de Preço', desc: 'Sensibilidade para repricing.', type: 'number'},
+        {key: 'MAX_VOLATILITY_PCT', label: 'Volatilidade Máxima', desc: 'Teto de volatilidade considerado.', type: 'number'},
+        {key: 'VOL_LIMIT_PCT', label: 'Limite de Volatilidade', desc: 'Limite para ajuste de agressividade.', type: 'number'},
+        {key: 'MAX_ORDER_AGE', label: 'Idade Máxima da Ordem (s)', desc: 'Tempo máximo antes de cancelar.', type: 'number'},
+        {key: 'MIN_REPRICE_AGE_SEC', label: 'Idade Mínima para Reprice (s)', desc: 'Espera mínima para repricing.', type: 'number'},
+        {key: 'HISTORICAL_FILLS_WINDOW', label: 'Janela de Fills', desc: 'Quantidade de fills para análise histórica.', type: 'number'},
+        {key: 'RECENT_WEIGHT_FACTOR', label: 'Peso dos Fills Recentes', desc: 'Peso dado a dados recentes.', type: 'number'},
+        {key: 'ALERT_PNL_THRESHOLD', label: 'Alerta de PnL', desc: 'Dispara alerta abaixo deste valor.', type: 'number'},
+        {key: 'ALERT_ROI_THRESHOLD', label: 'Alerta de ROI', desc: 'Dispara alerta abaixo deste percentual.', type: 'number'},
+        {key: 'MIN_VOLUME', label: 'Volume Mínimo', desc: 'Volume mínimo para considerar oportunidade.', type: 'number'},
+        {key: 'EXTERNAL_TREND_TIGHTEN_MAX', label: 'Aperto Máx. Tendência Externa', desc: 'Quanto pode fechar spread em tendência favorável.', type: 'number'},
+        {key: 'EXTERNAL_TREND_WIDEN_MAX', label: 'Abertura Máx. Tendência Externa', desc: 'Quanto pode abrir spread em tendência contrária.', type: 'number'},
+        {key: 'EXTERNAL_TREND_WEIGHT_COINGECKO', label: 'Peso CoinGecko', desc: 'Peso da fonte CoinGecko no sinal externo.', type: 'number'},
+        {key: 'EXTERNAL_TREND_WEIGHT_COINBASE', label: 'Peso Coinbase', desc: 'Peso da fonte Coinbase no sinal externo.', type: 'number'},
+        {key: 'EXTERNAL_TREND_WEIGHT_KRAKEN', label: 'Peso Kraken', desc: 'Peso da fonte Kraken no sinal externo.', type: 'number'},
+        {key: 'EXTERNAL_TREND_DIVERGENCE_CONF', label: 'Confiança de Divergência Externa', desc: 'Confiança mínima para divergência.', type: 'number'},
+        {key: 'EXTERNAL_TREND_VOLATILITY_DAMP', label: 'Amortecimento por Volatilidade', desc: 'Reduz impacto do externo em alta volatilidade.', type: 'number'},
+        {key: 'MAX_CONCURRENT_PAIRS', label: 'Máximo de Pares Simultâneos', desc: 'Quantidade máxima de pares abertos.', type: 'number'},
+        {key: 'MIN_FILL_RATE_FOR_NEW', label: 'Fill Rate Mínimo para Novos Pares', desc: 'Taxa mínima para liberar criação de novos pares.', type: 'number'},
+        {key: 'PAIRS_THROTTLE_CYCLES', label: 'Throttle entre Pares (ciclos)', desc: 'Ciclos de espera entre novas criações.', type: 'number'}
+    ];
 
     document.addEventListener('DOMContentLoaded', () => {
         console.log('[Dashboard] 🔧 Initializing charts...');
@@ -810,23 +888,81 @@
             if (spreadEl) {
                 spreadEl.textContent = isFinite(spread) ? `${spread.toFixed(2)}%` : '-';
             }
+            const spreadExplainEl = document.getElementById('spreadExplain');
+            if (spreadExplainEl) {
+                let spreadLevel = 'sem leitura';
+                let spreadClass = 'text-xs sm:text-sm text-gray-500';
+                if (isFinite(spread)) {
+                    if (spread < 0.10) {
+                        spreadLevel = 'Book estreito (execução fácil, margem menor)';
+                        spreadClass = 'text-xs sm:text-sm text-green-400';
+                    } else if (spread < 0.30) {
+                        spreadLevel = 'Book equilibrado (boa relação risco/retorno)';
+                        spreadClass = 'text-xs sm:text-sm text-yellow-300';
+                    } else {
+                        spreadLevel = 'Book largo (margem maior, execução mais difícil)';
+                        spreadClass = 'text-xs sm:text-sm text-red-400';
+                    }
+                }
+                spreadExplainEl.textContent = `Spread do book: ${spreadLevel}`;
+                spreadExplainEl.className = spreadClass;
+            }
 
             const buySpreadTrendEl = document.getElementById('buySpreadTrend');
+            const buySpreadExplainEl = document.getElementById('buySpreadExplain');
             if (buySpreadTrendEl) {
                 const buySpread = parseFloat(data.market?.buySpread || 0);
                 const buyTrend = data.market?.buySpreadTrend || 'neutral';
                 const buyConf = parseFloat(data.market?.buySpreadConfidence || 0);
+                const baseSpreadPct = (parseFloat(data.config?.spreadPct || 0) * 100);
                 const trendIcon = buyTrend === 'up' ? '🔥' : buyTrend === 'down' ? '❄️' : '➡️';
                 const confText = isFinite(buyConf) ? buyConf.toFixed(2) : '0.00';
                 buySpreadTrendEl.textContent = isFinite(buySpread)
                     ? `Spread BUY (tendência): ${buySpread.toFixed(2)}% ${trendIcon} (${confText})`
                     : 'Spread BUY (tendência): --';
+                if (buySpreadExplainEl) {
+                    let txt = 'Ajuste BUY: sem dados';
+                    let klass = 'text-xs sm:text-sm text-gray-500';
+                    if (isFinite(buySpread) && isFinite(baseSpreadPct) && baseSpreadPct > 0) {
+                        if (buySpread < baseSpreadPct) {
+                            txt = `Ajuste BUY: mais agressivo que o alvo (${baseSpreadPct.toFixed(2)}%)`;
+                            klass = 'text-xs sm:text-sm text-green-400';
+                        } else if (buySpread > baseSpreadPct) {
+                            txt = `Ajuste BUY: mais conservador que o alvo (${baseSpreadPct.toFixed(2)}%)`;
+                            klass = 'text-xs sm:text-sm text-yellow-300';
+                        } else {
+                            txt = `Ajuste BUY: igual ao spread alvo (${baseSpreadPct.toFixed(2)}%)`;
+                            klass = 'text-xs sm:text-sm text-blue-300';
+                        }
+                    }
+                    buySpreadExplainEl.textContent = txt;
+                    buySpreadExplainEl.className = klass;
+                }
             }
             
             const volatility = parseFloat(data.market?.volatility || data.market?.tendency?.volatility || 0.26);
             const volatilityEl = document.getElementById('volatility');
             if (volatilityEl) {
                 volatilityEl.textContent = isFinite(volatility) ? `${volatility.toFixed(2)}%` : '-';
+            }
+            const volatilityExplainEl = document.getElementById('volatilityExplain');
+            if (volatilityExplainEl) {
+                let txt = 'Leitura de risco: sem dados';
+                let klass = 'text-xs sm:text-sm text-gray-500';
+                if (isFinite(volatility)) {
+                    if (volatility < 0.60) {
+                        txt = 'Leitura de risco: baixa volatilidade (ambiente estável)';
+                        klass = 'text-xs sm:text-sm text-green-400';
+                    } else if (volatility < 1.50) {
+                        txt = 'Leitura de risco: volatilidade média (atenção ao fill rate)';
+                        klass = 'text-xs sm:text-sm text-yellow-300';
+                    } else {
+                        txt = 'Leitura de risco: alta volatilidade (maior risco de oscilação)';
+                        klass = 'text-xs sm:text-sm text-red-400';
+                    }
+                }
+                volatilityExplainEl.textContent = txt;
+                volatilityExplainEl.className = klass;
             }
 
             const totalPnL = parseFloat(data.stats?.totalPnL || data.stats?.pnl_total || 0);
@@ -988,46 +1124,33 @@
 
             // ========== GRÁFICOS ==========
             try {
-                if (typeof pnlChart !== 'undefined' && typeof btcChart !== 'undefined' && 
-                    pnlChart && btcChart && 
-                    data.stats?.pnlHistory?.length > 0 && data.stats?.pnlTimestamps?.length > 0) {
-                    console.log('[Dashboard] Updating charts...');
-                    
-                    const nowMs = Date.now();
-                    const cutoffMs = nowMs - (24 * 60 * 60 * 1000);
-                    const validPnLData = data.stats.pnlHistory
-                        .map((val, i) => ({value: parseFloat(val), timestamp: data.stats.pnlTimestamps[i]}))
-                        .filter(item => {
-                            if (isNaN(item.value) || item.value >= 1e10 || !item.timestamp) return false;
-                            const ts = new Date(item.timestamp).getTime();
-                            return !isNaN(ts) && ts >= cutoffMs;
-                        });
-                    
-                    // Carregar histórico de preço BTC do servidor
-                    const validPriceData = (data.stats?.priceHistory || [])
-                        .map((price, i) => ({price: parseFloat(price), timestamp: data.stats.priceTimestamps[i]}))
-                        .filter(item => !isNaN(item.price) && item.timestamp);
-                    
-                    // IMPORTANTE: Sempre recarregar dados completos do servidor
-                    // Isso garante que ao fazer refresh, o histórico persista
+                const nowMs = Date.now();
+                const cutoffMs = nowMs - (24 * 60 * 60 * 1000);
+                const validPnLData = (data.stats?.pnlHistory || [])
+                    .map((val, i) => ({value: parseFloat(val), timestamp: data.stats?.pnlTimestamps?.[i]}))
+                    .filter(item => {
+                        if (isNaN(item.value) || item.value >= 1e10 || !item.timestamp) return false;
+                        const ts = new Date(item.timestamp).getTime();
+                        return !isNaN(ts) && ts >= cutoffMs;
+                    });
+
+                const validPriceData = (data.stats?.priceHistory || [])
+                    .map((price, i) => ({price: parseFloat(price), timestamp: data.stats?.priceTimestamps?.[i]}))
+                    .filter(item => !isNaN(item.price) && item.timestamp);
+
+                if (typeof pnlChart !== 'undefined' && pnlChart && validPnLData.length > 0) {
                     const shouldRebuildPnLChart = pnlChart.data.labels.length === 0;
-                    const shouldRebuildBtcChart = btcChart.data.labels.length === 0;
-                    
                     if (shouldRebuildPnLChart) {
-                        // Primeira carga ou depois do refresh: carregar todos os dados do PnL
                         pnlChart.data.labels = validPnLData.map(item => new Date(item.timestamp));
                         pnlChart.data.datasets[0].data = validPnLData.map(item => ({
                             x: new Date(item.timestamp),
                             y: item.value
                         }));
-                        pnlChart.update();
                     } else {
-                        // Atualização normal do PnL: apenas adiciona novo ponto
                         const lastTimestamp = pnlChart.data.labels[pnlChart.data.labels.length - 1];
                         const newTimestamp = new Date(data.timestamp);
                         if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
-                            const lastValidPnL = validPnLData.length > 0 ? validPnLData[validPnLData.length - 1].value : parseFloat(data.stats.totalPnL || '0.06');
-                            
+                            const lastValidPnL = validPnLData[validPnLData.length - 1].value;
                             pnlChart.data.labels.push(newTimestamp);
                             pnlChart.data.datasets[0].data.push({
                                 x: newTimestamp,
@@ -1035,32 +1158,32 @@
                             });
                         }
                     }
-                    
-                    // Manter apenas os últimos 60 pontos para performance (PnL)
                     if (pnlChart.data.labels.length > 60) {
                         pnlChart.data.labels.shift();
                         pnlChart.data.datasets[0].data.shift();
                     }
                     pnlChart.update();
-                    
-                    // ===== GRÁFICO DE BTC PRICE =====
+                }
+
+                if (typeof btcChart !== 'undefined' && btcChart) {
+                    const shouldRebuildBtcChart = btcChart.data.labels.length === 0;
                     if (shouldRebuildBtcChart) {
-                        // Primeira carga: carregar histórico de preço
                         if (validPriceData.length > 0) {
                             btcChart.data.labels = validPriceData.map(item => new Date(item.timestamp));
                             btcChart.data.datasets[0].data = validPriceData.map(item => ({
                                 x: new Date(item.timestamp),
                                 y: item.price
                             }));
+                        } else if (data.market?.last) {
+                            const nowTs = new Date(data.timestamp);
+                            btcChart.data.labels = [nowTs];
+                            btcChart.data.datasets[0].data = [{ x: nowTs, y: parseFloat(data.market.last) }];
                         }
-                        btcChart.update();
                     } else {
-                        // Atualização normal: adiciona novo ponto
                         const lastTimestamp = btcChart.data.labels[btcChart.data.labels.length - 1];
                         const newTimestamp = new Date(data.timestamp);
                         if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
                             const currentPrice = validPriceData.length > 0 ? validPriceData[validPriceData.length - 1].price : parseFloat(data.market?.last || 490000);
-                            
                             btcChart.data.labels.push(newTimestamp);
                             btcChart.data.datasets[0].data.push({
                                 x: newTimestamp,
@@ -1068,17 +1191,11 @@
                             });
                         }
                     }
-                    
-                    // Manter apenas os últimos 60 pontos para performance (BTC Price)
                     if (btcChart.data.labels.length > 60) {
                         btcChart.data.labels.shift();
                         btcChart.data.datasets[0].data.shift();
                     }
                     btcChart.update();
-                    
-                    console.log('[Dashboard] ✅ Charts updated successfully');
-                } else {
-                    console.log('[Dashboard] Charts not available or no historical data');
                 }
             } catch (chartError) {
                 console.error('[Dashboard] ❌ Chart error:', chartError);
@@ -1264,6 +1381,16 @@
             setElementText('uptime', data.stats?.uptime
                 ? `${data.stats.uptime}`
                 : '23 minutos');
+            setElementText('profitSummary', data.stats?.profitStatus || '--');
+            setElementText('buyBlockReason', data.stats?.execution?.buyReason || '--');
+            setElementText('sellBlockReason', data.stats?.execution?.sellReason || '--');
+
+            const profitSummaryEl = document.getElementById('profitSummary');
+            if (profitSummaryEl) {
+                const isProfit = (data.stats?.totalPnL || 0) > 0;
+                const isLoss = (data.stats?.totalPnL || 0) < 0;
+                profitSummaryEl.className = isProfit ? 'text-green-400' : isLoss ? 'text-red-400' : 'text-gray-300';
+            }
             
             const roiEl2 = document.getElementById('roi');
             if (roiEl2) {
@@ -1435,6 +1562,68 @@
     // ========== FUNÇÕES DE TESTES AUTOMATIZADOS ==========
     
     let testsLoading = false;
+
+    function resetTestsEmptyState() {
+        const setText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+
+        setText('testsTotal', '0');
+        setText('testsPassed', '-');
+        setText('testsFailed', '-');
+        setText('testsPassRate', '-%');
+        setText('testsDataSource', 'Aguardando');
+        setText('testsHours', '-');
+        setText('testsPriceStart', '-');
+        setText('testsPriceEnd', '-');
+        setText('testsPriceChange', '-');
+        setText('testsDataPoints', '-');
+        setText('testsLastRun', 'Ainda não executado');
+        setText('testsCacheAge', '-');
+
+        setText('bestTestName', 'Execute o 1º teste');
+        setText('projPnlTest', '-');
+        setText('projVsHold', '-');
+        setText('projMonthly', '-');
+        setText('projMonthlyRoi', '-');
+        setText('projYearly', '-');
+        setText('projYearlyRoi', '-');
+        setText('projHours', '-');
+
+        const strictModeEl = document.getElementById('testsStrictMode');
+        if (strictModeEl) {
+            strictModeEl.textContent = 'Modo estrito Supabase: aguardando 1ª execução';
+            strictModeEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
+        }
+
+        const badgeSourceEl = document.getElementById('testsBadgeSource');
+        const badgeStrategyEl = document.getElementById('testsBadgeStrategy');
+        const badgeWindowEl = document.getElementById('testsBadgeWindow');
+        if (badgeSourceEl) {
+            badgeSourceEl.textContent = 'Fonte: rode os testes para validar origem dos dados.';
+            badgeSourceEl.className = 'bg-gray-700 p-2 rounded text-xs text-gray-300';
+        }
+        if (badgeStrategyEl) {
+            badgeStrategyEl.textContent = 'Estratégia: rode os testes para validar Runtime Config.';
+            badgeStrategyEl.className = 'bg-gray-700 p-2 rounded text-xs text-gray-300';
+        }
+        if (badgeWindowEl) {
+            badgeWindowEl.textContent = 'Janela real: será exibida após a primeira execução.';
+            badgeWindowEl.className = 'bg-gray-700 p-2 rounded text-xs text-gray-300';
+        }
+
+        const tbody = document.getElementById('testsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td class="p-2 text-gray-400 text-center" colspan="7">
+                        Nenhum teste executado ainda. Clique em "Refazer Testes" para gerar a análise.
+                    </td>
+                </tr>
+            `;
+        }
+    }
     
     async function loadTestResults() {
         try {
@@ -1445,6 +1634,7 @@
             
             const statusEl = document.getElementById('testsStatus');
             const runBtn = document.getElementById('runTestsBtn');
+            const strictModeEl = document.getElementById('testsStrictMode');
             
             if (data.isRunning) {
                 if (statusEl) {
@@ -1459,9 +1649,10 @@
             
             if (!data.hasResults || !data.results) {
                 if (statusEl) {
-                    statusEl.textContent = '⏳ Aguardando execução';
+                    statusEl.textContent = 'ℹ️ Sem execução ainda';
                     statusEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
                 }
+                resetTestsEmptyState();
                 return;
             }
             
@@ -1472,13 +1663,13 @@
                 if (results.status === 'completed') {
                     const passRate = parseFloat(results.summary.passRate || 0);
                     if (passRate >= 80) {
-                        statusEl.textContent = '✅ Testes OK';
+                        statusEl.textContent = '✅ OK (Lucro + vs HOLD)';
                         statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-200';
                     } else if (passRate >= 50) {
-                        statusEl.textContent = '⚠️ Atenção';
+                        statusEl.textContent = '⚠️ Parcial (Lucro + vs HOLD)';
                         statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-200';
                     } else {
-                        statusEl.textContent = '❌ Problemas';
+                        statusEl.textContent = '❌ Fraco (Lucro + vs HOLD)';
                         statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
                     }
                 } else if (results.status === 'error') {
@@ -1493,9 +1684,52 @@
             document.getElementById('testsFailed').textContent = results.summary.failed || '-';
             document.getElementById('testsPassRate').textContent = (results.summary.passRate || '0') + '%';
             document.getElementById('testsDataSource').textContent = results.summary.dataSource || '-';
+
+            const badgeSourceEl = document.getElementById('testsBadgeSource');
+            const badgeStrategyEl = document.getElementById('testsBadgeStrategy');
+            const badgeWindowEl = document.getElementById('testsBadgeWindow');
+            const requestedSource = (results.summary.requestedDataSource || 'auto').toLowerCase();
+            const actualSource = (results.summary.actualDataSource || results.summary.dataSource || 'desconhecido').toLowerCase();
+            const sourceOk = requestedSource === 'supabase' ? actualSource === 'supabase' : actualSource !== 'desconhecido';
+            if (strictModeEl) {
+                const strictEnabled = requestedSource === 'supabase';
+                const strictOk = strictEnabled && sourceOk;
+                strictModeEl.textContent = strictEnabled
+                    ? `Modo estrito Supabase: ${strictOk ? 'ATIVO ✅' : 'FALHOU ⚠️'}`
+                    : 'Modo estrito Supabase: DESATIVADO';
+                strictModeEl.className = strictEnabled
+                    ? (strictOk
+                        ? 'text-xs px-2 py-1 bg-green-700 rounded text-green-100'
+                        : 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-100')
+                    : 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
+            }
+            if (badgeSourceEl) {
+                badgeSourceEl.textContent = `Fonte real: ${results.summary.actualDataSource || results.summary.dataSource || '-'} ${sourceOk ? '✅' : '⚠️'} (solicitada: ${results.summary.requestedDataSource || 'auto'})`;
+                badgeSourceEl.className = sourceOk
+                    ? 'bg-green-900/50 border border-green-700 p-2 rounded text-xs text-green-200'
+                    : 'bg-yellow-900/50 border border-yellow-700 p-2 rounded text-xs text-yellow-200';
+            }
+            const strategyOk = !!results.summary.runtimeStrategyTested;
+            if (badgeStrategyEl) {
+                const profile = results.summary.runtimeConfigProfile || 'production';
+                badgeStrategyEl.textContent = `Estratégia atual: ${strategyOk ? 'Runtime Config aplicada ✅' : 'Runtime Config não aplicada ⚠️'} (perfil: ${profile})`;
+                badgeStrategyEl.className = strategyOk
+                    ? 'bg-green-900/50 border border-green-700 p-2 rounded text-xs text-green-200'
+                    : 'bg-yellow-900/50 border border-yellow-700 p-2 rounded text-xs text-yellow-200';
+            }
+            if (badgeWindowEl) {
+                const points = Number(results.summary.dataPoints || 0);
+                const approxHours = points > 1 ? (((points - 1) * 5) / 60).toFixed(1) : '0.0';
+                badgeWindowEl.textContent = `Janela real usada: ${points || '-'} pontos / ~${approxHours}h`;
+                badgeWindowEl.className = 'bg-blue-900/40 border border-blue-700 p-2 rounded text-xs text-blue-200';
+            }
             
             // Info do período
-            document.getElementById('testsHours').textContent = (results.hours || 24) + 'h';
+            const realHours = results.summary?.timeWindow?.hoursReal;
+            const periodLabel = Number.isFinite(realHours)
+                ? `~${realHours}h (janela real)`
+                : ((results.hours || 24) + 'h (solicitado)');
+            document.getElementById('testsHours').textContent = periodLabel;
             document.getElementById('testsDataPoints').textContent = results.summary.dataPoints || '-';
             
             if (results.summary.priceRange) {
@@ -1632,6 +1866,7 @@
                 statusEl.textContent = '❌ Erro ao carregar';
                 statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-200';
             }
+            resetTestsEmptyState();
         }
     }
     
@@ -1655,7 +1890,7 @@
             const res = await fetch('/api/tests/run', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hours: 83, dataSource: 'binance' })
+                body: JSON.stringify({ hours: 83, dataSource: 'supabase' })
             });
             
             const data = await res.json();
@@ -1673,7 +1908,7 @@
                         await loadTestResults();
                         if (btn) {
                             btn.disabled = false;
-                            btn.textContent = '🔄 Refazer Testes (83h)';
+                            btn.textContent = '🔄 Refazer Testes';
                         }
                         testsLoading = false;
                     }
@@ -1686,7 +1921,7 @@
             console.error('❌ Erro ao executar testes:', error);
             if (btn) {
                 btn.disabled = false;
-                btn.textContent = '🔄 Refazer Testes (83h)';
+                btn.textContent = '🔄 Refazer Testes';
             }
             if (statusEl) {
                 statusEl.textContent = '❌ Erro';
@@ -1758,6 +1993,131 @@
             await loadData(true);
         } catch (e) {
             alert('Falha ao registrar aporte.');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    function renderRuntimeConfigForm(config) {
+        const formEl = document.getElementById('runtimeConfigForm');
+        if (!formEl) return;
+
+        formEl.innerHTML = runtimeConfigFields.map((field) => {
+            const rawValue = config[field.key];
+            if (field.type === 'boolean') {
+                const checked = rawValue === true ? 'checked' : '';
+                return `
+                    <label class="bg-gray-900 border border-gray-700 rounded p-3 flex items-start gap-3">
+                        <input data-runtime-key="${field.key}" data-runtime-type="${field.type}" type="checkbox" ${checked}
+                               class="mt-1 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500"/>
+                        <span class="flex-1">
+                            <span class="block text-sm font-semibold text-gray-100">${field.label}</span>
+                            <span class="block text-xs text-gray-400">${field.desc}</span>
+                        </span>
+                    </label>
+                `;
+            }
+
+            const value = rawValue === undefined || rawValue === null ? '' : String(rawValue);
+            const inputType = field.type === 'number' ? 'number' : 'text';
+            const step = field.type === 'number' ? 'any' : '';
+            return `
+                <label class="bg-gray-900 border border-gray-700 rounded p-3 block">
+                    <span class="block text-sm font-semibold text-gray-100">${field.label}</span>
+                    <span class="block text-xs text-gray-400 mb-2">${field.desc}</span>
+                    <input data-runtime-key="${field.key}" data-runtime-type="${field.type}" type="${inputType}" step="${step}" value="${value.replace(/"/g, '&quot;')}"
+                           class="w-full text-xs bg-gray-800 border border-gray-600 rounded px-2 py-1 text-gray-200"/>
+                </label>
+            `;
+        }).join('');
+    }
+
+    function collectRuntimeConfigFromForm() {
+        const next = {...runtimeConfigRaw};
+        const inputs = document.querySelectorAll('[data-runtime-key]');
+        inputs.forEach((el) => {
+            const key = el.getAttribute('data-runtime-key');
+            const type = el.getAttribute('data-runtime-type');
+            if (!key || !type) return;
+
+            if (type === 'boolean') {
+                next[key] = !!el.checked;
+                return;
+            }
+
+            const value = String(el.value || '').trim();
+            if (value === '') return;
+            if (type === 'number') {
+                const parsed = Number(value);
+                next[key] = Number.isFinite(parsed) ? parsed : value;
+                return;
+            }
+            next[key] = value;
+        });
+        return next;
+    }
+
+    async function loadRuntimeConfig() {
+        const statusEl = document.getElementById('runtimeConfigStatus');
+        if (statusEl) {
+            statusEl.textContent = 'Carregando...';
+            statusEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
+        }
+        try {
+            const res = await fetch(`/api/runtime-config?profile=${encodeURIComponent(runtimeConfigProfile)}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Falha ao carregar configuração');
+            runtimeConfigRaw = data.env_config || {};
+            renderRuntimeConfigForm(runtimeConfigRaw);
+            if (statusEl) {
+                statusEl.textContent = `OK (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
+                statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
+            }
+        } catch (e) {
+            console.error('Erro ao carregar runtime config:', e);
+            if (statusEl) {
+                statusEl.textContent = 'Erro ao carregar';
+                statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-100';
+            }
+        }
+    }
+
+    async function saveRuntimeConfig() {
+        const btn = document.getElementById('saveRuntimeConfigBtn');
+        const statusEl = document.getElementById('runtimeConfigStatus');
+        const parsed = collectRuntimeConfigFromForm();
+
+        if (btn) btn.disabled = true;
+        if (statusEl) {
+            statusEl.textContent = 'Salvando...';
+            statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-100';
+        }
+
+        try {
+            const res = await fetch('/api/runtime-config', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    profile: runtimeConfigProfile,
+                    env_config: parsed
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Falha ao salvar configuração');
+
+            runtimeConfigRaw = data.env_config || parsed;
+            renderRuntimeConfigForm(runtimeConfigRaw);
+            if (statusEl) {
+                statusEl.textContent = `Salvo (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
+                statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
+            }
+        } catch (e) {
+            console.error('Erro ao salvar runtime config:', e);
+            if (statusEl) {
+                statusEl.textContent = 'Erro ao salvar';
+                statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-100';
+            }
+            alert(`Falha ao salvar configuração: ${e.message}`);
         } finally {
             if (btn) btn.disabled = false;
         }
@@ -1837,6 +2197,7 @@
     function startDataLoading() {
         console.log('[Dashboard] ✅ Starting data loading cycle...');
         loadData();
+        loadRuntimeConfig();
         // loadTestResults(); // DESABILITADO: Teste automático apenas em dev local, não em Render (Binance 451)
         setInterval(loadData, 5 * 1000);
         // setInterval(loadTestResults, 30 * 1000); // DESABILITADO: Teste automático com polling

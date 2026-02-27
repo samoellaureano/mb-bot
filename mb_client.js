@@ -11,6 +11,7 @@ const SPREAD_PCT = parseFloat(process.env.SPREAD_PCT) || 0.002;
 const ORDER_SIZE = parseFloat(process.env.ORDER_SIZE) || 0.0001;
 const RATE_LIMIT_PER_SEC = parseInt(process.env.RATE_LIMIT_PER_SEC) || 3;
 const DEBUG = process.env.DEBUG === 'true';
+const MB_REQUEST_TIMEOUT_MS = parseInt(process.env.MB_REQUEST_TIMEOUT_MS || '20000', 10);
 
 const log = (level = 'INFO', ...args) => {
     const timestamp = new Date().toISOString();
@@ -22,6 +23,7 @@ const log = (level = 'INFO', ...args) => {
 let accessToken = null;
 let tokenExpiration = 0;
 let accountId = null;
+let authInFlight = null;
 
 // Rate limiting simples
 let lastRequestTime = 0;
@@ -40,7 +42,13 @@ class MercadoBitcoinAuth {
         return crypto.createHash('sha256').update(data).digest('hex');
     }
 
-    static async authenticate() {
+    static async authenticate(force = false) {
+        if (authInFlight) return authInFlight;
+
+        if (!force && accessToken && accountId && Date.now() < (tokenExpiration - 120000)) {
+            return { access_token: accessToken, expiration: Math.floor(tokenExpiration / 1000) };
+        }
+
         if (SIMULATE) {
             accessToken = 'SIMULATE_BEARER_TOKEN_123';
             tokenExpiration = Date.now() + 24 * 60 * 60 * 1000; // 24h
@@ -52,40 +60,63 @@ class MercadoBitcoinAuth {
         if (!API_KEY || !API_SECRET) throw new Error('API_KEY and API_SECRET required for live trading');
 
         log('INFO', 'API_KEY:', API_KEY.substring(0, 8) + '...');
-        log('INFO', 'API_SECRET:', API_SECRET.substring(0, 8) + '...');
+        authInFlight = (async () => {
+            const maxRetries = 3;
+            let lastError = null;
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const authResponse = await axios.post(
+                        `${REST_BASE}/authorize`,
+                        {login: API_KEY, password: API_SECRET},
+                        {headers: {'Content-Type': 'application/json', 'User-Agent': 'MB-Bot/1.2.1'}, timeout: 20000}
+                    );
+
+                    if (!authResponse.data.access_token) throw new Error('Authentication failed: no access token received');
+
+                    accessToken = authResponse.data.access_token;
+                    tokenExpiration = authResponse.data.expiration * 1000;
+
+                    const accountsResponse = await axios.get(
+                        `${REST_BASE}/accounts`,
+                        {headers: {Authorization: `Bearer ${accessToken}`, 'User-Agent': 'MB-Bot/1.2.1'}, timeout: 20000}
+                    );
+
+                    if (accountsResponse.data && accountsResponse.data.length > 0) {
+                        accountId = accountsResponse.data[0].id;
+                        log('INFO', `Account ID: ${accountId.substring(0, 8)}...`);
+                        log('INFO', `Access Token: ${accessToken.substring(0, 8)}...`);
+                    } else {
+                        throw new Error('No accounts found');
+                    }
+
+                    const expiresIn = Math.floor((tokenExpiration - Date.now()) / (1000 * 60));
+                    log('SUCCESS', `Authentication OK - Token expires in ${expiresIn} minutes`);
+                    return authResponse.data;
+                } catch (error) {
+                    lastError = error;
+                    const status = error.response?.status || 'UNKNOWN';
+                    const errorMsg = error.response?.data?.message || error.message;
+                    log('ERROR', `Authentication failed [${status}] tentativa ${attempt}/${maxRetries}:`, errorMsg);
+
+                    accessToken = null;
+                    accountId = null;
+                    tokenExpiration = 0;
+
+                    if (attempt < maxRetries) {
+                        const delayMs = attempt * 1500;
+                        await new Promise(resolve => setTimeout(resolve, delayMs));
+                    }
+                }
+            }
+            const status = lastError?.response?.status || 'UNKNOWN';
+            const errorMsg = lastError?.response?.data?.message || lastError?.message || 'unknown';
+            throw new Error(`Authentication failed [${status}]: ${errorMsg}`);
+        })();
 
         try {
-            const authResponse = await axios.post(
-                `${REST_BASE}/authorize`,
-                {login: API_KEY, password: API_SECRET},
-                {headers: {'Content-Type': 'application/json', 'User-Agent': 'MB-Bot/1.2.1'}, timeout: 15000}
-            );
-
-            if (!authResponse.data.access_token) throw new Error('Authentication failed: no access token received');
-
-            accessToken = authResponse.data.access_token;
-            tokenExpiration = authResponse.data.expiration * 1000;
-
-            const accountsResponse = await axios.get(
-                `${REST_BASE}/accounts`,
-                {headers: {Authorization: `Bearer ${accessToken}`, 'User-Agent': 'MB-Bot/1.2.1'}, timeout: 10000}
-            );
-
-            if (accountsResponse.data && accountsResponse.data.length > 0) {
-                accountId = accountsResponse.data[0].id;
-                log('INFO', `Account ID: ${accountId.substring(0, 8)}...`);
-                log('INFO', `Access Token: ${accessToken.substring(0, 8)}...`);
-            } else throw new Error('No accounts found');
-
-            const expiresIn = Math.floor((tokenExpiration - Date.now()) / (1000 * 60));
-            log('SUCCESS', `Authentication OK - Token expires in ${expiresIn} minutes`);
-            return authResponse.data;
-
-        } catch (error) {
-            const status = error.response?.status || 'UNKNOWN';
-            const errorMsg = error.response?.data?.message || error.message;
-            log('ERROR', `Authentication failed [${status}]:`, errorMsg);
-            throw new Error(`Authentication failed: ${errorMsg}`);
+            return await authInFlight;
+        } finally {
+            authInFlight = null;
         }
     }
 
@@ -149,7 +180,7 @@ async function makeRequest(endpoint, method = 'GET', params = {}, body = null) {
         method: method.toUpperCase(),
         url: url.toString(),
         headers,
-        timeout: 10000,
+        timeout: MB_REQUEST_TIMEOUT_MS,
         validateStatus: () => true
     };
     if (body && ['POST', 'PUT', 'DELETE'].includes(method)) config.data = body;
@@ -157,7 +188,8 @@ async function makeRequest(endpoint, method = 'GET', params = {}, body = null) {
 
     try {
         if (DEBUG) {
-            log('DEBUG', 'CURL:', `curl -X ${method} '${url.toString()}' -H 'Authorization: Bearer ${accessToken}' -H 'User-Agent: MB-Bot/1.2.1'`);
+            const maskedToken = accessToken ? `${accessToken.substring(0, 16)}...` : 'N/A';
+            log('DEBUG', 'CURL:', `curl -X ${method} '${url.toString()}' -H 'Authorization: Bearer ${maskedToken}' -H 'User-Agent: MB-Bot/1.2.1'`);
         }
         const response = await axios(config);
         if (response.status >= 400) throw new Error(response.data?.message || `HTTP ${response.status}`);

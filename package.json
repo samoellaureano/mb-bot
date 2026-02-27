@@ -14,8 +14,8 @@
     "sqlite3": "^5.1.7"
   },
   "scripts": {
-    "bot": "node bot.js",
-    "dashboard": "node dashboard.js",
-    "dev": "node bot.js & node dashboard.js"
+    "bot": "node scripts/start-bot.js",
+    "dashboard": "node scripts/start-dashboard.js",
+    "dev": "node scripts/start-bot.js & node scripts/start-dashboard.js"
   }
 }

@@ -35,6 +35,8 @@ const BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // 0.015% 
 const MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '120'); // 120s - ALTERADO
 const MIN_VOLUME = parseFloat(process.env.MIN_VOLUME || '0.00005'); // 0.00005 BTC - ALTERADO
 const VOL_LIMIT_PCT = parseFloat(process.env.VOL_LIMIT_PCT || '1.5'); // 1.5% - ALTERADO
+const MAX_ACTIVE_BUYS = parseInt(process.env.MAX_ACTIVE_BUYS || '5');
+const MAX_CONCURRENT_PAIRS = parseInt(process.env.MAX_CONCURRENT_PAIRS || '10');
 const HISTORICAL_FILLS_WINDOW = parseInt(process.env.HISTORICAL_FILLS_WINDOW || '20'); // 20 fills - ALTERADO
 const RECENT_WEIGHT_FACTOR = parseFloat(process.env.RECENT_WEIGHT_FACTOR || '0.7'); // 0.7 - ALTERADO
 const CONTRIBUTIONS_FILE = path.join(__dirname, '.contributions.json');
@@ -44,6 +46,127 @@ const EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN
 const EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
 const EXTERNAL_TREND_DIVERGENCE_CONF = parseFloat(process.env.EXTERNAL_TREND_DIVERGENCE_CONF || '0.60');
 const EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLATILITY_DAMP || '0.50');
+const PRICE_HISTORY_SAVE_INTERVAL_SEC = parseInt(process.env.PRICE_HISTORY_SAVE_INTERVAL_SEC || '30');
+
+const RUNTIME_CONFIG_SCHEMA = {
+    API_KEY: {type: 'string', minLen: 8},
+    API_SECRET: {type: 'string', minLen: 8},
+    PAIR: {type: 'string', pattern: /^[A-Z0-9]+-[A-Z0-9]+$/},
+    SIMULATE: {type: 'boolean'},
+    USE_CASH_MANAGEMENT: {type: 'boolean'},
+    SELL_FIRST: {type: 'boolean'},
+    DEBUG: {type: 'boolean'},
+    CYCLE_SEC: {type: 'number', min: 1, max: 600},
+    SPREAD_PCT: {type: 'number', min: 0.000001, max: 0.5},
+    MIN_SPREAD_PCT: {type: 'number', min: 0.000001, max: 0.5},
+    MAX_SPREAD_PCT: {type: 'number', min: 0.000001, max: 0.5},
+    ORDER_SIZE: {type: 'number', min: 0.00000001, max: 10},
+    MIN_ORDER_SIZE: {type: 'number', min: 0.00000001, max: 10},
+    MAX_ORDER_SIZE: {type: 'number', min: 0.00000001, max: 10},
+    MAX_POSITION: {type: 'number', min: 0.00000001, max: 100},
+    INVENTORY_THRESHOLD: {type: 'number', min: 0, max: 1},
+    BIAS_FACTOR: {type: 'number', min: 0, max: 1},
+    STOP_LOSS_PCT: {type: 'number', min: 0, max: 1},
+    TAKE_PROFIT_PCT: {type: 'number', min: 0, max: 2},
+    PRICE_DRIFT_PCT: {type: 'number', min: 0, max: 1},
+    MAX_VOLATILITY_PCT: {type: 'number', min: 0, max: 100},
+    VOL_LIMIT_PCT: {type: 'number', min: 0, max: 100},
+    MAX_ORDER_AGE: {type: 'number', min: 1, max: 864000},
+    MIN_REPRICE_AGE_SEC: {type: 'number', min: 1, max: 864000},
+    HISTORICAL_FILLS_WINDOW: {type: 'number', min: 1, max: 5000},
+    RECENT_WEIGHT_FACTOR: {type: 'number', min: 0, max: 1},
+    ALERT_PNL_THRESHOLD: {type: 'number', min: -1000000, max: 1000000},
+    ALERT_ROI_THRESHOLD: {type: 'number', min: -10000, max: 10000},
+    MIN_VOLUME: {type: 'number', min: 0, max: 100},
+    EXTERNAL_TREND_TIGHTEN_MAX: {type: 'number', min: 0, max: 1},
+    EXTERNAL_TREND_WIDEN_MAX: {type: 'number', min: 0, max: 1},
+    EXTERNAL_TREND_DIVERGENCE_CONF: {type: 'number', min: 0, max: 1},
+    EXTERNAL_TREND_VOLATILITY_DAMP: {type: 'number', min: 0, max: 1},
+    EXTERNAL_TREND_WEIGHT_COINGECKO: {type: 'number', min: 0, max: 10},
+    EXTERNAL_TREND_WEIGHT_COINBASE: {type: 'number', min: 0, max: 10},
+    EXTERNAL_TREND_WEIGHT_KRAKEN: {type: 'number', min: 0, max: 10},
+    MAX_CONCURRENT_PAIRS: {type: 'number', min: 1, max: 100000},
+    MIN_FILL_RATE_FOR_NEW: {type: 'number', min: 0, max: 100},
+    PAIRS_THROTTLE_CYCLES: {type: 'number', min: 0, max: 100000}
+};
+
+function normalizeAndValidateRuntimeConfig(envConfig = {}) {
+    const normalized = {};
+    const errors = [];
+    for (const [key, rawValue] of Object.entries(envConfig)) {
+        const rule = RUNTIME_CONFIG_SCHEMA[key];
+        if (!rule) {
+            normalized[key] = rawValue;
+            continue;
+        }
+
+        if (rule.type === 'boolean') {
+            if (typeof rawValue === 'boolean') {
+                normalized[key] = rawValue;
+            } else if (typeof rawValue === 'string') {
+                const v = rawValue.trim().toLowerCase();
+                if (v === 'true' || v === '1') normalized[key] = true;
+                else if (v === 'false' || v === '0') normalized[key] = false;
+                else errors.push(`${key}: boolean inválido`);
+            } else {
+                errors.push(`${key}: boolean inválido`);
+            }
+            continue;
+        }
+
+        if (rule.type === 'number') {
+            const value = typeof rawValue === 'number' ? rawValue : parseFloat(rawValue);
+            if (!Number.isFinite(value)) {
+                errors.push(`${key}: número inválido`);
+                continue;
+            }
+            if (rule.min !== undefined && value < rule.min) {
+                errors.push(`${key}: mínimo ${rule.min}`);
+                continue;
+            }
+            if (rule.max !== undefined && value > rule.max) {
+                errors.push(`${key}: máximo ${rule.max}`);
+                continue;
+            }
+            normalized[key] = value;
+            continue;
+        }
+
+        if (rule.type === 'string') {
+            if (typeof rawValue !== 'string') {
+                errors.push(`${key}: string inválida`);
+                continue;
+            }
+            const value = rawValue.trim();
+            if (rule.minLen !== undefined && value.length < rule.minLen) {
+                errors.push(`${key}: tamanho mínimo ${rule.minLen}`);
+                continue;
+            }
+            if (rule.pattern && !rule.pattern.test(value)) {
+                errors.push(`${key}: formato inválido`);
+                continue;
+            }
+            normalized[key] = value;
+            continue;
+        }
+
+        normalized[key] = rawValue;
+    }
+
+    if (normalized.MIN_SPREAD_PCT !== undefined && normalized.MAX_SPREAD_PCT !== undefined) {
+        if (normalized.MIN_SPREAD_PCT > normalized.MAX_SPREAD_PCT) {
+            errors.push('MIN_SPREAD_PCT não pode ser maior que MAX_SPREAD_PCT');
+        }
+    }
+
+    if (normalized.MIN_ORDER_SIZE !== undefined && normalized.MAX_ORDER_SIZE !== undefined) {
+        if (normalized.MIN_ORDER_SIZE > normalized.MAX_ORDER_SIZE) {
+            errors.push('MIN_ORDER_SIZE não pode ser maior que MAX_ORDER_SIZE');
+        }
+    }
+
+    return {normalized, errors};
+}
 
 // Logging
 const log = (level, message, data) => {
@@ -112,6 +235,7 @@ let cache = {timestamp: 0, data: null, valid: false};
 let priceHistory = [];
 let priceHistoryWithTimestamps = []; // NOVO: histórico de preço com timestamps para gráfico
 let historicalFills = []; // ADICIONADO para análise de fills
+let lastPersistedPriceTs = 0;
 
 // ===== CARREGAR HISTÓRICO DE PREÇOS DO BANCO =====
 async function loadPriceHistoryFromDB() {
@@ -472,9 +596,7 @@ async function loadHistoricalFills() {
 // ===== Função para dados LIVE via mb_client =====
 async function getLiveData() {
     try {
-        if (!await mbClient.ensureAuthenticated()) {
-            await mbClient.authenticate();
-        }
+        await mbClient.ensureAuthenticated();
         const accountId = mbClient.getAccountId();
         
         let ticker, balances, orders, orderbook;
@@ -515,7 +637,7 @@ async function getLiveData() {
             const ordersResponse = await axios.get(`https://api.mercadobitcoin.net/api/v4/accounts/${accountId}/orders`, {
                 params: {status: 'all', symbol: mbClient.PAIR, limit: 100},
                 headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`},
-                timeout: 10000
+                timeout: 20000
             });
 
             if (ordersResponse.data && Array.isArray(ordersResponse.data.items)) {
@@ -579,7 +701,7 @@ async function getLiveData() {
             try {
                 // Usar API pública para orderbook para evitar problemas de autenticação/rate limit no dashboard
                 const response = await axios.get(`https://api.mercadobitcoin.net/api/v4/${mbClient.PAIR}/orderbook?limit=20`, {
-                    timeout: 5000
+                    timeout: 12000
                 });
                 if (response.data && response.data.bids && response.data.asks) {
                     orderbook = {
@@ -612,6 +734,16 @@ async function getLiveData() {
         const bestAsk = orderbook.asks && orderbook.asks.length ? parseFloat(orderbook.asks[0][0]) : ask;
         const mid = (bestBid + bestAsk) / 2;
         const spreadPct = bestAsk > bestBid ? ((bestAsk - bestBid) / mid) * 100 : 0;
+        const nowSec = Math.floor(now / 1000);
+
+        if ((nowSec - lastPersistedPriceTs) >= PRICE_HISTORY_SAVE_INTERVAL_SEC) {
+            try {
+                await db.savePrice(mid, nowSec);
+                lastPersistedPriceTs = nowSec;
+            } catch (e) {
+                log('WARN', `Falha ao persistir preço no histórico: ${e.message}`);
+            }
+        }
 
         const obPrices = [
             ...orderbook.bids.map(b => parseFloat(b[0])),
@@ -726,6 +858,11 @@ async function getLiveData() {
         if (!lastTimestamp || (currentTime - lastTimestamp) >= 60000) {
             const newPnlValue = parseFloat(totalPnL.toFixed(8));
             newPnlHistoryWithTimestamps.push({value: newPnlValue, timestamp: currentTime.toISOString()});
+            try {
+                await db.savePnL(newPnlValue, now, null);
+            } catch (e) {
+                log('WARN', `Falha ao persistir PnL no histórico: ${e.message}`);
+            }
         }
 
         const combinedData = [
@@ -769,6 +906,53 @@ async function getLiveData() {
         const buyCost = bid * ORDER_SIZE * (1 + FEE_RATE_MAKER); // ALTERADO: usar ORDER_SIZE e FEE_RATE_MAKER
         const canBuy = balances.find(b => b.symbol === 'BRL')?.available >= buyCost;
         const marketInterest = orderbook.bids[0][1] > ORDER_SIZE * 5 || orderbook.asks[0][1] > ORDER_SIZE * 5;
+        const brlAvailable = parseFloat(balances.find(b => b.symbol === 'BRL')?.available || 0);
+        const btcAvailable = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
+        const openBuyOrdersCount = enrichedActiveOrders.filter(o => o.side === 'buy').length;
+        const openSellOrdersCount = enrichedActiveOrders.filter(o => o.side === 'sell').length;
+        const openPairsCount = new Set(enrichedActiveOrders.map(o => o.pair_id).filter(Boolean)).size;
+        const filledBuyPairs = new Set(
+            correctedOrders
+                .filter(o => o.side === 'buy' && o.status === 'filled' && o.pair_id)
+                .map(o => o.pair_id)
+        );
+        const openSellPairs = new Set(
+            enrichedActiveOrders
+                .filter(o => o.side === 'sell' && o.pair_id)
+                .map(o => o.pair_id)
+        );
+        const eligibleSellPairsCount = [...filledBuyPairs].filter(pairId => !openSellPairs.has(pairId)).length;
+
+        let buyCanCreate = true;
+        let buyReason = '✅ BUY liberada para criação.';
+        if (openBuyOrdersCount >= MAX_ACTIVE_BUYS) {
+            buyCanCreate = false;
+            buyReason = `❌ Limite de BUYs ativas atingido (${openBuyOrdersCount}/${MAX_ACTIVE_BUYS}).`;
+        } else if (openPairsCount >= MAX_CONCURRENT_PAIRS) {
+            buyCanCreate = false;
+            buyReason = `❌ Limite de pares atingido (${openPairsCount}/${MAX_CONCURRENT_PAIRS}).`;
+        } else if (!canBuy) {
+            buyCanCreate = false;
+            buyReason = `❌ BRL insuficiente (${brlAvailable.toFixed(2)} < ${buyCost.toFixed(2)}).`;
+        } else if (!marketInterest) {
+            buyCanCreate = false;
+            buyReason = '⚠️ Interesse de mercado baixo no book.';
+        }
+
+        let sellCanCreate = true;
+        let sellReason = '✅ SELL liberada para criação.';
+        if (eligibleSellPairsCount <= 0) {
+            sellCanCreate = false;
+            sellReason = '❌ Sem BUY executada pendente de SELL (regra: 1 SELL por par com BUY preenchida).';
+        } else if (btcAvailable < MIN_ORDER_SIZE) {
+            sellCanCreate = false;
+            sellReason = `❌ BTC insuficiente (${btcAvailable.toFixed(8)} < ${MIN_ORDER_SIZE}).`;
+        } else if (btcPosition <= 0) {
+            sellCanCreate = false;
+            sellReason = '⚠️ Sem posição comprada relevante para montar par de SELL.';
+        } else {
+            sellReason = `✅ SELL liberada para ${eligibleSellPairsCount} par(es) com BUY preenchida e sem SELL ativa.`;
+        }
 
         // filledOrders já foi definido acima com dados do banco
         // filledOrders = correctedOrders.filter(o => o.status === 'filled'); // REMOVIDO - causava erro de reatribuição
@@ -865,11 +1049,23 @@ async function getLiveData() {
                 volatility: parseFloat(pred.volatility.toFixed(2)),
                 regime: pred.regime,
                 roi: initialCapitalInvested > 0 ? parseFloat(((totalPnL / initialCapitalInvested) * 100).toFixed(4)) : 0,
+                profitStatus: totalPnL > 0 ? '🟢 Lucro' : totalPnL < 0 ? '🔴 Prejuízo' : '⚪ Neutro',
                 initialCapital: parseFloat(INITIAL_CAPITAL.toFixed(2)),
                 baseCapital: parseFloat(baseCapital.toFixed(2)),
                 netContributions: parseFloat(netContributions.toFixed(2)),
                 totalInvestedInOrders: totalInvested,
-                debugCapital: initialCapitalInvested
+                debugCapital: initialCapitalInvested,
+                execution: {
+                    buyCanCreate,
+                    sellCanCreate,
+                    buyReason,
+                    sellReason,
+                    openBuyOrdersCount,
+                    openSellOrdersCount,
+                    openPairsCount,
+                    maxConcurrentPairs: MAX_CONCURRENT_PAIRS,
+                    maxActiveBuys: MAX_ACTIVE_BUYS
+                }
             },
             config: {
                 simulate: SIMULATE,
@@ -1032,6 +1228,60 @@ app.post('/api/contributions', (req, res) => {
     } catch (err) {
         log('ERROR', 'Erro ao salvar aporte:', err.message);
         res.status(500).json({error: 'erro_ao_salvar'});
+    }
+});
+
+app.get('/api/runtime-config', async (req, res) => {
+    try {
+        const profile = String(req.query.profile || 'production');
+        const configRow = await db.getRuntimeConfig(profile);
+        if (!configRow) {
+            return res.status(404).json({error: `Nenhuma configuração ativa para profile='${profile}'`});
+        }
+        res.json({
+            profile: configRow.profile,
+            is_active: configRow.is_active,
+            updated_at: configRow.updated_at,
+            env_config: configRow.env_config || {}
+        });
+    } catch (err) {
+        log('ERROR', `Falha ao obter runtime config: ${err.message}`);
+        res.status(500).json({error: err.message});
+    }
+});
+
+app.put('/api/runtime-config', async (req, res) => {
+    try {
+        const profile = String(req.body?.profile || 'production');
+        const incoming = req.body?.env_config;
+        if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+            return res.status(400).json({error: 'env_config inválido: esperado objeto JSON'});
+        }
+
+        const current = await db.getRuntimeConfig(profile);
+        const merged = {
+            ...((current && current.env_config) || {}),
+            ...incoming
+        };
+
+        const {normalized, errors} = normalizeAndValidateRuntimeConfig(merged);
+        if (errors.length > 0) {
+            return res.status(400).json({
+                error: 'Validação de configuração falhou',
+                details: errors
+            });
+        }
+
+        const saved = await db.upsertRuntimeConfig(profile, normalized, true);
+        res.json({
+            ok: true,
+            profile,
+            updated_at: saved?.updated_at || new Date().toISOString(),
+            env_config: saved?.env_config || normalized
+        });
+    } catch (err) {
+        log('ERROR', `Falha ao salvar runtime config: ${err.message}`);
+        res.status(500).json({error: err.message});
     }
 });
 
@@ -1511,8 +1761,10 @@ app.post('/api/tests/run', async (req, res) => {
         const hours = parseInt(req.body?.hours) || 24;
         const forceDataSource = req.body?.dataSource || 'binance';
         const useCashManagement = process.env.USE_CASH_MANAGEMENT === 'true';
+        const normalizedDataSource = forceDataSource === 'supabase' ? 'supabase' : (forceDataSource === 'binance' ? 'binance' : null);
         const testOptions = {
-            forceDataSource: forceDataSource === 'binance' ? 'binance' : null,
+            forceDataSource: normalizedDataSource,
+            runtimeConfigProfile: process.env.BOT_CONFIG_PROFILE || 'production',
             cashManagementParams: useCashManagement ? getCurrentCashManagementParams() : null
         };
         
