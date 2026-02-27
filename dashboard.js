@@ -20,6 +20,11 @@ const SIMULATE = process.env.SIMULATE === 'true';
 const PORT = parseInt(process.env.PORT) || 3001;
 const ENABLE_AUTOMATED_TESTS = process.env.ENABLE_AUTOMATED_TESTS !== 'false'; // Default: true (disable on Render via env)
 const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 30000;
+const DB_ORDERS_CACHE_TTL_MS = parseInt(process.env.DB_ORDERS_CACHE_TTL_MS || '15000', 10);
+const DB_FILLS_CACHE_TTL_MS = parseInt(process.env.DB_FILLS_CACHE_TTL_MS || '30000', 10);
+const DASHBOARD_ORDERS_TIMEOUT_MS = parseInt(process.env.DASHBOARD_ORDERS_TIMEOUT_MS || '30000', 10);
+const DASHBOARD_ORDERBOOK_TIMEOUT_MS = parseInt(process.env.DASHBOARD_ORDERBOOK_TIMEOUT_MS || '20000', 10);
+const DASHBOARD_INIT_HISTORY_TIMEOUT_MS = parseInt(process.env.DASHBOARD_INIT_HISTORY_TIMEOUT_MS || '20000', 10);
 const DEBUG = process.env.DEBUG === 'true';
 const PNL_HISTORY_FILE = path.join(__dirname, 'pnl_history.json');
 const MAX_PNL_HISTORY_POINTS = 1440;
@@ -235,6 +240,38 @@ let priceHistory = [];
 let priceHistoryWithTimestamps = []; // NOVO: histórico de preço com timestamps para gráfico
 let historicalFills = []; // ADICIONADO para análise de fills
 let lastPersistedPriceTs = 0;
+let dbOrdersCache = {data: [], timestamp: 0};
+let dbFillsCache = {data: [], timestamp: 0};
+
+async function getCachedDbOrders(limit = 1000) {
+    const now = Date.now();
+    if (dbOrdersCache.data.length > 0 && (now - dbOrdersCache.timestamp) <= DB_ORDERS_CACHE_TTL_MS) {
+        return dbOrdersCache.data;
+    }
+    try {
+        const rows = await db.getOrders({limit});
+        dbOrdersCache = {data: Array.isArray(rows) ? rows : [], timestamp: now};
+        return dbOrdersCache.data;
+    } catch (err) {
+        if (dbOrdersCache.data.length > 0) return dbOrdersCache.data;
+        throw err;
+    }
+}
+
+async function getCachedHistoricalFills() {
+    const now = Date.now();
+    if (dbFillsCache.data.length > 0 && (now - dbFillsCache.timestamp) <= DB_FILLS_CACHE_TTL_MS) {
+        return dbFillsCache.data;
+    }
+    try {
+        const rows = await db.loadHistoricalFills({sessionId: null});
+        dbFillsCache = {data: Array.isArray(rows) ? rows : [], timestamp: now};
+        return dbFillsCache.data;
+    } catch (err) {
+        if (dbFillsCache.data.length > 0) return dbFillsCache.data;
+        throw err;
+    }
+}
 
 // ===== CARREGAR HISTÓRICO DE PREÇOS DO BANCO =====
 async function loadPriceHistoryFromDB() {
@@ -242,7 +279,7 @@ async function loadPriceHistoryFromDB() {
         log('INFO', 'Iniciando carregamento de histórico de preços...');
         const prices = await Promise.race([
             db.getPriceHistory(24, 500),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout (${DASHBOARD_INIT_HISTORY_TIMEOUT_MS}ms)`)), DASHBOARD_INIT_HISTORY_TIMEOUT_MS))
         ]);
         
         if (prices && prices.length > 0) {
@@ -568,7 +605,7 @@ function getMonthlyPnL(pnlHistory, pnlTimestamps) {
 // Função para carregar fills históricos do banco de dados - ADICIONADO
 async function loadHistoricalFills() {
     try {
-        const fills = await db.loadHistoricalFills() || [];
+        const fills = await getCachedHistoricalFills();
         log('INFO', `Carregados ${fills.length} fills históricos do banco de dados.`);
         return fills;
     } catch (err) {
@@ -585,13 +622,9 @@ async function getLiveData() {
         
         let ticker, balances, orders, orderbook;
 
-        // Buscar ordens do banco de dados SEMPRE para ter acesso ao pair_id
-        const localOrders = await db.getOrders({limit: 100}) || [];
-        const localOpenOrders = await db.getOrders({status: 'open', limit: 1000}) || [];
-        const mergedLocalOrders = new Map();
-        [...localOrders, ...localOpenOrders].forEach(o => mergedLocalOrders.set(o.id, o));
-        const mergedOrdersArray = Array.from(mergedLocalOrders.values());
-        const localOrderMap = new Map(localOrders.filter(o => o.external_id).map(o => [o.external_id, o])); // Map para busca rápida por external_id
+        // Buscar snapshot de ordens do banco (com cache curto) para reduzir load no Supabase
+        const mergedOrdersArray = await getCachedDbOrders(1000);
+        const localOrderMap = new Map(mergedOrdersArray.filter(o => o.external_id).map(o => [o.external_id, o])); // Map para busca rápida por external_id
 
         if (SIMULATE) {
             // Em modo simulação, usar ordens locais
@@ -621,7 +654,7 @@ async function getLiveData() {
             const ordersResponse = await axios.get(`https://api.mercadobitcoin.net/api/v4/accounts/${accountId}/orders`, {
                 params: {status: 'all', symbol: mbClient.PAIR, limit: 100},
                 headers: {'Authorization': `Bearer ${mbClient.getAccessToken()}`},
-                timeout: 20000
+                timeout: DASHBOARD_ORDERS_TIMEOUT_MS
             });
 
             if (ordersResponse.data && Array.isArray(ordersResponse.data.items)) {
@@ -687,7 +720,7 @@ async function getLiveData() {
             try {
                 // Usar API pública para orderbook para evitar problemas de autenticação/rate limit no dashboard
                 const response = await axios.get(`https://api.mercadobitcoin.net/api/v4/${mbClient.PAIR}/orderbook?limit=20`, {
-                    timeout: 12000
+                    timeout: DASHBOARD_ORDERBOOK_TIMEOUT_MS
                 });
                 if (response.data && response.data.bids && response.data.asks) {
                     orderbook = {
@@ -779,7 +812,7 @@ async function getLiveData() {
         log('DEBUG', `Database PnL: ${realizedPnL}, Capital Base: R$ ${INITIAL_CAPITAL.toFixed(2)}, Saldo Atual: R$ ${currentBalance.toFixed(2)}`);
 
         // Usar dados do banco em vez da API da exchange para consistência com bot.js
-        const sessionFills = await db.loadHistoricalFills({ sessionId: null });
+        const sessionFills = await getCachedHistoricalFills();
         
         // Converter formato do banco para formato compatível
         const filledOrders = sessionFills.map(f => ({

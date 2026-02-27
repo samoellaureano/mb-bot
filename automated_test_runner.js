@@ -15,6 +15,7 @@ const HttpsProxyAgent = require('https-proxy-agent').HttpsProxyAgent;
 // Proxy configuration for Binance (attempt to bypass 451 errors)
 const PROXY_URL = process.env.HTTP_PROXY_BINANCE || process.env.HTTP_PROXY || null;
 const USE_PROXY = process.env.USE_PROXY_FOR_BINANCE === 'true' && PROXY_URL;
+const SUPABASE_TEST_TIMEOUT_MS = Math.max(10000, parseInt(process.env.SUPABASE_TEST_TIMEOUT_MS || '30000', 10));
 
 if (USE_PROXY) {
     console.log(`[TEST_RUNNER] ⚠️ Proxy habilitado: ${PROXY_URL.replace(/:[^:]*@/, ':***@')}`);
@@ -960,6 +961,7 @@ async function runTestBattery(hours = 24, options = {}) {
         let pricePoints = [];
         let dataSource = null;
         let runtimeConfig = null;
+        let supabaseLoadError = null;
         
         if (forceDataSource !== 'binance') {
             try {
@@ -975,7 +977,7 @@ async function runTestBattery(hours = 24, options = {}) {
                 // Buscar histórico do Supabase via db.getPriceHistory
                 const priceHistory = await Promise.race([
                     db.getPriceHistory(hours, 500), // 500 pontos nas últimas X horas
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                    new Promise((_, reject) => setTimeout(() => reject(new Error(`Timeout (${SUPABASE_TEST_TIMEOUT_MS}ms)`)), SUPABASE_TEST_TIMEOUT_MS))
                 ]);
                 
                 if (priceHistory && priceHistory.length >= 10) {
@@ -988,6 +990,7 @@ async function runTestBattery(hours = 24, options = {}) {
                     console.log(`[TEST_RUNNER] ✅ ${prices.length} preços carregados do Supabase`);
                 }
             } catch (DBError) {
+                supabaseLoadError = DBError;
                 console.warn(`[TEST_RUNNER] ⚠️ Erro ao carregar Supabase: ${DBError.message}`);
             }
         }
@@ -995,6 +998,9 @@ async function runTestBattery(hours = 24, options = {}) {
         // ===== FALLBACK: BUSCAR DA BINANCE SE NÃO HOUVER DADOS LOCAIS =====
         if (!prices || prices.length < 10) {
             if (forceDataSource === 'supabase') {
+                if (supabaseLoadError) {
+                    throw new Error(`Fonte Supabase foi solicitada, mas falhou ao carregar histórico: ${supabaseLoadError.message}`);
+                }
                 throw new Error('Fonte Supabase foi solicitada, mas não há histórico suficiente em price_history.');
             }
             const binanceReason = forceDataSource === 'binance'

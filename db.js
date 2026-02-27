@@ -12,6 +12,19 @@ class Database {
         this.db = null;
         this.supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
         this.supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+        this.supabasePostTimeoutBaseMs = Math.max(7000, parseInt(process.env.SUPABASE_POST_TIMEOUT_BASE_MS || '16000', 10));
+        this.supabasePostTimeoutStepMs = Math.max(1000, parseInt(process.env.SUPABASE_POST_TIMEOUT_STEP_MS || '7000', 10));
+        this.supabaseGetTimeoutBaseMs = Math.max(10000, parseInt(process.env.SUPABASE_GET_TIMEOUT_BASE_MS || '15000', 10));
+        this.supabaseGetTimeoutStepMs = Math.max(1000, parseInt(process.env.SUPABASE_GET_TIMEOUT_STEP_MS || '7000', 10));
+        this.supabaseRetryMaxAttempts = Math.max(3, parseInt(process.env.SUPABASE_RETRY_MAX_ATTEMPTS || '4', 10));
+        this.priceSaveFailureCooldownMs = Math.max(5000, parseInt(process.env.SUPABASE_PRICE_SAVE_COOLDOWN_MS || '45000', 10));
+        this.nextPriceSaveAllowedAt = 0;
+        this.runtimeConfigCache = new Map();
+        this.runtimeConfigCacheTtlMs = Math.max(2000, parseInt(process.env.RUNTIME_CONFIG_CACHE_TTL_MS || '30000', 10));
+        this.ordersCacheTtlMs = Math.max(1000, parseInt(process.env.DB_ORDERS_CACHE_TTL_MS || '8000', 10));
+        this.fillsCacheTtlMs = Math.max(1000, parseInt(process.env.DB_FILLS_CACHE_TTL_MS || '12000', 10));
+        this.ordersCache = new Map();
+        this.fillsCache = new Map();
         this.useSupabasePriceHistory = Boolean(this.supabaseUrl && this.supabaseKey);
         this.useSupabasePnlHistory = Boolean(this.supabaseUrl && this.supabaseKey);
         this.useSupabaseOrders = Boolean(this.supabaseUrl && this.supabaseKey);
@@ -40,10 +53,11 @@ class Database {
         return false;
     }
 
-    async postSupabaseWithRetry(pathname, payload, contextLabel = 'operação', maxAttempts = 3) {
+    async postSupabaseWithRetry(pathname, payload, contextLabel = 'operação', maxAttempts = null) {
         let lastErr = null;
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            const timeoutMs = 7000 + (attempt * 4000); // 11s, 15s, 19s
+        const attempts = maxAttempts || this.supabaseRetryMaxAttempts;
+        for (let attempt = 1; attempt <= attempts; attempt++) {
+            const timeoutMs = this.supabasePostTimeoutBaseMs + (attempt * this.supabasePostTimeoutStepMs);
             try {
                 await axios.post(`${this.supabaseUrl}/rest/v1/${pathname}`, payload, {
                     headers: {
@@ -57,21 +71,22 @@ class Database {
                 return;
             } catch (err) {
                 lastErr = err;
-                if (!this.isRetryableSupabaseError(err) || attempt === maxAttempts) {
+                if (!this.isRetryableSupabaseError(err) || attempt === attempts) {
                     throw err;
                 }
                 const waitMs = attempt * 700;
-                this.log('WARN', `${contextLabel} falhou (tentativa ${attempt}/${maxAttempts}) [timeout=${timeoutMs}ms]: ${err.message}. Repetindo em ${waitMs}ms...`);
+                this.log('WARN', `${contextLabel} falhou (tentativa ${attempt}/${attempts}) [timeout=${timeoutMs}ms]: ${err.message}. Repetindo em ${waitMs}ms...`);
                 await new Promise((resolve) => setTimeout(resolve, waitMs));
             }
         }
         throw lastErr;
     }
 
-    async getSupabaseWithRetry(pathname, params = {}, contextLabel = 'operação', maxAttempts = 3) {
+    async getSupabaseWithRetry(pathname, params = {}, contextLabel = 'operação', maxAttempts = null) {
         let lastErr = null;
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            const timeoutMs = 10000 + (attempt * 5000); // 15s, 20s, 25s
+        const attempts = maxAttempts || this.supabaseRetryMaxAttempts;
+        for (let attempt = 1; attempt <= attempts; attempt++) {
+            const timeoutMs = this.supabaseGetTimeoutBaseMs + (attempt * this.supabaseGetTimeoutStepMs);
             try {
                 const response = await axios.get(`${this.supabaseUrl}/rest/v1/${pathname}`, {
                     params,
@@ -84,11 +99,11 @@ class Database {
                 return response;
             } catch (err) {
                 lastErr = err;
-                if (!this.isRetryableSupabaseError(err) || attempt === maxAttempts) {
+                if (!this.isRetryableSupabaseError(err) || attempt === attempts) {
                     throw err;
                 }
                 const waitMs = attempt * 1000;
-                this.log('WARN', `${contextLabel} falhou (tentativa ${attempt}/${maxAttempts}) [timeout=${timeoutMs}ms]: ${err.message}. Repetindo em ${waitMs}ms...`);
+                this.log('WARN', `${contextLabel} falhou (tentativa ${attempt}/${attempts}) [timeout=${timeoutMs}ms]: ${err.message}. Repetindo em ${waitMs}ms...`);
                 await new Promise((resolve) => setTimeout(resolve, waitMs));
             }
         }
@@ -282,19 +297,16 @@ class Database {
         this.assertSupabaseForHistory('pnl_history');
 
         try {
-            const response = await axios.get(`${this.supabaseUrl}/rest/v1/pnl_history`, {
-                params: {
+            const response = await this.getSupabaseWithRetry(
+                'pnl_history',
+                {
                     select: 'pnl_value,timestamp,session_id',
                     timestamp: `gte.${cutoffTs}`,
                     order: 'timestamp.asc',
                     limit
                 },
-                headers: {
-                    apikey: this.supabaseKey,
-                    Authorization: `Bearer ${this.supabaseKey}`
-                },
-                timeout: 7000
-            });
+                'Carregar pnl_history'
+            );
 
             const rows = Array.isArray(response.data) ? response.data : [];
             return rows.map((row) => {
@@ -356,6 +368,8 @@ class Database {
                     },
                     timeout: 20000
                 });
+                this.ordersCache.clear();
+                this.fillsCache.clear();
                 return order;
             } catch (err) {
                 this.log('ERROR', `Erro ao salvar ordem no Supabase: ${err.message}`);
@@ -399,6 +413,12 @@ class Database {
     async getOrders({limit = 50, status = null, minAge = null} = {}) {
         if (this.useSupabaseOrders) {
             this.assertSupabaseConfigured('orders');
+            const cacheKey = JSON.stringify({ limit, status, minAge });
+            const now = Date.now();
+            const cached = this.ordersCache.get(cacheKey);
+            if (cached && (now - cached.fetchedAt) <= this.ordersCacheTtlMs) {
+                return cached.rows;
+            }
             const params = {
                 select: 'id,side,price,qty,status,filled_qty,timestamp,note,external_id,pnl,session_id,pair_id',
                 order: 'timestamp.desc',
@@ -411,7 +431,7 @@ class Database {
             }
             const response = await this.getSupabaseWithRetry('orders', params, 'Carregar orders');
             const rows = Array.isArray(response.data) ? response.data : [];
-            return rows.map((r) => ({
+            const mappedRows = rows.map((r) => ({
                 id: r.id,
                 side: r.side,
                 price: parseFloat(r.price),
@@ -425,6 +445,8 @@ class Database {
                 session_id: r.session_id,
                 pair_id: r.pair_id
             }));
+            this.ordersCache.set(cacheKey, { rows: mappedRows, fetchedAt: now });
+            return mappedRows;
         }
         let query = `
             SELECT 
@@ -469,6 +491,12 @@ class Database {
     async loadHistoricalFills({ sessionId = null } = {}) {
         if (this.useSupabaseOrders) {
             this.assertSupabaseConfigured('orders');
+            const cacheKey = `fills:${sessionId == null ? 'all' : String(sessionId)}`;
+            const now = Date.now();
+            const cached = this.fillsCache.get(cacheKey);
+            if (cached && (now - cached.fetchedAt) <= this.fillsCacheTtlMs) {
+                return cached.rows;
+            }
             const params = {
                 select: 'side,qty,price,timestamp,session_id',
                 status: 'eq.filled',
@@ -480,7 +508,7 @@ class Database {
             }
             const response = await this.getSupabaseWithRetry('orders', params, 'Carregar fills históricos');
             const rows = Array.isArray(response.data) ? response.data : [];
-            return rows.map((r) => ({
+            const mappedRows = rows.map((r) => ({
                 side: r.side,
                 qty: parseFloat(r.qty),
                 price: parseFloat(r.price),
@@ -488,6 +516,8 @@ class Database {
                 feeRate: null,
                 timestamp: Number(r.timestamp)
             })).filter((f) => Number.isFinite(f.qty) && Number.isFinite(f.price));
+            this.fillsCache.set(cacheKey, { rows: mappedRows, fetchedAt: now });
+            return mappedRows;
         }
         if (!this.db) throw new Error('Database not initialized');
         let query = `
@@ -617,6 +647,10 @@ class Database {
     }
 
     async savePrice(price, timestamp = null) {
+        const now = Date.now();
+        if (now < this.nextPriceSaveAllowedAt) {
+            return { source: 'supabase', skipped: true, reason: 'cooldown_after_failure' };
+        }
         const ts = timestamp || Math.floor(Date.now() / 1000);
         this.assertSupabaseForHistory('price_history');
 
@@ -627,9 +661,11 @@ class Database {
                 pair: 'BTC-BRL'
             };
             await this.postSupabaseWithRetry('price_history', payload, 'Salvar price_history');
+            this.nextPriceSaveAllowedAt = 0;
 
             return { source: 'supabase', timestamp: ts };
         } catch (err) {
+            this.nextPriceSaveAllowedAt = Date.now() + this.priceSaveFailureCooldownMs;
             this.log('ERROR', `Falha ao salvar price_history no Supabase: ${err.message}`);
             throw err;
         }
@@ -645,20 +681,17 @@ class Database {
         this.assertSupabaseForHistory('price_history');
 
         try {
-            const response = await axios.get(`${this.supabaseUrl}/rest/v1/price_history`, {
-                params: {
+            const response = await this.getSupabaseWithRetry(
+                'price_history',
+                {
                     select: 'btc_price,timestamp',
                     pair: 'eq.BTC-BRL',
                     timestamp: `gte.${cutoffTs}`,
                     order: 'timestamp.asc',
                     limit
                 },
-                headers: {
-                    apikey: this.supabaseKey,
-                    Authorization: `Bearer ${this.supabaseKey}`
-                },
-                timeout: 7000
-            });
+                'Carregar price_history'
+            );
 
             const rows = Array.isArray(response.data) ? response.data : [];
             return rows.map((row) => ({
@@ -885,6 +918,11 @@ class Database {
 
     async getRuntimeConfig(profile = 'production') {
         this.assertSupabaseConfigured('runtime_config');
+        const now = Date.now();
+        const cached = this.runtimeConfigCache.get(profile);
+        if (cached && (now - cached.fetchedAt) <= this.runtimeConfigCacheTtlMs) {
+            return cached.row;
+        }
         try {
             const response = await this.getSupabaseWithRetry(
                 'bot_runtime_configs',
@@ -899,9 +937,16 @@ class Database {
             );
 
             const row = Array.isArray(response.data) ? response.data[0] : null;
+            if (row) {
+                this.runtimeConfigCache.set(profile, { row, fetchedAt: now });
+            }
             if (!row) return null;
             return row;
         } catch (err) {
+            if (cached && cached.row) {
+                this.log('WARN', `Falha ao carregar bot_runtime_configs (profile=${profile}), usando cache local: ${err.message}`);
+                return cached.row;
+            }
             this.log('ERROR', `Falha ao carregar bot_runtime_configs: ${err.message}`);
             throw err;
         }
@@ -971,7 +1016,7 @@ class Database {
             );
             const row = Array.isArray(response.data) ? response.data[0] : null;
             if (!row) return null;
-            return this.saveOrder({
+            const saved = await this.saveOrder({
                 id: row.id,
                 side: row.side,
                 price: parseFloat(row.price),
@@ -985,6 +1030,9 @@ class Database {
                 sessionId: row.session_id || null,
                 pairId: row.pair_id || null
             });
+            this.ordersCache.clear();
+            this.fillsCache.clear();
+            return saved;
         }
         if (!this.db) throw new Error('Database not initialized');
         return new Promise((resolve, reject) => {
