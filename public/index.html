@@ -331,6 +331,18 @@
         </div>
     </div>
 
+    <div class="mt-4 mb-2 flex items-center justify-between gap-2 flex-wrap">
+        <h2 class="text-sm text-gray-300">Janela dos Gráficos</h2>
+        <div id="chartWindowFilter" class="flex items-center gap-1">
+            <button data-history-window="all" class="history-window-btn text-xs px-2 py-1 rounded bg-gray-700 text-gray-200 hover:bg-gray-600">ALL</button>
+            <button data-history-window="1h" class="history-window-btn text-xs px-2 py-1 rounded bg-gray-700 text-gray-200 hover:bg-gray-600">1h</button>
+            <button data-history-window="4h" class="history-window-btn text-xs px-2 py-1 rounded bg-gray-700 text-gray-200 hover:bg-gray-600">4h</button>
+            <button data-history-window="8h" class="history-window-btn text-xs px-2 py-1 rounded bg-gray-700 text-gray-200 hover:bg-gray-600">8h</button>
+            <button data-history-window="12h" class="history-window-btn text-xs px-2 py-1 rounded bg-gray-700 text-gray-200 hover:bg-gray-600">12h</button>
+            <button data-history-window="24h" class="history-window-btn text-xs px-2 py-1 rounded bg-blue-700 text-white hover:bg-blue-600">24h</button>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <!-- Gráfico de PnL -->
         <div class="bg-gray-800 p-2 sm:p-4 rounded-xl shadow">
@@ -561,8 +573,15 @@
     let residualPnlChart;
     let showCompletedPairs = false;
     let latestPairsData = null;
+    const HISTORY_WINDOW_STORAGE_KEY = 'mbbot.chart.historyWindow';
+    const allowedHistoryWindows = new Set(['all', '1h', '4h', '8h', '12h', '24h']);
+    let selectedHistoryWindow = '24h';
     let runtimeConfigProfile = 'production';
     let runtimeConfigRaw = {};
+    const runtimeConfigDefaults = {
+        PRICE_HISTORY_SAVE_INTERVAL_SEC: 30,
+        PNL_HISTORY_SAVE_INTERVAL_SEC: 60
+    };
     const runtimeConfigFields = [
         {key: 'API_KEY', label: 'API Key', desc: 'Chave pública da API da exchange.', type: 'text'},
         {key: 'API_SECRET', label: 'API Secret', desc: 'Chave secreta da API da exchange.', type: 'text'},
@@ -572,6 +591,8 @@
         {key: 'SELL_FIRST', label: 'Permitir Sell First', desc: 'Permite iniciar ciclo por SELL.', type: 'boolean'},
         {key: 'DEBUG', label: 'Debug', desc: 'Aumenta verbosidade dos logs.', type: 'boolean'},
         {key: 'CYCLE_SEC', label: 'Intervalo do Ciclo (s)', desc: 'Tempo entre ciclos do bot.', type: 'number'},
+        {key: 'PRICE_HISTORY_SAVE_INTERVAL_SEC', label: 'Intervalo Save Price (s)', desc: 'Intervalo para salvar price_history no Supabase.', type: 'number'},
+        {key: 'PNL_HISTORY_SAVE_INTERVAL_SEC', label: 'Intervalo Save PnL (s)', desc: 'Intervalo para salvar pnl_history no Supabase.', type: 'number'},
         {key: 'SPREAD_PCT', label: 'Spread Base', desc: 'Spread alvo usado nas ordens.', type: 'number'},
         {key: 'MIN_SPREAD_PCT', label: 'Spread Mínimo', desc: 'Limite inferior de spread.', type: 'number'},
         {key: 'MAX_SPREAD_PCT', label: 'Spread Máximo', desc: 'Limite superior de spread.', type: 'number'},
@@ -604,6 +625,13 @@
         {key: 'MIN_FILL_RATE_FOR_NEW', label: 'Fill Rate Mínimo para Novos Pares', desc: 'Taxa mínima para liberar criação de novos pares.', type: 'number'},
         {key: 'PAIRS_THROTTLE_CYCLES', label: 'Throttle entre Pares (ciclos)', desc: 'Ciclos de espera entre novas criações.', type: 'number'}
     ];
+
+    function withRuntimeConfigDefaults(config) {
+        return {
+            ...runtimeConfigDefaults,
+            ...(config || {})
+        };
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         console.log('[Dashboard] 🔧 Initializing charts...');
@@ -751,6 +779,15 @@
             }
         });
         console.log('[Dashboard] ✅ Charts initialized:', { pnlChart: !!pnlChart, btcChart: !!btcChart });
+        setActiveHistoryWindow(selectedHistoryWindow);
+        document.querySelectorAll('.history-window-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const nextWindow = btn.getAttribute('data-history-window') || '24h';
+                if (nextWindow === selectedHistoryWindow) return;
+                setActiveHistoryWindow(nextWindow);
+                await loadData(true);
+            });
+        });
     });
 
     function formatSpread(spread) {
@@ -824,11 +861,30 @@
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
+    function setActiveHistoryWindow(windowKey) {
+        const normalizedWindow = allowedHistoryWindows.has(windowKey) ? windowKey : '24h';
+        selectedHistoryWindow = normalizedWindow;
+        try {
+            localStorage.setItem(HISTORY_WINDOW_STORAGE_KEY, selectedHistoryWindow);
+        } catch (_) {}
+        document.querySelectorAll('.history-window-btn').forEach((btn) => {
+            const key = btn.getAttribute('data-history-window');
+            const active = key === selectedHistoryWindow;
+            btn.classList.toggle('bg-blue-700', active);
+            btn.classList.toggle('text-white', active);
+            btn.classList.toggle('hover:bg-blue-600', active);
+            btn.classList.toggle('bg-gray-700', !active);
+            btn.classList.toggle('text-gray-200', !active);
+            btn.classList.toggle('hover:bg-gray-600', !active);
+        });
+    }
+
     async function loadData(forceRefresh = false) {
         try {
             console.log('[Dashboard] Fetching data from API...');
             const refreshParam = forceRefresh ? '&refresh=true' : '';
-            const res = await fetch(`/api/data?t=${Date.now()}${refreshParam}`);
+            const historyParam = `&history=${encodeURIComponent(selectedHistoryWindow)}`;
+            const res = await fetch(`/api/data?t=${Date.now()}${refreshParam}${historyParam}`);
             
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
@@ -1124,76 +1180,37 @@
 
             // ========== GRÁFICOS ==========
             try {
-                const nowMs = Date.now();
-                const cutoffMs = nowMs - (24 * 60 * 60 * 1000);
                 const validPnLData = (data.stats?.pnlHistory || [])
                     .map((val, i) => ({value: parseFloat(val), timestamp: data.stats?.pnlTimestamps?.[i]}))
-                    .filter(item => {
-                        if (isNaN(item.value) || item.value >= 1e10 || !item.timestamp) return false;
-                        const ts = new Date(item.timestamp).getTime();
-                        return !isNaN(ts) && ts >= cutoffMs;
-                    });
+                    .filter(item => !isNaN(item.value) && item.value < 1e10 && !!item.timestamp);
 
                 const validPriceData = (data.stats?.priceHistory || [])
                     .map((price, i) => ({price: parseFloat(price), timestamp: data.stats?.priceTimestamps?.[i]}))
                     .filter(item => !isNaN(item.price) && item.timestamp);
 
-                if (typeof pnlChart !== 'undefined' && pnlChart && validPnLData.length > 0) {
-                    const shouldRebuildPnLChart = pnlChart.data.labels.length === 0;
-                    if (shouldRebuildPnLChart) {
-                        pnlChart.data.labels = validPnLData.map(item => new Date(item.timestamp));
-                        pnlChart.data.datasets[0].data = validPnLData.map(item => ({
-                            x: new Date(item.timestamp),
-                            y: item.value
-                        }));
-                    } else {
-                        const lastTimestamp = pnlChart.data.labels[pnlChart.data.labels.length - 1];
-                        const newTimestamp = new Date(data.timestamp);
-                        if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
-                            const lastValidPnL = validPnLData[validPnLData.length - 1].value;
-                            pnlChart.data.labels.push(newTimestamp);
-                            pnlChart.data.datasets[0].data.push({
-                                x: newTimestamp,
-                                y: lastValidPnL
-                            });
-                        }
-                    }
-                    if (pnlChart.data.labels.length > 60) {
-                        pnlChart.data.labels.shift();
-                        pnlChart.data.datasets[0].data.shift();
-                    }
+                if (typeof pnlChart !== 'undefined' && pnlChart) {
+                    pnlChart.data.labels = validPnLData.map(item => new Date(item.timestamp));
+                    pnlChart.data.datasets[0].data = validPnLData.map(item => ({
+                        x: new Date(item.timestamp),
+                        y: item.value
+                    }));
                     pnlChart.update();
                 }
 
                 if (typeof btcChart !== 'undefined' && btcChart) {
-                    const shouldRebuildBtcChart = btcChart.data.labels.length === 0;
-                    if (shouldRebuildBtcChart) {
-                        if (validPriceData.length > 0) {
-                            btcChart.data.labels = validPriceData.map(item => new Date(item.timestamp));
-                            btcChart.data.datasets[0].data = validPriceData.map(item => ({
-                                x: new Date(item.timestamp),
-                                y: item.price
-                            }));
-                        } else if (data.market?.last) {
-                            const nowTs = new Date(data.timestamp);
-                            btcChart.data.labels = [nowTs];
-                            btcChart.data.datasets[0].data = [{ x: nowTs, y: parseFloat(data.market.last) }];
-                        }
+                    if (validPriceData.length > 0) {
+                        btcChart.data.labels = validPriceData.map(item => new Date(item.timestamp));
+                        btcChart.data.datasets[0].data = validPriceData.map(item => ({
+                            x: new Date(item.timestamp),
+                            y: item.price
+                        }));
+                    } else if (data.market?.last) {
+                        const nowTs = new Date(data.timestamp);
+                        btcChart.data.labels = [nowTs];
+                        btcChart.data.datasets[0].data = [{ x: nowTs, y: parseFloat(data.market.last) }];
                     } else {
-                        const lastTimestamp = btcChart.data.labels[btcChart.data.labels.length - 1];
-                        const newTimestamp = new Date(data.timestamp);
-                        if (!lastTimestamp || (newTimestamp - lastTimestamp) >= 60000) {
-                            const currentPrice = validPriceData.length > 0 ? validPriceData[validPriceData.length - 1].price : parseFloat(data.market?.last || 490000);
-                            btcChart.data.labels.push(newTimestamp);
-                            btcChart.data.datasets[0].data.push({
-                                x: newTimestamp,
-                                y: currentPrice
-                            });
-                        }
-                    }
-                    if (btcChart.data.labels.length > 60) {
-                        btcChart.data.labels.shift();
-                        btcChart.data.datasets[0].data.shift();
+                        btcChart.data.labels = [];
+                        btcChart.data.datasets[0].data = [];
                     }
                     btcChart.update();
                 }
@@ -1557,6 +1574,15 @@
             console.error('[Dashboard] ❌ Error in loadData():', error);
             console.error('Full error:', error.toString(), error.stack);
         }
+    }
+
+    function restoreHistoryWindowPreference() {
+        try {
+            const stored = String(localStorage.getItem(HISTORY_WINDOW_STORAGE_KEY) || '').toLowerCase();
+            if (allowedHistoryWindows.has(stored)) {
+                selectedHistoryWindow = stored;
+            }
+        } catch (_) {}
     }
 
     // ========== FUNÇÕES DE TESTES AUTOMATIZADOS ==========
@@ -2067,7 +2093,7 @@
             const res = await fetch(`/api/runtime-config?profile=${encodeURIComponent(runtimeConfigProfile)}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Falha ao carregar configuração');
-            runtimeConfigRaw = data.env_config || {};
+            runtimeConfigRaw = withRuntimeConfigDefaults(data.env_config || {});
             renderRuntimeConfigForm(runtimeConfigRaw);
             if (statusEl) {
                 statusEl.textContent = `OK (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
@@ -2085,7 +2111,7 @@
     async function saveRuntimeConfig() {
         const btn = document.getElementById('saveRuntimeConfigBtn');
         const statusEl = document.getElementById('runtimeConfigStatus');
-        const parsed = collectRuntimeConfigFromForm();
+        const parsed = withRuntimeConfigDefaults(collectRuntimeConfigFromForm());
 
         if (btn) btn.disabled = true;
         if (statusEl) {
@@ -2105,7 +2131,7 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Falha ao salvar configuração');
 
-            runtimeConfigRaw = data.env_config || parsed;
+            runtimeConfigRaw = withRuntimeConfigDefaults(data.env_config || parsed);
             renderRuntimeConfigForm(runtimeConfigRaw);
             if (statusEl) {
                 statusEl.textContent = `Salvo (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
@@ -2196,6 +2222,8 @@
     // Função para iniciar após gráficos estarem prontos
     function startDataLoading() {
         console.log('[Dashboard] ✅ Starting data loading cycle...');
+        restoreHistoryWindowPreference();
+        setActiveHistoryWindow(selectedHistoryWindow);
         loadData();
         loadRuntimeConfig();
         // loadTestResults(); // DESABILITADO: Teste automático apenas em dev local, não em Render (Binance 451)

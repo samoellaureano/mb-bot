@@ -79,6 +79,8 @@ let EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLAT
 let EXTERNAL_TREND_WEIGHT_COINGECKO = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINGECKO || '0.7');
 let EXTERNAL_TREND_WEIGHT_COINBASE = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_COINBASE || '0.7');
 let EXTERNAL_TREND_WEIGHT_KRAKEN = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_KRAKEN || '0.7');
+let PRICE_HISTORY_SAVE_INTERVAL_SEC = parseInt(process.env.PRICE_HISTORY_SAVE_INTERVAL_SEC || '30', 10);
+let PNL_HISTORY_SAVE_INTERVAL_SEC = parseInt(process.env.PNL_HISTORY_SAVE_INTERVAL_SEC || '60', 10);
 const WARMUP_CANDLES = 50; // Velas para warmup
 const TEST_PHASE_CYCLES = 10; // Ciclos de fase teste
 const PARAM_ADJUST_FACTOR = 0.05; // 5% de ajuste
@@ -108,6 +110,7 @@ let lastAdaptiveUpdate = 0;
 const RUNTIME_CONFIG_PROFILE = process.env.BOT_CONFIG_PROFILE || 'production';
 const RUNTIME_CONFIG_REFRESH_SEC = Math.max(5, parseInt(process.env.RUNTIME_CONFIG_REFRESH_SEC || '10'));
 const STATE_PROFILE = process.env.BOT_CONFIG_PROFILE || 'production';
+const PNL_BASE_CACHE_TTL_MS = Math.max(10_000, parseInt(process.env.PNL_BASE_CACHE_TTL_MS || '60000', 10));
 
 // Validação configs
 if (!REST_BASE.startsWith('http')) {
@@ -199,6 +202,8 @@ function applyRuntimeConfig(envConfig = {}) {
     EXTERNAL_TREND_WEIGHT_COINGECKO = parseNum(envConfig.EXTERNAL_TREND_WEIGHT_COINGECKO, EXTERNAL_TREND_WEIGHT_COINGECKO);
     EXTERNAL_TREND_WEIGHT_COINBASE = parseNum(envConfig.EXTERNAL_TREND_WEIGHT_COINBASE, EXTERNAL_TREND_WEIGHT_COINBASE);
     EXTERNAL_TREND_WEIGHT_KRAKEN = parseNum(envConfig.EXTERNAL_TREND_WEIGHT_KRAKEN, EXTERNAL_TREND_WEIGHT_KRAKEN);
+    PRICE_HISTORY_SAVE_INTERVAL_SEC = Math.max(1, parseIntSafe(envConfig.PRICE_HISTORY_SAVE_INTERVAL_SEC, PRICE_HISTORY_SAVE_INTERVAL_SEC));
+    PNL_HISTORY_SAVE_INTERVAL_SEC = Math.max(1, parseIntSafe(envConfig.PNL_HISTORY_SAVE_INTERVAL_SEC, PNL_HISTORY_SAVE_INTERVAL_SEC));
     MAX_CONCURRENT_PAIRS = parseIntSafe(envConfig.MAX_CONCURRENT_PAIRS, MAX_CONCURRENT_PAIRS);
     MAX_PAIRS_PER_CYCLE = parseIntSafe(envConfig.MAX_PAIRS_PER_CYCLE, MAX_PAIRS_PER_CYCLE);
     MIN_FILL_RATE_FOR_NEW = parseNum(envConfig.MIN_FILL_RATE_FOR_NEW, MIN_FILL_RATE_FOR_NEW);
@@ -259,7 +264,44 @@ let currentSpreadPct = MIN_SPREAD_PCT;
 let currentBaseSize = ORDER_SIZE;
 let currentMaxPosition = MAX_POSITION;
 let currentStopLoss = STOP_LOSS_PCT;
+let lastPersistedPriceTs = 0;
+let lastPersistedPnlTs = 0;
+let pnlBaseCache = { timestamp: 0, baseCapital: INITIAL_CAPITAL };
 // módulos não disponíveis removidos
+
+async function getCachedPnlBaseCapital() {
+    const now = Date.now();
+    if ((now - pnlBaseCache.timestamp) <= PNL_BASE_CACHE_TTL_MS) {
+        return pnlBaseCache.baseCapital;
+    }
+
+    try {
+        let initialTotal = INITIAL_CAPITAL;
+        try {
+            const initialData = await db.getInitialBalance(STATE_PROFILE);
+            if (initialData && Number.isFinite(initialData.total)) {
+                initialTotal = parseFloat(initialData.total) || INITIAL_CAPITAL;
+            }
+        } catch (e) {
+            log('DEBUG', `[PNL_BASE] Falha ao ler saldo inicial: ${e.message}`);
+        }
+
+        let netContributions = 0;
+        try {
+            const contributions = await db.listContributions(2000);
+            netContributions = contributions.reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
+        } catch (e) {
+            log('DEBUG', `[PNL_BASE] Falha ao ler aportes: ${e.message}`);
+        }
+
+        const baseCapital = initialTotal + netContributions;
+        pnlBaseCache = { timestamp: now, baseCapital };
+        return baseCapital;
+    } catch (e) {
+        log('WARN', `[PNL_BASE] Falha ao calcular base de capital: ${e.message}`);
+        return pnlBaseCache.baseCapital || INITIAL_CAPITAL;
+    }
+}
 
 function getActiveOrdersBySide(side) {
     return Array.from(activeOrders.values()).filter(order => order.side === side);
@@ -2038,8 +2080,18 @@ async function runCycle() {
         const mid = (bestBid + bestAsk) / 2;
         const spreadPct = ((bestAsk - bestBid) / mid) * 100;
         const spreadAmount = mid * SPREAD_PCT;
+        const nowSec = Math.floor(Date.now() / 1000);
         let buySpreadAmount = spreadAmount;
         let sellSpreadAmount = spreadAmount;
+
+        if ((nowSec - lastPersistedPriceTs) >= PRICE_HISTORY_SAVE_INTERVAL_SEC) {
+            try {
+                await db.savePrice(mid, nowSec);
+                lastPersistedPriceTs = nowSec;
+            } catch (e) {
+                log('WARN', `Falha ao persistir preço no histórico: ${e.message}`);
+            }
+        }
 
         // Atualizar priceHistory com o preço atual
         priceHistory.push(mid);
@@ -2096,13 +2148,17 @@ async function runCycle() {
             log('ERROR', `Falha ao buscar saldos: ${e.message}.`, e);
             return; // Pula o ciclo se não conseguir buscar saldos
         }
-        const brlBalance = parseFloat(balances.find(b => b.symbol === 'BRL')?.available || 0);
-        const btcBalance = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
+        const brlEntry = balances.find(b => b.symbol === 'BRL') || {};
+        const btcEntry = balances.find(b => b.symbol === 'BTC') || {};
+        const brlBalance = parseFloat(brlEntry?.available || 0);
+        const btcBalance = parseFloat(btcEntry?.available || 0);
+        const brlTotal = parseFloat(brlEntry?.total || brlEntry?.available || 0);
+        const btcTotal = parseFloat(btcEntry?.total || btcEntry?.available || 0);
 
         // ✅ CAPTURAR SALDO INICIAL NO PRIMEIRO CICLO
         if (initialBRLBalance === null && initialBTCBalance === null) {
-            initialBRLBalance = brlBalance;
-            initialBTCBalance = btcBalance;
+            initialBRLBalance = brlTotal;
+            initialBTCBalance = btcTotal;
             initialBalanceCaptureCycle = cycleCount;
             log('SUCCESS', `✅ SALDO INICIAL CAPTURADO (Ciclo ${cycleCount}): BRL=R$ ${initialBRLBalance.toFixed(2)} + BTC=${initialBTCBalance.toFixed(8)}`);
             
@@ -2126,12 +2182,23 @@ async function runCycle() {
         }
 
         // ✅ CALCULAR PnL CORRETO = Saldo Atual - Saldo Inicial
-        const totalBalanceNow = brlBalance + (btcBalance * mid);  // Saldo total atual em BRL
+        const totalBalanceNow = brlTotal + (btcTotal * mid);  // Saldo total atual em BRL
         const totalBalanceInitial = initialBRLBalance + (initialBTCBalance * mid);  // Saldo inicial em BRL
         const totalPnLCorrect = totalBalanceNow - totalBalanceInitial;  // PnL = Diferença
         
         // Atualizar stats com PnL correto
         stats.totalPnL = totalPnLCorrect.toFixed(2);
+
+        if ((nowSec - lastPersistedPnlTs) >= PNL_HISTORY_SAVE_INTERVAL_SEC) {
+            try {
+                const baseCapitalForHistory = await getCachedPnlBaseCapital();
+                const pnlForHistory = totalBalanceNow - baseCapitalForHistory;
+                await db.savePnL(pnlForHistory, nowSec, null);
+                lastPersistedPnlTs = nowSec;
+            } catch (e) {
+                log('WARN', `Falha ao persistir PnL no histórico: ${e.message}`);
+            }
+        }
 
         // ===== RECUPERAR SELLs FALTANTES PARA BUYs PREENCHIDAS =====
         await recoverMissingPairedSells(mid, spreadAmount, btcBalance);

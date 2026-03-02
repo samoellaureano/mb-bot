@@ -22,6 +22,8 @@ const ENABLE_AUTOMATED_TESTS = process.env.ENABLE_AUTOMATED_TESTS !== 'false'; /
 const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 30000;
 const DB_ORDERS_CACHE_TTL_MS = parseInt(process.env.DB_ORDERS_CACHE_TTL_MS || '15000', 10);
 const DB_FILLS_CACHE_TTL_MS = parseInt(process.env.DB_FILLS_CACHE_TTL_MS || '30000', 10);
+const DB_PRICE_HISTORY_CACHE_TTL_MS = parseInt(process.env.DB_PRICE_HISTORY_CACHE_TTL_MS || '15000', 10);
+const DB_PNL_HISTORY_CACHE_TTL_MS = parseInt(process.env.DB_PNL_HISTORY_CACHE_TTL_MS || '15000', 10);
 const DASHBOARD_ORDERS_TIMEOUT_MS = parseInt(process.env.DASHBOARD_ORDERS_TIMEOUT_MS || '30000', 10);
 const DASHBOARD_ORDERBOOK_TIMEOUT_MS = parseInt(process.env.DASHBOARD_ORDERBOOK_TIMEOUT_MS || '20000', 10);
 const DASHBOARD_INIT_HISTORY_TIMEOUT_MS = parseInt(process.env.DASHBOARD_INIT_HISTORY_TIMEOUT_MS || '20000', 10);
@@ -50,7 +52,6 @@ const EXTERNAL_TREND_TIGHTEN_MAX = parseFloat(process.env.EXTERNAL_TREND_TIGHTEN
 const EXTERNAL_TREND_WIDEN_MAX = parseFloat(process.env.EXTERNAL_TREND_WIDEN_MAX || '0.20');
 const EXTERNAL_TREND_DIVERGENCE_CONF = parseFloat(process.env.EXTERNAL_TREND_DIVERGENCE_CONF || '0.60');
 const EXTERNAL_TREND_VOLATILITY_DAMP = parseFloat(process.env.EXTERNAL_TREND_VOLATILITY_DAMP || '0.50');
-const PRICE_HISTORY_SAVE_INTERVAL_SEC = parseInt(process.env.PRICE_HISTORY_SAVE_INTERVAL_SEC || '30');
 
 const RUNTIME_CONFIG_SCHEMA = {
     API_KEY: {type: 'string', minLen: 8},
@@ -77,6 +78,8 @@ const RUNTIME_CONFIG_SCHEMA = {
     VOL_LIMIT_PCT: {type: 'number', min: 0, max: 100},
     MAX_ORDER_AGE: {type: 'number', min: 1, max: 864000},
     MIN_REPRICE_AGE_SEC: {type: 'number', min: 1, max: 864000},
+    PRICE_HISTORY_SAVE_INTERVAL_SEC: {type: 'number', min: 1, max: 864000},
+    PNL_HISTORY_SAVE_INTERVAL_SEC: {type: 'number', min: 1, max: 864000},
     HISTORICAL_FILLS_WINDOW: {type: 'number', min: 1, max: 5000},
     RECENT_WEIGHT_FACTOR: {type: 'number', min: 0, max: 1},
     ALERT_PNL_THRESHOLD: {type: 'number', min: -1000000, max: 1000000},
@@ -232,16 +235,17 @@ let requestCount = 0;
 let errorCount = 0;
 const serverStartTime = Date.now();
 
-// Cache
-let cache = {timestamp: 0, data: null, valid: false};
+// Cache por janela de histórico (all, 1h, 4h, 8h, 12h, 24h...)
+const dataCacheByWindow = new Map();
 
 // -------------------- INDICADORES --------------------
 let priceHistory = [];
 let priceHistoryWithTimestamps = []; // NOVO: histórico de preço com timestamps para gráfico
 let historicalFills = []; // ADICIONADO para análise de fills
-let lastPersistedPriceTs = 0;
 let dbOrdersCache = {data: [], timestamp: 0};
 let dbFillsCache = {data: [], timestamp: 0};
+let dbPriceHistoryCache = {data: [], timestamp: 0};
+let dbPnlHistoryCache = {data: [], timestamp: 0};
 
 async function getCachedDbOrders(limit = 1000) {
     const now = Date.now();
@@ -273,6 +277,48 @@ async function getCachedHistoricalFills() {
     }
 }
 
+function buildHistoryKey(hours, limit) {
+    return `${hours == null ? 'all' : String(hours)}:${limit}`;
+}
+
+async function getCachedDbPriceHistory(hours = 24, limit = 500) {
+    const now = Date.now();
+    const cacheKey = buildHistoryKey(hours, limit);
+    if (!dbPriceHistoryCache.byKey) dbPriceHistoryCache.byKey = new Map();
+    const cached = dbPriceHistoryCache.byKey.get(cacheKey);
+    if (cached && (now - cached.timestamp) <= DB_PRICE_HISTORY_CACHE_TTL_MS) {
+        return cached.data;
+    }
+    try {
+        const rows = await db.getPriceHistory(hours, limit);
+        const normalizedRows = Array.isArray(rows) ? rows : [];
+        dbPriceHistoryCache.byKey.set(cacheKey, {data: normalizedRows, timestamp: now});
+        return normalizedRows;
+    } catch (err) {
+        if (cached && Array.isArray(cached.data) && cached.data.length > 0) return cached.data;
+        throw err;
+    }
+}
+
+async function getCachedDbPnlHistory(hours = 24, limit = MAX_PNL_HISTORY_POINTS) {
+    const now = Date.now();
+    const cacheKey = buildHistoryKey(hours, limit);
+    if (!dbPnlHistoryCache.byKey) dbPnlHistoryCache.byKey = new Map();
+    const cached = dbPnlHistoryCache.byKey.get(cacheKey);
+    if (cached && (now - cached.timestamp) <= DB_PNL_HISTORY_CACHE_TTL_MS) {
+        return cached.data;
+    }
+    try {
+        const rows = await db.getPnLHistory(hours, limit);
+        const normalizedRows = Array.isArray(rows) ? rows : [];
+        dbPnlHistoryCache.byKey.set(cacheKey, {data: normalizedRows, timestamp: now});
+        return normalizedRows;
+    } catch (err) {
+        if (cached && Array.isArray(cached.data) && cached.data.length > 0) return cached.data;
+        throw err;
+    }
+}
+
 // ===== CARREGAR HISTÓRICO DE PREÇOS DO BANCO =====
 async function loadPriceHistoryFromDB() {
     try {
@@ -290,6 +336,8 @@ async function loadPriceHistoryFromDB() {
             }));
             log('INFO', `Carregados ${prices.length} preços históricos do banco de dados.`);
         } else {
+            priceHistory = [];
+            priceHistoryWithTimestamps = [];
             log('INFO', 'Nenhum histórico de preço encontrado no banco. Iniciando novo histórico.');
         }
     } catch (e) {
@@ -615,7 +663,7 @@ async function loadHistoricalFills() {
 }
 
 // ===== Função para dados LIVE via mb_client =====
-async function getLiveData() {
+async function getLiveData(historyHours = 24) {
     try {
         await mbClient.ensureAuthenticated();
         const accountId = mbClient.getAccountId();
@@ -753,16 +801,6 @@ async function getLiveData() {
         const bestAsk = orderbook.asks && orderbook.asks.length ? parseFloat(orderbook.asks[0][0]) : ask;
         const mid = (bestBid + bestAsk) / 2;
         const spreadPct = bestAsk > bestBid ? ((bestAsk - bestBid) / mid) * 100 : 0;
-        const nowSec = Math.floor(now / 1000);
-
-        if ((nowSec - lastPersistedPriceTs) >= PRICE_HISTORY_SAVE_INTERVAL_SEC) {
-            try {
-                await db.savePrice(mid, nowSec);
-                lastPersistedPriceTs = nowSec;
-            } catch (e) {
-                log('WARN', `Falha ao persistir preço no histórico: ${e.message}`);
-            }
-        }
 
         const obPrices = [
             ...orderbook.bids.map(b => parseFloat(b[0])),
@@ -783,7 +821,6 @@ async function getLiveData() {
         let totalCost = 0;
         let realizedPnL = 0; // PnL realizado das vendas
         let totalInvested = 0; // Capital total investido
-        const newPnlHistoryWithTimestamps = [];
 
         // Não usar PnL do banco - calcular corretamente usando FIFO como no bot
         // const dbStats = await db.getStats({hours: 24});
@@ -871,27 +908,7 @@ async function getLiveData() {
         log('DEBUG', `PnL Correto (Saldo): Saldo Atual R$${currentTotalBalance.toFixed(2)} - Base R$${baseCapital.toFixed(2)} = R$${totalPnL.toFixed(2)} | BRL=${brlBalance.toFixed(2)} + BTC=${btcBalance.toFixed(8)} @ R$${mid.toFixed(2)}`);
         log('DEBUG', `PnL Histórico (FIFO): Realizado=${realizedPnL.toFixed(2)} + Não Realizado=${unrealizedPnL.toFixed(2)} = ${(realizedPnL + unrealizedPnL).toFixed(2)} (Apenas ordens preenchidas)`);
 
-        const lastTimestamp = pnlTimestamps.length > 0 ? new Date(pnlTimestamps[pnlTimestamps.length - 1]) : null;
-        const currentTime = new Date(now);
-        if (!lastTimestamp || (currentTime - lastTimestamp) >= 60000) {
-            const newPnlValue = parseFloat(totalPnL.toFixed(8));
-            newPnlHistoryWithTimestamps.push({value: newPnlValue, timestamp: currentTime.toISOString()});
-            try {
-                await db.savePnL(newPnlValue, now, null);
-            } catch (e) {
-                log('WARN', `Falha ao persistir PnL no histórico: ${e.message}`);
-            }
-        }
-
-        const combinedData = [
-            ...newPnlHistoryWithTimestamps,
-            ...pnlHistory.map((value, index) => ({value, timestamp: pnlTimestamps[index]}))
-        ].filter(item => typeof item.value === 'number' && typeof item.timestamp === 'string');
-        const uniqueData = Array.from(new Map(combinedData.map(item => [item.timestamp, item])).values())
-            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        pnlHistory = uniqueData.map(item => item.value).slice(-MAX_PNL_HISTORY_POINTS);
-        pnlTimestamps = uniqueData.map(item => item.timestamp).slice(-MAX_PNL_HISTORY_POINTS);
-        // NOTA: PnL agora é salvo pelo bot.js, não pelo dashboard
+        // NOTA: PnL é salvo pelo backend do bot; dashboard apenas lê do Supabase para o gráfico.
 
         // Usar o totalPnL já calculado (não recalcular novamente)
 
@@ -998,6 +1015,32 @@ async function getLiveData() {
 
         const buySpreadPctTrend = dynamicSpreadPct * spreadFactors.buyFactor * 100;
 
+        let chartPriceHistory = [];
+        let chartPriceTimestamps = [];
+        try {
+            const priceLimit = historyHours == null ? 20000 : 500;
+            const chartRows = await getCachedDbPriceHistory(historyHours, priceLimit);
+            chartPriceHistory = chartRows.map(p => parseFloat(p.price)).filter(v => Number.isFinite(v));
+            chartPriceTimestamps = chartRows.map(p => new Date((parseInt(p.timestamp, 10) || 0) * 1000).toISOString());
+        } catch (e) {
+            log('WARN', `Falha ao carregar histórico de preço para gráfico: ${e.message}`);
+            chartPriceHistory = [];
+            chartPriceTimestamps = [];
+        }
+
+        let chartPnlHistory = [];
+        let chartPnlTimestamps = [];
+        try {
+            const pnlLimit = historyHours == null ? 20000 : MAX_PNL_HISTORY_POINTS;
+            const pnlRows = await getCachedDbPnlHistory(historyHours, pnlLimit);
+            chartPnlHistory = pnlRows.map(p => parseFloat(p.value)).filter(v => Number.isFinite(v));
+            chartPnlTimestamps = pnlRows.map(p => p.iso).filter(ts => typeof ts === 'string');
+        } catch (e) {
+            log('WARN', `Falha ao carregar histórico de PnL para gráfico: ${e.message}`);
+            chartPnlHistory = [];
+            chartPnlTimestamps = [];
+        }
+
         return {
             timestamp: new Date().toISOString(),
             mode: SIMULATE ? 'SIMULATE' : 'LIVE',
@@ -1044,11 +1087,12 @@ async function getLiveData() {
                 totalPnL,
                 realizedPnL: parseFloat(realizedPnL.toFixed(8)),
                 unrealizedPnL: parseFloat(unrealizedPnL.toFixed(8)),
-                monthlyPnL: getMonthlyPnL(pnlHistory, pnlTimestamps).toFixed(8),
-                pnlHistory: [...pnlHistory],
-                pnlTimestamps: [...pnlTimestamps],
-                priceHistory: priceHistoryWithTimestamps.map(p => p.price),
-                priceTimestamps: priceHistoryWithTimestamps.map(p => p.timestamp),
+                monthlyPnL: getMonthlyPnL(chartPnlHistory, chartPnlTimestamps).toFixed(8),
+                pnlHistory: chartPnlHistory,
+                pnlTimestamps: chartPnlTimestamps,
+                priceHistory: chartPriceHistory,
+                priceTimestamps: chartPriceTimestamps,
+                historyHours: historyHours == null ? null : historyHours,
                 fillRate: orders.length ? ((fills / orders.length) * 100).toFixed(1) + '%' : '0%',
                 avgSpread: spreadPct.toFixed(2),
                 dynamicSpread: (dynamicSpreadPct * 100).toFixed(2) + '%',
@@ -1165,51 +1209,76 @@ async function getLiveData() {
     }
 }
 
+function parseHistoryWindow(rawWindow) {
+    const value = String(rawWindow || '24h').trim().toLowerCase();
+    if (value === 'all') return { key: 'all', hours: null };
+    const match = value.match(/^(\d+)\s*h$/);
+    if (match) {
+        const hours = parseInt(match[1], 10);
+        if (Number.isFinite(hours) && hours > 0 && hours <= (24 * 365 * 20)) {
+            return { key: `${hours}h`, hours };
+        }
+    }
+    return { key: '24h', hours: 24 };
+}
+
+let latestDataSnapshot = null;
+let latestDataSnapshotTs = 0;
+
 // ===== API status atualizado =====
 app.get('/api/data', async (req, res) => {
     requestCount++;
     const forceRefresh = req.query.refresh === 'true';
+    const history = parseHistoryWindow(req.query.history);
     const now = Date.now();
     const uptimeSeconds = Math.floor((now - serverStartTime) / 1000);
     const cycleDuration = parseInt(process.env.CYCLE_SEC || '15');
     const cycles = SIMULATE ? 667 : Math.floor(uptimeSeconds / cycleDuration);
+    const cacheKey = history.key;
+    const currentCache = dataCacheByWindow.get(cacheKey) || {timestamp: 0, data: null, valid: false};
 
-    const cacheValid = cache.timestamp > 0 && cache.valid && (now - cache.timestamp) <= CACHE_TTL;
+    const cacheValid = currentCache.timestamp > 0 && currentCache.valid && (now - currentCache.timestamp) <= CACHE_TTL;
+    let responseData = currentCache.data;
 
     if (!cacheValid || forceRefresh) {
         try {
-            let data = await getLiveData();
+            let data = await getLiveData(history.hours);
             data.stats = data.stats || {};
             data.stats.uptime = SIMULATE ? "169min" : Math.floor(uptimeSeconds / 60) + 'min';
             data.stats.cycles = cycles;
-            cache.data = data;
-            cache.timestamp = now;
-            cache.valid = true;
+            data.stats.historyWindow = history.key;
+            responseData = data;
+            dataCacheByWindow.set(cacheKey, {data, timestamp: now, valid: true});
+            latestDataSnapshot = data;
+            latestDataSnapshotTs = now;
         } catch (err) {
             log('ERROR', 'Cache update failed:', err.message);
-            cache.data = {error: err.message, mode: SIMULATE ? 'SIMULATE' : 'LIVE'};
-            cache.timestamp = now;
-            cache.valid = false;
+            responseData = {error: err.message, mode: SIMULATE ? 'SIMULATE' : 'LIVE'};
+            dataCacheByWindow.set(cacheKey, {data: responseData, timestamp: now, valid: false});
             errorCount++;
         }
     } else {
-        cache.data.stats = cache.data.stats || {};
-        cache.data.stats.uptime = SIMULATE ? "169min" : Math.floor(uptimeSeconds / 60) + 'min';
-        cache.data.stats.cycles = cycles;
-        if (cache.data.activeOrders) {
-            const mid = parseFloat(cache.data.market.mid);
-            cache.data.activeOrders.forEach(o => {
+        responseData = currentCache.data || {};
+        responseData.stats = responseData.stats || {};
+        responseData.stats.uptime = SIMULATE ? "169min" : Math.floor(uptimeSeconds / 60) + 'min';
+        responseData.stats.cycles = cycles;
+        responseData.stats.historyWindow = history.key;
+        if (responseData.activeOrders) {
+            const mid = parseFloat(responseData.market.mid);
+            responseData.activeOrders.forEach(o => {
                 const diff = o.side === 'buy' ? (mid - o.price) : (o.price - mid);
                 const base = o.side === 'buy' ? o.price : mid;
                 const driftPct = base > 0 ? (diff / base) * 100 : 0;
                 o.drift = `${driftPct.toFixed(2)}%`;
             });
         }
+        latestDataSnapshot = responseData;
+        latestDataSnapshotTs = now;
     }
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
-    res.json(cache.data);
+    res.json(responseData);
 });
 
 app.get('/api/contributions', async (req, res) => {
@@ -1310,8 +1379,8 @@ app.get('/api/pairs', async (req, res) => {
     try {
         const COMPLETED_PAIR_TTL_MS = parseInt(process.env.PAIRS_COMPLETED_TTL_MS || '300000');
         const now = Date.now();
-        // Obter dados do /api/data que inclui ordens ativas enriquecidas em memória
-        const dashData = cache.data || {};
+        // Obter dados mais recentes do /api/data que inclui ordens ativas enriquecidas em memória
+        const dashData = latestDataSnapshot || {};
         const memoryActiveOrders = (dashData.activeOrders || []).map(o => ({
             id: o.id,
             side: o.side,
@@ -2035,13 +2104,22 @@ app.post('/api/pairs/clear-all', async (req, res) => {
 // Health check
 app.get('/health', (req, res) => {
     const now = Date.now();
+    const cacheWindows = Array.from(dataCacheByWindow.entries()).map(([key, value]) => ({
+        window: key,
+        valid: !!value.valid,
+        ageMs: now - (value.timestamp || 0)
+    }));
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
         uptime: process.uptime().toFixed(1) + 's',
         simulate: SIMULATE,
         port: PORT,
-        cache: {valid: cache.valid, ageMs: now - cache.timestamp, ttlMs: CACHE_TTL},
+        cache: {
+            ttlMs: CACHE_TTL,
+            latestSnapshotAgeMs: latestDataSnapshotTs > 0 ? (now - latestDataSnapshotTs) : null,
+            windows: cacheWindows
+        },
         requests: {total: requestCount, sinceStart: Math.round(requestCount / (process.uptime() / 60))},
         errors: errorCount
     });

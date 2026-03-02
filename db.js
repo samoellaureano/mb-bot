@@ -293,7 +293,8 @@ class Database {
 
     // Novo método para buscar histórico de PnL (compatível com dashboard)
     async getPnLHistory(hoursBack = 24, limit = 500) {
-        const cutoffTs = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+        const useCutoff = Number.isFinite(hoursBack) && hoursBack > 0;
+        const cutoffTs = useCutoff ? Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000) : null;
         this.assertSupabaseForHistory('pnl_history');
 
         try {
@@ -301,7 +302,7 @@ class Database {
                 'pnl_history',
                 {
                     select: 'pnl_value,timestamp,session_id',
-                    timestamp: `gte.${cutoffTs}`,
+                    ...(useCutoff ? { timestamp: `gte.${cutoffTs}` } : {}),
                     order: 'timestamp.asc',
                     limit
                 },
@@ -677,7 +678,8 @@ class Database {
     }
 
     async getPriceHistory(hoursBack = 24, limit = 500) {
-        const cutoffTs = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+        const useCutoff = Number.isFinite(hoursBack) && hoursBack > 0;
+        const cutoffTs = useCutoff ? Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000) : null;
         this.assertSupabaseForHistory('price_history');
 
         try {
@@ -686,7 +688,7 @@ class Database {
                 {
                     select: 'btc_price,timestamp',
                     pair: 'eq.BTC-BRL',
-                    timestamp: `gte.${cutoffTs}`,
+                    ...(useCutoff ? { timestamp: `gte.${cutoffTs}` } : {}),
                     order: 'timestamp.asc',
                     limit
                 },
