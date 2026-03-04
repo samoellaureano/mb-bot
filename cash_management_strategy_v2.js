@@ -12,7 +12,7 @@
  */
 
 class CashManagementStrategy {
-    constructor() {
+    constructor(config = {}) {
         this.priceHistory = [];
         this.lastTradePrice = null;
         this.lastSellPrice = null;
@@ -46,6 +46,37 @@ class CashManagementStrategy {
         // Profit targets
         this.PROFIT_TARGET_PCT = 0.003;
         this.STOP_LOSS_PCT = 0.002;
+
+        this.updateConfig(config);
+    }
+
+    updateConfig(config = {}) {
+        const getNum = (key, fallback) => {
+            const value = parseFloat(config[key]);
+            return Number.isFinite(value) ? value : fallback;
+        };
+        const getInt = (key, fallback) => {
+            const value = parseInt(config[key], 10);
+            return Number.isFinite(value) ? value : fallback;
+        };
+
+        this.BASE_BUY_THRESHOLD = getNum('BASE_BUY_THRESHOLD', this.BASE_BUY_THRESHOLD);
+        this.BASE_SELL_THRESHOLD = getNum('BASE_SELL_THRESHOLD', this.BASE_SELL_THRESHOLD);
+        this.BASE_BUY_MICRO_THRESHOLD = getNum('BASE_BUY_MICRO_THRESHOLD', this.BASE_BUY_MICRO_THRESHOLD);
+        this.BASE_SELL_MICRO_THRESHOLD = getNum('BASE_SELL_MICRO_THRESHOLD', this.BASE_SELL_MICRO_THRESHOLD);
+        this.BASE_MICRO_TRADE_INTERVAL = Math.max(1, getInt('BASE_MICRO_TRADE_INTERVAL', this.BASE_MICRO_TRADE_INTERVAL));
+        this.MAX_BUY_COUNT = Math.max(1, getInt('MAX_BUY_COUNT', this.MAX_BUY_COUNT));
+        this.MIN_BTC_RESERVE = getNum('MIN_BTC_RESERVE', this.MIN_BTC_RESERVE);
+        this.BUY_BRL_MIN = getNum('BUY_BRL_MIN', this.BUY_BRL_MIN);
+        this.MICRO_BUY_BRL_MIN = getNum('MICRO_BUY_BRL_MIN', this.MICRO_BUY_BRL_MIN);
+        this.SELL_PCT_BASE = getNum('SELL_PCT_BASE', this.SELL_PCT_BASE);
+        this.BUY_PCT_BASE = getNum('BUY_PCT_BASE', this.BUY_PCT_BASE);
+        this.SELL_PCT_MIN = getNum('SELL_PCT_MIN', this.SELL_PCT_MIN);
+        this.SELL_PCT_MAX = getNum('SELL_PCT_MAX', this.SELL_PCT_MAX);
+        this.BUY_PCT_MIN = getNum('BUY_PCT_MIN', this.BUY_PCT_MIN);
+        this.BUY_PCT_MAX = getNum('BUY_PCT_MAX', this.BUY_PCT_MAX);
+        this.PROFIT_TARGET_PCT = getNum('PROFIT_TARGET_PCT', this.PROFIT_TARGET_PCT);
+        this.STOP_LOSS_PCT = getNum('STOP_LOSS_PCT', this.STOP_LOSS_PCT);
     }
 
     clamp(value, min, max) {

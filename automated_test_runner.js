@@ -500,61 +500,184 @@ function computeRSI(values, period = 14) {
     return 100 - (100 / (1 + rs));
 }
 
+function parseNumCfg(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function parseIntCfg(value, fallback) {
+    const n = parseInt(value, 10);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function parseBoolCfg(value, fallback) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+        if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+    }
+    return fallback;
+}
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function stdDev(values) {
+    if (!Array.isArray(values) || values.length < 2) return 0;
+    const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+    const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
+    return Math.sqrt(variance);
+}
+
 function testCurrentBotRuntimeStrategy(prices, runtimeConfig = {}, testName = 'Bot Strategy (Runtime Config)') {
     const cfg = {
-        SPREAD_PCT: Number(runtimeConfig.SPREAD_PCT ?? 0.008),
-        MIN_SPREAD_PCT: Number(runtimeConfig.MIN_SPREAD_PCT ?? 0.005),
-        ORDER_SIZE: Number(runtimeConfig.ORDER_SIZE ?? 0.00005),
-        MIN_ORDER_SIZE: Number(runtimeConfig.MIN_ORDER_SIZE ?? 0.00005),
-        STOP_LOSS_PCT: Number(runtimeConfig.STOP_LOSS_PCT ?? 0.025),
-        TAKE_PROFIT_PCT: Number(runtimeConfig.TAKE_PROFIT_PCT ?? 0.040),
-        MIN_VOLUME: Number(runtimeConfig.MIN_VOLUME ?? 0.00003)
+        SPREAD_PCT: parseNumCfg(runtimeConfig.SPREAD_PCT, 0.008),
+        MIN_SPREAD_PCT: parseNumCfg(runtimeConfig.MIN_SPREAD_PCT, 0.005),
+        MAX_SPREAD_PCT: parseNumCfg(runtimeConfig.MAX_SPREAD_PCT, 0.012),
+        ORDER_SIZE: parseNumCfg(runtimeConfig.ORDER_SIZE, 0.00005),
+        MIN_ORDER_SIZE: parseNumCfg(runtimeConfig.MIN_ORDER_SIZE, 0.00004),
+        MAX_ORDER_SIZE: parseNumCfg(runtimeConfig.MAX_ORDER_SIZE, 0.0002),
+        POSITION_LIMIT_BTC: parseNumCfg(runtimeConfig.POSITION_LIMIT_BTC, 0.001),
+        STOP_LOSS_PCT: parseNumCfg(runtimeConfig.STOP_LOSS_PCT, 0.01),
+        TAKE_PROFIT_PCT: parseNumCfg(runtimeConfig.TAKE_PROFIT_PCT, 0.01),
+        MIN_VOLUME: parseNumCfg(runtimeConfig.MIN_VOLUME, 0.00003),
+        PRICE_DRIFT_THRESHOLD: parseNumCfg(runtimeConfig.PRICE_DRIFT_THRESHOLD, 0.0001),
+        MAX_ORDER_AGE_SEC: parseIntCfg(runtimeConfig.MAX_ORDER_AGE_SEC, 86400),
+        MAX_CONCURRENT_PAIRS: parseIntCfg(runtimeConfig.MAX_CONCURRENT_PAIRS, 10),
+        MIN_FILL_RATE_FOR_NEW: parseNumCfg(runtimeConfig.MIN_FILL_RATE_FOR_NEW, 30),
+        PAIRS_THROTTLE_CYCLES: parseIntCfg(runtimeConfig.PAIRS_THROTTLE_CYCLES, 5),
+        TRADING_ENABLED: parseBoolCfg(runtimeConfig.TRADING_ENABLED, true)
     };
 
     let brl = 200;
     let btc = 0.0001;
-    let openPosition = null; // {entryPrice, qty}
     let trades = 0;
     let wins = 0;
     let losses = 0;
+    let totalPairsCreated = 0;
+    let totalPairsCompleted = 0;
+    let lastNewPairCycle = -cfg.PAIRS_THROTTLE_CYCLES;
+    const openPairs = []; // {status, buyLimit, sellLimit, qty, reservedCost, createdAt, buyFilledPrice}
     const initialValue = brl + btc * prices[0];
+    const orderMaxAgeCandles = Math.max(1, Math.floor(cfg.MAX_ORDER_AGE_SEC / (5 * 60)));
 
     for (let i = 20; i < prices.length; i++) {
         const price = prices[i];
         const window = prices.slice(Math.max(0, i - 30), i + 1);
         const ema20 = computeEMA(window, 20);
         const rsi = computeRSI(window, 14);
-        const spreadTarget = Math.max(cfg.SPREAD_PCT, cfg.MIN_SPREAD_PCT);
+        const recentVolatility = price > 0 ? stdDev(window) / price : 0;
+        const spreadTarget = clamp(
+            Math.max(cfg.SPREAD_PCT, cfg.MIN_SPREAD_PCT) + recentVolatility * 0.2,
+            cfg.MIN_SPREAD_PCT,
+            cfg.MAX_SPREAD_PCT
+        );
 
-        if (!openPosition) {
-            const qty = Math.max(cfg.MIN_ORDER_SIZE, cfg.ORDER_SIZE);
-            const cost = qty * price;
-            const buySignal = price < ema20 && rsi < 55;
-            if (buySignal && brl >= cost && cost >= cfg.MIN_VOLUME) {
-                brl -= cost;
-                btc += qty;
-                openPosition = { entryPrice: price, qty };
-                trades++;
+        // 1) Atualizar pares abertos: fill de BUY, fill de SELL, stop loss e expiração
+        for (let p = openPairs.length - 1; p >= 0; p--) {
+            const pair = openPairs[p];
+            const age = i - pair.createdAt;
+
+            if (pair.status === 'pending_buy') {
+                if (age >= orderMaxAgeCandles) {
+                    // Ordem expirou sem fill: devolve caixa reservado
+                    brl += pair.reservedCost;
+                    openPairs.splice(p, 1);
+                    continue;
+                }
+
+                const buyRepriceBand = pair.buyLimit * (1 + cfg.PRICE_DRIFT_THRESHOLD);
+                if (price <= buyRepriceBand) {
+                    // Fill de buy no limite configurado
+                    btc += pair.qty;
+                    pair.status = 'waiting_sell';
+                    pair.buyFilledPrice = pair.buyLimit;
+                    pair.sellLimit = Math.max(
+                        pair.buyFilledPrice * (1 + spreadTarget),
+                        pair.buyFilledPrice * (1 + cfg.TAKE_PROFIT_PCT)
+                    );
+                    pair.stopLoss = pair.buyFilledPrice * (1 - cfg.STOP_LOSS_PCT);
+                }
+            } else if (pair.status === 'waiting_sell') {
+                const shouldStop = price <= pair.stopLoss;
+                const shouldTake = price >= pair.sellLimit;
+                if (shouldStop || shouldTake) {
+                    const exitPrice = shouldStop ? price : pair.sellLimit;
+                    const pnl = (exitPrice - pair.buyFilledPrice) * pair.qty;
+                    brl += pair.qty * exitPrice;
+                    btc = Math.max(0, btc - pair.qty);
+                    if (pnl >= 0) wins++;
+                    else losses++;
+                    trades++;
+                    totalPairsCompleted++;
+                    openPairs.splice(p, 1);
+                }
             }
-        } else {
-            const qty = openPosition.qty;
-            const stop = openPosition.entryPrice * (1 - cfg.STOP_LOSS_PCT);
-            const take = openPosition.entryPrice * (1 + cfg.TAKE_PROFIT_PCT);
-            const spreadTake = openPosition.entryPrice * (1 + spreadTarget);
-            const target = Math.min(take, Math.max(spreadTake, openPosition.entryPrice));
+        }
 
-            const shouldStop = price <= stop;
-            const shouldTake = price >= target;
+        // 2) Regras para criação de novos pares (aproximação de canCreateNewPair do bot)
+        const incompletePairs = openPairs.length;
+        const fillRate = totalPairsCreated > 0 ? (totalPairsCompleted / totalPairsCreated) * 100 : 100;
+        const throttleOk = (i - lastNewPairCycle) >= cfg.PAIRS_THROTTLE_CYCLES;
+        const fillRateOk = !(incompletePairs > 0 && totalPairsCreated > 5 && fillRate < cfg.MIN_FILL_RATE_FOR_NEW);
+        const pairLimitOk = incompletePairs < cfg.MAX_CONCURRENT_PAIRS;
 
-            if (shouldStop || shouldTake) {
-                brl += qty * price;
-                btc = Math.max(0, btc - qty);
-                const pnl = (price - openPosition.entryPrice) * qty;
-                if (pnl >= 0) wins++;
-                else losses++;
-                openPosition = null;
-                trades++;
-            }
+        if (!cfg.TRADING_ENABLED || !throttleOk || !fillRateOk || !pairLimitOk) {
+            continue;
+        }
+
+        // 3) Sinal de entrada (apenas buy-first, como principal fluxo no bot)
+        const buySignal = price < ema20 && rsi < 55;
+        if (!buySignal) {
+            continue;
+        }
+
+        let qty = clamp(cfg.ORDER_SIZE, cfg.MIN_ORDER_SIZE, cfg.MAX_ORDER_SIZE);
+        const availablePosition = Math.max(0, cfg.POSITION_LIMIT_BTC - btc);
+        qty = Math.min(qty, availablePosition);
+        if (qty < cfg.MIN_ORDER_SIZE) {
+            continue;
+        }
+
+        const buyLimit = price * (1 - spreadTarget);
+        const cost = qty * buyLimit;
+
+        // MIN_VOLUME no runtime é em BTC (aproximação mais coerente que notional)
+        if (qty < cfg.MIN_VOLUME || brl < cost) {
+            continue;
+        }
+
+        // Reserva BRL para refletir ordem aberta no book
+        brl -= cost;
+        openPairs.push({
+            status: 'pending_buy',
+            qty,
+            buyLimit,
+            reservedCost: cost,
+            createdAt: i,
+            buyFilledPrice: null,
+            sellLimit: null,
+            stopLoss: null
+        });
+        totalPairsCreated++;
+        lastNewPairCycle = i;
+    }
+
+    // Encerramento: liquida posição BTC restante no último preço e devolve ordens pendentes
+    for (const pair of openPairs) {
+        if (pair.status === 'pending_buy') {
+            brl += pair.reservedCost;
+        } else if (pair.status === 'waiting_sell' && pair.qty > 0) {
+            brl += pair.qty * prices[prices.length - 1];
+            btc = Math.max(0, btc - pair.qty);
+            const pnl = (prices[prices.length - 1] - pair.buyFilledPrice) * pair.qty;
+            if (pnl >= 0) wins++;
+            else losses++;
+            trades++;
+            totalPairsCompleted++;
         }
     }
 
@@ -565,9 +688,9 @@ function testCurrentBotRuntimeStrategy(prices, runtimeConfig = {}, testName = 'B
     const holdPnl = holdValue - initialValue;
     const vsHold = pnl - holdPnl;
     const hoursInTest = prices.length * 5 / 60;
-    const monthlyBRL = (pnl / hoursInTest) * (24 * 30);
+    const monthlyBRL = hoursInTest > 0 ? (pnl / hoursInTest) * (24 * 30) : 0;
     const yearlyBRL = monthlyBRL * 12;
-    const monthlyRoi = (roi / hoursInTest) * (24 * 30);
+    const monthlyRoi = hoursInTest > 0 ? (roi / hoursInTest) * (24 * 30) : 0;
     const yearlyRoi = monthlyRoi * 12;
 
     return {
@@ -586,6 +709,14 @@ function testCurrentBotRuntimeStrategy(prices, runtimeConfig = {}, testName = 'B
             yearlyRoi: yearlyRoi.toFixed(2),
             monthlyBRL: monthlyBRL.toFixed(2),
             yearlyBRL: yearlyBRL.toFixed(2)
+        },
+        runtimeApprox: {
+            pairsCreated: totalPairsCreated,
+            pairsCompleted: totalPairsCompleted,
+            fillRatePct: totalPairsCreated > 0 ? ((totalPairsCompleted / totalPairsCreated) * 100).toFixed(1) : '100.0',
+            maxConcurrentPairs: cfg.MAX_CONCURRENT_PAIRS,
+            pairThrottleCycles: cfg.PAIRS_THROTTLE_CYCLES,
+            tradingEnabled: cfg.TRADING_ENABLED
         },
         strategySource: 'runtime_config'
     };
@@ -935,6 +1066,9 @@ async function runTestBattery(hours = 24, options = {}) {
     const resolvedOptions = options || {};
     const forceDataSource = resolvedOptions.forceDataSource || null;
     const cashManagementParams = resolvedOptions.cashManagementParams || null;
+    const runtimeConfigOverride = resolvedOptions.runtimeConfigOverride && typeof resolvedOptions.runtimeConfigOverride === 'object'
+        ? resolvedOptions.runtimeConfigOverride
+        : null;
 
     const results = {
         timestamp: new Date().toISOString(),
@@ -969,9 +1103,15 @@ async function runTestBattery(hours = 24, options = {}) {
                 console.log(`[TEST_RUNNER] 🔍 Tentando carregar dados históricos do banco de dados...`);
                 const runtimeRow = await db.getRuntimeConfig(resolvedOptions.runtimeConfigProfile || 'production');
                 runtimeConfig = runtimeRow?.env_config || null;
+                if (runtimeConfigOverride) {
+                    runtimeConfig = {
+                        ...(runtimeConfig || {}),
+                        ...runtimeConfigOverride
+                    };
+                }
                 if (runtimeConfig) {
                     results.summary.runtimeConfigApplied = true;
-                    results.summary.runtimeConfigSource = 'Supabase';
+                    results.summary.runtimeConfigSource = runtimeConfigOverride ? 'Supabase+Override' : 'Supabase';
                 }
                 
                 // Buscar histórico do Supabase via db.getPriceHistory
@@ -1030,6 +1170,13 @@ async function runTestBattery(hours = 24, options = {}) {
             }
         }
         
+        // Fallback para caso a fonte não seja Supabase mas exista override
+        if (!runtimeConfig && runtimeConfigOverride) {
+            runtimeConfig = {...runtimeConfigOverride};
+            results.summary.runtimeConfigApplied = true;
+            results.summary.runtimeConfigSource = 'Override';
+        }
+
         // ===== VALIDAR DADOS =====
         if (!prices || prices.length < 10) {
             throw new Error(`Dados insuficientes (obtidos: ${prices ? prices.length : 0} preços, esperado: ≥10)`);

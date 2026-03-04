@@ -148,8 +148,8 @@
                 </button>
                 <button id="clearAllOrdersBtn" onclick="clearAllOrders()" 
                     class="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 rounded text-white transition"
-                    title="Cancelar TODAS as ordens abertas do sistema">
-                    🚨 Limpar Todas
+                    title="Cancelar ordens abertas e limpar apenas pares não completos">
+                    🚨 Limpar Pendentes
                 </button>
             </div>
         </div>
@@ -203,6 +203,7 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-base sm:text-lg font-bold" style="color: #f59e0b;">🧪 Testes Automatizados (Dados Reais)</h2>
             <div class="flex gap-2 items-center">
+                <span id="testsAdaptiveAuto" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Auto-ajuste: aguardando...</span>
                 <span id="testsStrictMode" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Modo estrito Supabase: aguardando 1ª execução</span>
                 <span id="testsStatus" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">ℹ️ Sem execução ainda</span>
                 <button id="runTestsBtn" onclick="runAutomatedTests()" 
@@ -236,7 +237,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4" id="testsValidationBadges">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-4" id="testsValidationBadges">
             <div id="testsBadgeSource" class="bg-gray-700 p-2 rounded text-xs text-gray-300">
                 Fonte: aguardando...
             </div>
@@ -245,6 +246,9 @@
             </div>
             <div id="testsBadgeWindow" class="bg-gray-700 p-2 rounded text-xs text-gray-300">
                 Janela real: aguardando...
+            </div>
+            <div id="testsBadgeRuntimeApprox" class="bg-gray-700 p-2 rounded text-xs text-gray-300">
+                Aproximação Runtime: aguardando...
             </div>
         </div>
 
@@ -402,6 +406,9 @@
                         <li title="Tamanho mínimo de cada ordem em BTC" class="p-1 rounded pulse-green">
                             Ordem size: <span id="orderSize">0.00005 BTC (~R$ 32,75)</span>
                         </li>
+                        <li title="Controla se o bot pode criar novas ordens (START/STOP)" class="p-1 rounded">
+                            Colocação de Ordens: <span id="tradingPlacementStatus">START ✅</span>
+                        </li>
                         <li title="Percentual alvo de diferença entre compra e venda" class="p-1 rounded pulse-green">
                             Spread alvo: <span id="targetSpread">0.02% ✅</span>
                         </li>
@@ -556,6 +563,14 @@
         <div class="flex justify-between items-center mb-2 gap-2 flex-wrap">
             <h2 class="text-base sm:text-lg font-bold">⚙️ Configuração Runtime do Bot (Supabase)</h2>
             <div class="flex gap-2 items-center">
+                <select id="riskPresetSelect" onchange="applyRiskPreset()" class="text-xs px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white">
+                    <option value="personalizado">Personalizado</option>
+                    <option value="conservador">Conservador</option>
+                    <option value="equilibrado">Equilibrado</option>
+                    <option value="agressivo">Agressivo</option>
+                </select>
+                <span id="tradingToggleStatus" class="text-xs px-2 py-1 rounded bg-green-700 text-green-100">Rodando ✅</span>
+                <button id="tradingToggleBtn" onclick="toggleTradingEnabled()" class="text-xs px-3 py-1 bg-red-700 hover:bg-red-600 rounded text-white transition">STOP</button>
                 <span id="runtimeConfigStatus" class="text-xs px-2 py-1 bg-gray-700 rounded text-gray-300">Carregando...</span>
                 <button onclick="loadRuntimeConfig()" class="text-xs px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white transition">Recarregar</button>
                 <button id="saveRuntimeConfigBtn" onclick="saveRuntimeConfig()" class="text-xs px-3 py-1 bg-blue-700 hover:bg-blue-600 rounded text-white transition">Salvar</button>
@@ -578,9 +593,80 @@
     let selectedHistoryWindow = '24h';
     let runtimeConfigProfile = 'production';
     let runtimeConfigRaw = {};
+    let runtimeConfigMutationInProgress = false;
+    const RISK_PRESET_MODE_KEY = 'RISK_PROFILE_MODE';
+    const RISK_PRESET_CUSTOM_KEY = 'RISK_PROFILE_CUSTOM';
+    const riskPresetDefaults = {
+        conservador: {
+            SPREAD_PCT: 0.005,
+            MIN_SPREAD_PCT: 0.006,
+            MAX_SPREAD_PCT: 0.009,
+            ORDER_SIZE: 0.00005,
+            MIN_ORDER_SIZE: 0.00004,
+            MAX_ORDER_SIZE: 0.00012,
+            MAX_CONCURRENT_PAIRS: 6,
+            MIN_FILL_RATE_FOR_NEW: 60,
+            PAIRS_THROTTLE_CYCLES: 8,
+            CASH_MGT_BASE_BUY_THRESHOLD: 0.00045,
+            CASH_MGT_BASE_SELL_THRESHOLD: 0.00075,
+            CASH_MGT_BASE_MICRO_TRADE_INTERVAL: 8,
+            CASH_MGT_MAX_BUY_COUNT: 3,
+            CASH_MGT_BUY_BRL_MIN: 80,
+            CASH_MGT_MICRO_BUY_BRL_MIN: 70,
+            CASH_MGT_PROFIT_TARGET_PCT: 0.004,
+            CASH_MGT_STOP_LOSS_PCT: 0.002
+        },
+        equilibrado: {
+            SPREAD_PCT: 0.005,
+            MIN_SPREAD_PCT: 0.006,
+            MAX_SPREAD_PCT: 0.009,
+            ORDER_SIZE: 0.00007,
+            MIN_ORDER_SIZE: 0.00004,
+            MAX_ORDER_SIZE: 0.0002,
+            MAX_CONCURRENT_PAIRS: 9,
+            MIN_FILL_RATE_FOR_NEW: 50,
+            PAIRS_THROTTLE_CYCLES: 5,
+            TAKE_PROFIT_PCT: 0.012,
+            CASH_MGT_BASE_BUY_THRESHOLD: 0.00040,
+            CASH_MGT_BASE_SELL_THRESHOLD: 0.00070,
+            CASH_MGT_BASE_MICRO_TRADE_INTERVAL: 6,
+            CASH_MGT_MAX_BUY_COUNT: 4,
+            CASH_MGT_BUY_BRL_MIN: 60,
+            CASH_MGT_MICRO_BUY_BRL_MIN: 50,
+            CASH_MGT_PROFIT_TARGET_PCT: 0.0035,
+            CASH_MGT_STOP_LOSS_PCT: 0.002
+        },
+        agressivo: {
+            SPREAD_PCT: 0.005,
+            MIN_SPREAD_PCT: 0.0065,
+            MAX_SPREAD_PCT: 0.0095,
+            ORDER_SIZE: 0.00006,
+            MIN_ORDER_SIZE: 0.00004,
+            MAX_ORDER_SIZE: 0.00025,
+            MAX_CONCURRENT_PAIRS: 8,
+            MIN_FILL_RATE_FOR_NEW: 50,
+            PAIRS_THROTTLE_CYCLES: 5,
+            TAKE_PROFIT_PCT: 0.013,
+            CASH_MGT_BASE_BUY_THRESHOLD: 0.00030,
+            CASH_MGT_BASE_SELL_THRESHOLD: 0.00070,
+            CASH_MGT_BASE_MICRO_TRADE_INTERVAL: 4,
+            CASH_MGT_MAX_BUY_COUNT: 6,
+            CASH_MGT_BUY_BRL_MIN: 40,
+            CASH_MGT_MICRO_BUY_BRL_MIN: 35,
+            CASH_MGT_PROFIT_TARGET_PCT: 0.0035,
+            CASH_MGT_STOP_LOSS_PCT: 0.0025
+        }
+    };
+    const riskPresetManagedKeys = Array.from(
+        new Set(Object.values(riskPresetDefaults).flatMap((cfg) => Object.keys(cfg)))
+    );
     const runtimeConfigDefaults = {
+        TRADING_ENABLED: true,
         PRICE_HISTORY_SAVE_INTERVAL_SEC: 30,
-        PNL_HISTORY_SAVE_INTERVAL_SEC: 60
+        PNL_HISTORY_SAVE_INTERVAL_SEC: 60,
+        ADAPTIVE_PROFILE_AUTORUN: true,
+        ADAPTIVE_PROFILE_INTERVAL_MIN: 30,
+        ADAPTIVE_PROFILE_TEST_HOURS: 24
     };
     const runtimeConfigFields = [
         {key: 'API_KEY', label: 'API Key', desc: 'Chave pública da API da exchange.', type: 'text'},
@@ -588,6 +674,7 @@
         {key: 'PAIR', label: 'Par de Mercado', desc: 'Par negociado pelo bot.', type: 'text'},
         {key: 'SIMULATE', label: 'Modo Simulação', desc: 'Se ativo, não envia ordens reais.', type: 'boolean'},
         {key: 'USE_CASH_MANAGEMENT', label: 'Usar Gestão de Caixa', desc: 'Ativa decisões baseadas em caixa/saldo.', type: 'boolean'},
+        {key: 'ADAPTIVE_STRATEGY', label: 'Estratégia Adaptativa', desc: 'Ativa ajustes automáticos de parâmetros.', type: 'boolean'},
         {key: 'SELL_FIRST', label: 'Permitir Sell First', desc: 'Permite iniciar ciclo por SELL.', type: 'boolean'},
         {key: 'DEBUG', label: 'Debug', desc: 'Aumenta verbosidade dos logs.', type: 'boolean'},
         {key: 'CYCLE_SEC', label: 'Intervalo do Ciclo (s)', desc: 'Tempo entre ciclos do bot.', type: 'number'},
@@ -623,7 +710,18 @@
         {key: 'EXTERNAL_TREND_VOLATILITY_DAMP', label: 'Amortecimento por Volatilidade', desc: 'Reduz impacto do externo em alta volatilidade.', type: 'number'},
         {key: 'MAX_CONCURRENT_PAIRS', label: 'Máximo de Pares Simultâneos', desc: 'Quantidade máxima de pares abertos.', type: 'number'},
         {key: 'MIN_FILL_RATE_FOR_NEW', label: 'Fill Rate Mínimo para Novos Pares', desc: 'Taxa mínima para liberar criação de novos pares.', type: 'number'},
-        {key: 'PAIRS_THROTTLE_CYCLES', label: 'Throttle entre Pares (ciclos)', desc: 'Ciclos de espera entre novas criações.', type: 'number'}
+        {key: 'PAIRS_THROTTLE_CYCLES', label: 'Throttle entre Pares (ciclos)', desc: 'Ciclos de espera entre novas criações.', type: 'number'},
+        {key: 'ADAPTIVE_PROFILE_AUTORUN', label: 'Auto Ajuste Periódico', desc: 'Liga/desliga agendamento automático de seleção de perfil.', type: 'boolean'},
+        {key: 'ADAPTIVE_PROFILE_INTERVAL_MIN', label: 'Auto Ajuste Intervalo (min)', desc: 'Intervalo entre execuções do auto-ajuste.', type: 'number'},
+        {key: 'ADAPTIVE_PROFILE_TEST_HOURS', label: 'Auto Ajuste Janela (h)', desc: 'Janela de dados usada no teste de seleção automática.', type: 'number'},
+        {key: 'CASH_MGT_BASE_BUY_THRESHOLD', label: 'CashMgt Buy Threshold Base', desc: 'Limiar base de compra da estratégia de caixa.', type: 'number'},
+        {key: 'CASH_MGT_BASE_SELL_THRESHOLD', label: 'CashMgt Sell Threshold Base', desc: 'Limiar base de venda da estratégia de caixa.', type: 'number'},
+        {key: 'CASH_MGT_BASE_MICRO_TRADE_INTERVAL', label: 'CashMgt Intervalo Micro', desc: 'Intervalo base de micro trades (candles).', type: 'number'},
+        {key: 'CASH_MGT_MAX_BUY_COUNT', label: 'CashMgt Max Buy Count', desc: 'Máximo de compras sequenciais na estratégia de caixa.', type: 'number'},
+        {key: 'CASH_MGT_BUY_BRL_MIN', label: 'CashMgt Buy BRL Min', desc: 'Valor mínimo em BRL para compra na estratégia de caixa.', type: 'number'},
+        {key: 'CASH_MGT_MICRO_BUY_BRL_MIN', label: 'CashMgt Micro Buy BRL Min', desc: 'Valor mínimo em BRL para micro-compra.', type: 'number'},
+        {key: 'CASH_MGT_PROFIT_TARGET_PCT', label: 'CashMgt Profit Target', desc: 'Alvo de lucro da estratégia de caixa.', type: 'number'},
+        {key: 'CASH_MGT_STOP_LOSS_PCT', label: 'CashMgt Stop Loss', desc: 'Stop loss da estratégia de caixa.', type: 'number'}
     ];
 
     function withRuntimeConfigDefaults(config) {
@@ -1231,6 +1329,8 @@
                     maximumFractionDigits: 2
                 })})`
                 : '0.00005 BTC (~R$ 32,75)');
+            const isTradingEnabled = data.config?.tradingEnabled !== false;
+            setElementText('tradingPlacementStatus', isTradingEnabled ? 'START ✅' : 'STOP ⛔');
             setElementText('targetSpread', data.config?.spreadPct
                 ? `${(data.config.spreadPct * 100).toFixed(2)}% ${data.config.spreadPct < 0.01 ? '✅' : data.config.spreadPct < 0.02 ? '😐' : '⚠️'}`
                 : '0.02% ✅');
@@ -1618,6 +1718,11 @@
         setText('projHours', '-');
 
         const strictModeEl = document.getElementById('testsStrictMode');
+        const adaptiveAutoEl = document.getElementById('testsAdaptiveAuto');
+        if (adaptiveAutoEl) {
+            adaptiveAutoEl.textContent = 'Auto-ajuste: aguardando status...';
+            adaptiveAutoEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
+        }
         if (strictModeEl) {
             strictModeEl.textContent = 'Modo estrito Supabase: aguardando 1ª execução';
             strictModeEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
@@ -1626,6 +1731,7 @@
         const badgeSourceEl = document.getElementById('testsBadgeSource');
         const badgeStrategyEl = document.getElementById('testsBadgeStrategy');
         const badgeWindowEl = document.getElementById('testsBadgeWindow');
+        const badgeRuntimeApproxEl = document.getElementById('testsBadgeRuntimeApprox');
         if (badgeSourceEl) {
             badgeSourceEl.textContent = 'Fonte: rode os testes para validar origem dos dados.';
             badgeSourceEl.className = 'bg-gray-700 p-2 rounded text-xs text-gray-300';
@@ -1637,6 +1743,10 @@
         if (badgeWindowEl) {
             badgeWindowEl.textContent = 'Janela real: será exibida após a primeira execução.';
             badgeWindowEl.className = 'bg-gray-700 p-2 rounded text-xs text-gray-300';
+        }
+        if (badgeRuntimeApproxEl) {
+            badgeRuntimeApproxEl.textContent = 'Aproximação Runtime: será exibida após a primeira execução.';
+            badgeRuntimeApproxEl.className = 'bg-gray-700 p-2 rounded text-xs text-gray-300';
         }
 
         const tbody = document.getElementById('testsTableBody');
@@ -1661,6 +1771,30 @@
             const statusEl = document.getElementById('testsStatus');
             const runBtn = document.getElementById('runTestsBtn');
             const strictModeEl = document.getElementById('testsStrictMode');
+            const adaptiveAutoEl = document.getElementById('testsAdaptiveAuto');
+            const adaptiveAuto = data.adaptiveAuto || null;
+
+            if (adaptiveAutoEl) {
+                if (adaptiveAuto && adaptiveAuto.enabled) {
+                    const runningTag = adaptiveAuto.running ? '⏳ rodando' : '✅ ativo';
+                    const intervalTag = `${adaptiveAuto.intervalMin || '-'}m/${adaptiveAuto.testHours || '-'}h`;
+                    const lastTag = adaptiveAuto.lastRunTime
+                        ? new Date(adaptiveAuto.lastRunTime).toLocaleTimeString('pt-BR')
+                        : '-';
+                    const rawStatus = String(adaptiveAuto.lastStatus || '');
+                    const profileTag = rawStatus.startsWith('applied:')
+                        ? rawStatus.split(':')[1]
+                        : (adaptiveAuto.currentProfile || (rawStatus.startsWith('running:') ? 'executando' : null));
+                    const profileText = profileTag ? ` | perfil: ${profileTag}` : '';
+                    adaptiveAutoEl.textContent = `Auto-ajuste: ${runningTag}${profileText} | ${intervalTag} | último: ${lastTag}`;
+                    adaptiveAutoEl.className = adaptiveAuto.running
+                        ? 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-100 animate-pulse'
+                        : 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
+                } else {
+                    adaptiveAutoEl.textContent = 'Auto-ajuste: desativado';
+                    adaptiveAutoEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
+                }
+            }
             
             if (data.isRunning) {
                 if (statusEl) {
@@ -1705,15 +1839,19 @@
             }
             
             // Atualizar resumo
-            document.getElementById('testsTotal').textContent = results.summary.total || '-';
-            document.getElementById('testsPassed').textContent = results.summary.passed || '-';
-            document.getElementById('testsFailed').textContent = results.summary.failed || '-';
+            const summaryTotal = Number.isFinite(Number(results.summary.total)) ? Number(results.summary.total) : '-';
+            const summaryPassed = Number.isFinite(Number(results.summary.passed)) ? Number(results.summary.passed) : '-';
+            const summaryFailed = Number.isFinite(Number(results.summary.failed)) ? Number(results.summary.failed) : '-';
+            document.getElementById('testsTotal').textContent = summaryTotal;
+            document.getElementById('testsPassed').textContent = summaryPassed;
+            document.getElementById('testsFailed').textContent = summaryFailed;
             document.getElementById('testsPassRate').textContent = (results.summary.passRate || '0') + '%';
             document.getElementById('testsDataSource').textContent = results.summary.dataSource || '-';
 
             const badgeSourceEl = document.getElementById('testsBadgeSource');
             const badgeStrategyEl = document.getElementById('testsBadgeStrategy');
             const badgeWindowEl = document.getElementById('testsBadgeWindow');
+            const badgeRuntimeApproxEl = document.getElementById('testsBadgeRuntimeApprox');
             const requestedSource = (results.summary.requestedDataSource || 'auto').toLowerCase();
             const actualSource = (results.summary.actualDataSource || results.summary.dataSource || 'desconhecido').toLowerCase();
             const sourceOk = requestedSource === 'supabase' ? actualSource === 'supabase' : actualSource !== 'desconhecido';
@@ -1738,7 +1876,13 @@
             const strategyOk = !!results.summary.runtimeStrategyTested;
             if (badgeStrategyEl) {
                 const profile = results.summary.runtimeConfigProfile || 'production';
-                badgeStrategyEl.textContent = `Estratégia atual: ${strategyOk ? 'Runtime Config aplicada ✅' : 'Runtime Config não aplicada ⚠️'} (perfil: ${profile})`;
+                const adaptiveInfo = results.summary.adaptiveProfileSelection;
+                const adaptiveSuffix = adaptiveInfo && adaptiveInfo.enabled
+                    ? (adaptiveInfo.applied
+                        ? ` | Auto perfil: ${adaptiveInfo.bestProfile} ✅`
+                        : ` | Auto perfil: não aplicado ⚠️`)
+                    : '';
+                badgeStrategyEl.textContent = `Estratégia atual: ${strategyOk ? 'Runtime Config aplicada ✅' : 'Runtime Config não aplicada ⚠️'} (perfil: ${profile})${adaptiveSuffix}`;
                 badgeStrategyEl.className = strategyOk
                     ? 'bg-green-900/50 border border-green-700 p-2 rounded text-xs text-green-200'
                     : 'bg-yellow-900/50 border border-yellow-700 p-2 rounded text-xs text-yellow-200';
@@ -1748,6 +1892,19 @@
                 const approxHours = points > 1 ? (((points - 1) * 5) / 60).toFixed(1) : '0.0';
                 badgeWindowEl.textContent = `Janela real usada: ${points || '-'} pontos / ~${approxHours}h`;
                 badgeWindowEl.className = 'bg-blue-900/40 border border-blue-700 p-2 rounded text-xs text-blue-200';
+            }
+            if (badgeRuntimeApproxEl) {
+                const runtimeTest = Array.isArray(results.tests)
+                    ? results.tests.find((t) => t && (t.strategySource === 'runtime_config' || t.testName === 'Bot Strategy (Runtime Config)'))
+                    : null;
+                const approx = runtimeTest && runtimeTest.runtimeApprox ? runtimeTest.runtimeApprox : null;
+                if (approx) {
+                    badgeRuntimeApproxEl.textContent = `Aproximação Runtime: pares ${approx.pairsCompleted}/${approx.pairsCreated} | fill ${approx.fillRatePct}% | limite ${approx.maxConcurrentPairs} | throttle ${approx.pairThrottleCycles}`;
+                    badgeRuntimeApproxEl.className = 'bg-indigo-900/40 border border-indigo-700 p-2 rounded text-xs text-indigo-200';
+                } else {
+                    badgeRuntimeApproxEl.textContent = 'Aproximação Runtime: indisponível neste resultado.';
+                    badgeRuntimeApproxEl.className = 'bg-yellow-900/40 border border-yellow-700 p-2 rounded text-xs text-yellow-200';
+                }
             }
             
             // Info do período
@@ -1855,6 +2012,10 @@
                     
                     const monthly = test.projection ? parseFloat(test.projection.monthlyBRL || 0) : 0;
                     const monthlyColor = monthly >= 0 ? 'text-green-400' : 'text-red-400';
+                    const runtimeApprox = test.runtimeApprox || null;
+                    const testNameHtml = runtimeApprox
+                        ? `${test.testName}<div class="text-[10px] text-gray-500 mt-1">pares ${runtimeApprox.pairsCompleted}/${runtimeApprox.pairsCreated} | fill ${runtimeApprox.fillRatePct}%</div>`
+                        : test.testName;
                     
                     // Para testes de Momentum (sem projeção)
                     if (test.testName.includes('Momentum')) {
@@ -1871,7 +2032,7 @@
                     // Para testes com projeção (Accumulator e Integrado)
                     else {
                         tr.innerHTML = `
-                            <td class="p-2 text-gray-300">${test.testName}</td>
+                            <td class="p-2 text-gray-300">${testNameHtml}</td>
                             <td class="p-2 text-center ${statusColor}">${statusIcon}</td>
                             <td class="p-2 text-right ${pnlColor}">R$ ${test.pnlBRL || '-'}</td>
                             <td class="p-2 text-right ${vsHoldColor}">${vsHold >= 0 ? '+' : ''}R$ ${test.vsHoldBRL || '-'}</td>
@@ -2083,6 +2244,257 @@
         return next;
     }
 
+    function getRiskPresetMode(config = {}) {
+        const mode = String(config[RISK_PRESET_MODE_KEY] || 'personalizado').toLowerCase();
+        return ['conservador', 'equilibrado', 'agressivo', 'personalizado'].includes(mode)
+            ? mode
+            : 'personalizado';
+    }
+
+    function extractManagedConfig(config = {}) {
+        const out = {};
+        riskPresetManagedKeys.forEach((key) => {
+            if (config[key] !== undefined) out[key] = config[key];
+        });
+        return out;
+    }
+
+    function updateRiskPresetUI(config = {}) {
+        const select = document.getElementById('riskPresetSelect');
+        if (select) select.value = getRiskPresetMode(config);
+    }
+
+    async function fetchRuntimeConfigFromApi() {
+        const res = await fetch(`/api/runtime-config?profile=${encodeURIComponent(runtimeConfigProfile)}&t=${Date.now()}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Falha ao carregar configuração');
+        return data;
+    }
+
+    function runtimeConfigMatches(expected = {}, actual = {}) {
+        for (const [key, expectedValue] of Object.entries(expected)) {
+            const actualValue = actual[key];
+            if (typeof expectedValue === 'boolean') {
+                if (!!actualValue !== expectedValue) return false;
+                continue;
+            }
+            if (typeof expectedValue === 'number') {
+                const a = Number(actualValue);
+                if (!Number.isFinite(a) || Math.abs(a - expectedValue) > 1e-12) return false;
+                continue;
+            }
+            if (String(actualValue) !== String(expectedValue)) return false;
+        }
+        return true;
+    }
+
+    async function waitRuntimeConfigMatch(expectedSubset = {}, timeoutMs = 5000) {
+        const startedAt = Date.now();
+        let lastData = null;
+        while ((Date.now() - startedAt) < timeoutMs) {
+            try {
+                const data = await fetchRuntimeConfigFromApi();
+                lastData = data;
+                const env = withRuntimeConfigDefaults(data.env_config || {});
+                if (runtimeConfigMatches(expectedSubset, env)) {
+                    return data;
+                }
+            } catch (_) {}
+            await new Promise((resolve) => setTimeout(resolve, 180));
+        }
+        return lastData;
+    }
+
+    async function persistRuntimeConfig(nextConfig) {
+        const res = await fetch('/api/runtime-config', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                profile: runtimeConfigProfile,
+                env_config: nextConfig
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Falha ao salvar configuração');
+
+        const expectedSubset = {};
+        ['RISK_PROFILE_MODE', 'TRADING_ENABLED'].forEach((key) => {
+            if (nextConfig[key] !== undefined) expectedSubset[key] = nextConfig[key];
+        });
+
+        if (Object.keys(expectedSubset).length === 0) {
+            return data;
+        }
+
+        const confirmed = await waitRuntimeConfigMatch(expectedSubset, 5000);
+        return confirmed || data;
+    }
+
+    async function runRuntimeConfigMutation(taskName, fn) {
+        if (runtimeConfigMutationInProgress) {
+            console.warn(`[RuntimeConfig] Operação ignorada (${taskName}): já existe atualização em andamento.`);
+            return null;
+        }
+        runtimeConfigMutationInProgress = true;
+        try {
+            return await fn();
+        } finally {
+            runtimeConfigMutationInProgress = false;
+        }
+    }
+
+    async function waitForRuntimeConfigIdle(maxWaitMs = 5000) {
+        const startedAt = Date.now();
+        while (runtimeConfigMutationInProgress) {
+            if ((Date.now() - startedAt) >= maxWaitMs) return false;
+            await new Promise((resolve) => setTimeout(resolve, 120));
+        }
+        return true;
+    }
+
+    async function refreshAfterRuntimeConfigChange() {
+        // Forçar atualização de dados do dashboard após mutation confirmada.
+        await loadData(true);
+        setTimeout(() => {
+            loadData(true).catch((err) => console.warn('Refresh pós-save (2ª passada) falhou:', err));
+        }, 700);
+    }
+
+    async function applyRiskPreset() {
+        const select = document.getElementById('riskPresetSelect');
+        const statusEl = document.getElementById('runtimeConfigStatus');
+        if (!select) return;
+        const selectedMode = String(select.value || 'personalizado').toLowerCase();
+        const currentMode = getRiskPresetMode(runtimeConfigRaw);
+        if (selectedMode === currentMode) return;
+
+        if (!(await waitForRuntimeConfigIdle())) {
+            if (statusEl) {
+                statusEl.textContent = 'Erro: timeout ao aplicar preset';
+                statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-100';
+            }
+            return;
+        }
+
+        if (statusEl) {
+            statusEl.textContent = `Aplicando preset ${selectedMode}...`;
+            statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-100';
+        }
+
+        try {
+            const result = await runRuntimeConfigMutation('applyRiskPreset', async () => {
+            let nextConfig = withRuntimeConfigDefaults({...runtimeConfigRaw});
+
+            if (!nextConfig[RISK_PRESET_CUSTOM_KEY] || typeof nextConfig[RISK_PRESET_CUSTOM_KEY] !== 'object') {
+                nextConfig[RISK_PRESET_CUSTOM_KEY] = extractManagedConfig(runtimeConfigRaw);
+            }
+
+            if (selectedMode !== 'personalizado' && currentMode === 'personalizado') {
+                nextConfig[RISK_PRESET_CUSTOM_KEY] = extractManagedConfig(runtimeConfigRaw);
+            }
+
+            if (selectedMode === 'personalizado') {
+                const customSnapshot = nextConfig[RISK_PRESET_CUSTOM_KEY] || {};
+                riskPresetManagedKeys.forEach((key) => {
+                    if (customSnapshot[key] !== undefined) nextConfig[key] = customSnapshot[key];
+                });
+            } else {
+                const presetConfig = riskPresetDefaults[selectedMode] || {};
+                Object.entries(presetConfig).forEach(([key, value]) => {
+                    nextConfig[key] = value;
+                });
+            }
+
+            nextConfig[RISK_PRESET_MODE_KEY] = selectedMode;
+            const data = await persistRuntimeConfig(nextConfig);
+
+            runtimeConfigRaw = withRuntimeConfigDefaults(data.env_config || nextConfig);
+            renderRuntimeConfigForm(runtimeConfigRaw);
+            updateTradingControlUI(runtimeConfigRaw);
+            updateRiskPresetUI(runtimeConfigRaw);
+
+            if (statusEl) {
+                statusEl.textContent = `Preset aplicado (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
+                statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
+            }
+            await refreshAfterRuntimeConfigChange();
+                return true;
+            });
+            if (result === null) {
+                select.value = currentMode;
+            }
+        } catch (e) {
+            console.error('Erro ao aplicar preset:', e);
+            if (statusEl) {
+                statusEl.textContent = 'Erro ao aplicar preset';
+                statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-100';
+            }
+            select.value = currentMode;
+            alert(`Falha ao aplicar preset: ${e.message}`);
+        }
+    }
+
+    function updateTradingControlUI(config = {}) {
+        const enabled = config.TRADING_ENABLED !== false;
+        const badge = document.getElementById('tradingToggleStatus');
+        const btn = document.getElementById('tradingToggleBtn');
+        if (badge) {
+            badge.textContent = enabled ? 'Rodando ✅' : 'Parado ⛔';
+            badge.className = enabled
+                ? 'text-xs px-2 py-1 rounded bg-green-700 text-green-100'
+                : 'text-xs px-2 py-1 rounded bg-red-700 text-red-100';
+        }
+        if (btn) {
+            btn.textContent = enabled ? 'STOP' : 'START';
+            btn.className = enabled
+                ? 'text-xs px-3 py-1 bg-red-700 hover:bg-red-600 rounded text-white transition'
+                : 'text-xs px-3 py-1 bg-green-700 hover:bg-green-600 rounded text-white transition';
+        }
+    }
+
+    async function toggleTradingEnabled() {
+        const nextEnabled = runtimeConfigRaw.TRADING_ENABLED === false;
+        const btn = document.getElementById('tradingToggleBtn');
+        const statusEl = document.getElementById('runtimeConfigStatus');
+        if (btn) btn.disabled = true;
+        if (statusEl) {
+            statusEl.textContent = nextEnabled ? 'Iniciando...' : 'Parando...';
+            statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-100';
+        }
+        try {
+            const result = await runRuntimeConfigMutation('toggleTradingEnabled', async () => {
+            const nextConfig = withRuntimeConfigDefaults({
+                ...runtimeConfigRaw,
+                TRADING_ENABLED: nextEnabled
+            });
+            const data = await persistRuntimeConfig(nextConfig);
+            runtimeConfigRaw = withRuntimeConfigDefaults(data.env_config || nextConfig);
+            renderRuntimeConfigForm(runtimeConfigRaw);
+            updateTradingControlUI(runtimeConfigRaw);
+            updateRiskPresetUI(runtimeConfigRaw);
+            if (statusEl) {
+                statusEl.textContent = `Salvo (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
+                statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
+            }
+            await refreshAfterRuntimeConfigChange();
+                return true;
+            });
+            if (result === null && statusEl) {
+                statusEl.textContent = 'Aguarde operação em andamento';
+                statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-100';
+            }
+        } catch (e) {
+            console.error('Erro ao alternar START/STOP:', e);
+            if (statusEl) {
+                statusEl.textContent = 'Erro ao alternar';
+                statusEl.className = 'text-xs px-2 py-1 bg-red-700 rounded text-red-100';
+            }
+            alert(`Falha ao alternar START/STOP: ${e.message}`);
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
     async function loadRuntimeConfig() {
         const statusEl = document.getElementById('runtimeConfigStatus');
         if (statusEl) {
@@ -2090,11 +2502,11 @@
             statusEl.className = 'text-xs px-2 py-1 bg-gray-700 rounded text-gray-300';
         }
         try {
-            const res = await fetch(`/api/runtime-config?profile=${encodeURIComponent(runtimeConfigProfile)}`);
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Falha ao carregar configuração');
+            const data = await fetchRuntimeConfigFromApi();
             runtimeConfigRaw = withRuntimeConfigDefaults(data.env_config || {});
             renderRuntimeConfigForm(runtimeConfigRaw);
+            updateTradingControlUI(runtimeConfigRaw);
+            updateRiskPresetUI(runtimeConfigRaw);
             if (statusEl) {
                 statusEl.textContent = `OK (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
                 statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
@@ -2111,7 +2523,18 @@
     async function saveRuntimeConfig() {
         const btn = document.getElementById('saveRuntimeConfigBtn');
         const statusEl = document.getElementById('runtimeConfigStatus');
+        const presetSelect = document.getElementById('riskPresetSelect');
         const parsed = withRuntimeConfigDefaults(collectRuntimeConfigFromForm());
+        const selectedMode = presetSelect ? String(presetSelect.value || 'personalizado').toLowerCase() : getRiskPresetMode(parsed);
+        const mode = ['conservador', 'equilibrado', 'agressivo', 'personalizado'].includes(selectedMode)
+            ? selectedMode
+            : getRiskPresetMode(parsed);
+        parsed[RISK_PRESET_MODE_KEY] = mode;
+        if (mode === 'personalizado') {
+            parsed[RISK_PRESET_CUSTOM_KEY] = extractManagedConfig(parsed);
+        } else if (!parsed[RISK_PRESET_CUSTOM_KEY] || typeof parsed[RISK_PRESET_CUSTOM_KEY] !== 'object') {
+            parsed[RISK_PRESET_CUSTOM_KEY] = extractManagedConfig(runtimeConfigRaw);
+        }
 
         if (btn) btn.disabled = true;
         if (statusEl) {
@@ -2120,22 +2543,23 @@
         }
 
         try {
-            const res = await fetch('/api/runtime-config', {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    profile: runtimeConfigProfile,
-                    env_config: parsed
-                })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Falha ao salvar configuração');
+            const result = await runRuntimeConfigMutation('saveRuntimeConfig', async () => {
+                const data = await persistRuntimeConfig(parsed);
 
-            runtimeConfigRaw = withRuntimeConfigDefaults(data.env_config || parsed);
-            renderRuntimeConfigForm(runtimeConfigRaw);
-            if (statusEl) {
-                statusEl.textContent = `Salvo (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
-                statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
+                runtimeConfigRaw = withRuntimeConfigDefaults(data.env_config || parsed);
+                renderRuntimeConfigForm(runtimeConfigRaw);
+                updateTradingControlUI(runtimeConfigRaw);
+                updateRiskPresetUI(runtimeConfigRaw);
+                if (statusEl) {
+                    statusEl.textContent = `Salvo (${new Date(data.updated_at).toLocaleTimeString('pt-BR')})`;
+                    statusEl.className = 'text-xs px-2 py-1 bg-green-700 rounded text-green-100';
+                }
+                await refreshAfterRuntimeConfigChange();
+                return true;
+            });
+            if (result === null && statusEl) {
+                statusEl.textContent = 'Aguarde operação em andamento';
+                statusEl.className = 'text-xs px-2 py-1 bg-yellow-700 rounded text-yellow-100';
             }
         } catch (e) {
             console.error('Erro ao salvar runtime config:', e);
@@ -2182,10 +2606,10 @@
 
     async function clearAllOrders() {
         // Confirmação de segurança - dupla verificação
-        if (!confirm('⚠️ AVISO: Você está para LIMPAR TODOS OS PARES do sistema!\n\nTem certeza?')) {
+        if (!confirm('⚠️ AVISO: Você está para limpar apenas pares NÃO completos.\n\nPares com ✅ CICLO COMPLETO serão preservados.\n\nTem certeza?')) {
             return;
         }
-        if (!confirm('🚨 ÚLTIMA CHANCE: Deseja realmente LIMPAR TODOS OS PARES?\n\nIsso não pode ser desfeito!')) {
+        if (!confirm('🚨 ÚLTIMA CHANCE: Deseja realmente limpar pares NÃO completos?\n\nIsso não pode ser desfeito!')) {
             return;
         }
 
@@ -2193,7 +2617,7 @@
         if (btn) btn.disabled = true;
 
         try {
-            console.log('[Dashboard] 🚨 Limpando TODOS os pares...');
+            console.log('[Dashboard] 🚨 Limpando pares NÃO completos...');
             
             const res = await fetch('/api/pairs/clear-all', {
                 method: 'POST',
@@ -2204,7 +2628,7 @@
 
             if (res.ok) {
                 console.log(`[Dashboard] Resultado limpeza:`, data);
-                alert(`🚨 SISTEMA LIMPO!\n\n✅ Pares removidos: ${data.clearedCount}\n❌ Com erro: ${data.failedCount}\n📊 Total processado: ${data.totalPairs}`);
+                alert(`🚨 LIMPEZA CONCLUÍDA!\n\n✅ Pares NÃO completos removidos: ${data.clearedCount}\n🛡️ Pares completos preservados: ${data.preservedCompletePairs || 0}\n❌ Com erro: ${data.failedCount}\n📊 Total processado: ${data.totalPairs}`);
                 // Recarregar dados após limpeza
                 setTimeout(loadData, 1500);
             } else {

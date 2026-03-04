@@ -19,6 +19,9 @@ const CashManagementStrategy = require('./cash_management_strategy_v2');
 const SIMULATE = process.env.SIMULATE === 'true';
 const PORT = parseInt(process.env.PORT) || 3001;
 const ENABLE_AUTOMATED_TESTS = process.env.ENABLE_AUTOMATED_TESTS !== 'false'; // Default: true (disable on Render via env)
+const ADAPTIVE_PROFILE_AUTORUN_DEFAULT = process.env.ADAPTIVE_PROFILE_AUTORUN !== 'false';
+const ADAPTIVE_PROFILE_INTERVAL_MIN_DEFAULT = Math.max(5, parseInt(process.env.ADAPTIVE_PROFILE_INTERVAL_MIN || '30', 10) || 30);
+const ADAPTIVE_PROFILE_TEST_HOURS_DEFAULT = Math.max(4, parseInt(process.env.ADAPTIVE_PROFILE_TEST_HOURS || '24', 10) || 24);
 const CACHE_TTL = parseInt(process.env.DASHBOARD_CACHE_TTL) || 30000;
 const DB_ORDERS_CACHE_TTL_MS = parseInt(process.env.DB_ORDERS_CACHE_TTL_MS || '15000', 10);
 const DB_FILLS_CACHE_TTL_MS = parseInt(process.env.DB_FILLS_CACHE_TTL_MS || '30000', 10);
@@ -58,7 +61,9 @@ const RUNTIME_CONFIG_SCHEMA = {
     API_SECRET: {type: 'string', minLen: 8},
     PAIR: {type: 'string', pattern: /^[A-Z0-9]+-[A-Z0-9]+$/},
     SIMULATE: {type: 'boolean'},
+    TRADING_ENABLED: {type: 'boolean'},
     USE_CASH_MANAGEMENT: {type: 'boolean'},
+    ADAPTIVE_STRATEGY: {type: 'boolean'},
     SELL_FIRST: {type: 'boolean'},
     DEBUG: {type: 'boolean'},
     CYCLE_SEC: {type: 'number', min: 1, max: 600},
@@ -94,7 +99,27 @@ const RUNTIME_CONFIG_SCHEMA = {
     EXTERNAL_TREND_WEIGHT_KRAKEN: {type: 'number', min: 0, max: 10},
     MAX_CONCURRENT_PAIRS: {type: 'number', min: 1, max: 100000},
     MIN_FILL_RATE_FOR_NEW: {type: 'number', min: 0, max: 100},
-    PAIRS_THROTTLE_CYCLES: {type: 'number', min: 0, max: 100000}
+    PAIRS_THROTTLE_CYCLES: {type: 'number', min: 0, max: 100000},
+    CASH_MGT_BASE_BUY_THRESHOLD: {type: 'number', min: 0, max: 1},
+    CASH_MGT_BASE_SELL_THRESHOLD: {type: 'number', min: 0, max: 1},
+    CASH_MGT_BASE_BUY_MICRO_THRESHOLD: {type: 'number', min: 0, max: 1},
+    CASH_MGT_BASE_SELL_MICRO_THRESHOLD: {type: 'number', min: 0, max: 1},
+    CASH_MGT_BASE_MICRO_TRADE_INTERVAL: {type: 'number', min: 1, max: 1000},
+    CASH_MGT_MAX_BUY_COUNT: {type: 'number', min: 1, max: 1000},
+    CASH_MGT_MIN_BTC_RESERVE: {type: 'number', min: 0, max: 100},
+    CASH_MGT_BUY_BRL_MIN: {type: 'number', min: 0, max: 1000000},
+    CASH_MGT_MICRO_BUY_BRL_MIN: {type: 'number', min: 0, max: 1000000},
+    CASH_MGT_SELL_PCT_BASE: {type: 'number', min: 0, max: 1},
+    CASH_MGT_BUY_PCT_BASE: {type: 'number', min: 0, max: 1},
+    CASH_MGT_SELL_PCT_MIN: {type: 'number', min: 0, max: 1},
+    CASH_MGT_SELL_PCT_MAX: {type: 'number', min: 0, max: 1},
+    CASH_MGT_BUY_PCT_MIN: {type: 'number', min: 0, max: 1},
+    CASH_MGT_BUY_PCT_MAX: {type: 'number', min: 0, max: 1},
+    CASH_MGT_PROFIT_TARGET_PCT: {type: 'number', min: 0, max: 1},
+    CASH_MGT_STOP_LOSS_PCT: {type: 'number', min: 0, max: 1},
+    ADAPTIVE_PROFILE_AUTORUN: {type: 'boolean'},
+    ADAPTIVE_PROFILE_INTERVAL_MIN: {type: 'number', min: 5, max: 10080},
+    ADAPTIVE_PROFILE_TEST_HOURS: {type: 'number', min: 4, max: 720}
 };
 
 function normalizeAndValidateRuntimeConfig(envConfig = {}) {
@@ -182,8 +207,35 @@ const log = (level, message, data) => {
     console.log(`[${timestamp}] [DASHBOARD ${level}] ${message}`, data || '');
 };
 
-const getCurrentCashManagementParams = () => {
-    const strategy = new CashManagementStrategy();
+const parseBoolSafe = (value, fallback = false) => {
+    if (value === undefined || value === null) return fallback;
+    if (typeof value === 'boolean') return value;
+    const normalized = String(value).trim().toLowerCase();
+    return normalized === 'true' || normalized === '1' || normalized === 'yes';
+};
+
+const extractCashManagementRuntimeConfig = (envConfig = {}) => ({
+    BASE_BUY_THRESHOLD: envConfig.CASH_MGT_BASE_BUY_THRESHOLD,
+    BASE_SELL_THRESHOLD: envConfig.CASH_MGT_BASE_SELL_THRESHOLD,
+    BASE_BUY_MICRO_THRESHOLD: envConfig.CASH_MGT_BASE_BUY_MICRO_THRESHOLD,
+    BASE_SELL_MICRO_THRESHOLD: envConfig.CASH_MGT_BASE_SELL_MICRO_THRESHOLD,
+    BASE_MICRO_TRADE_INTERVAL: envConfig.CASH_MGT_BASE_MICRO_TRADE_INTERVAL,
+    MAX_BUY_COUNT: envConfig.CASH_MGT_MAX_BUY_COUNT,
+    MIN_BTC_RESERVE: envConfig.CASH_MGT_MIN_BTC_RESERVE,
+    BUY_BRL_MIN: envConfig.CASH_MGT_BUY_BRL_MIN,
+    MICRO_BUY_BRL_MIN: envConfig.CASH_MGT_MICRO_BUY_BRL_MIN,
+    SELL_PCT_BASE: envConfig.CASH_MGT_SELL_PCT_BASE,
+    BUY_PCT_BASE: envConfig.CASH_MGT_BUY_PCT_BASE,
+    SELL_PCT_MIN: envConfig.CASH_MGT_SELL_PCT_MIN,
+    SELL_PCT_MAX: envConfig.CASH_MGT_SELL_PCT_MAX,
+    BUY_PCT_MIN: envConfig.CASH_MGT_BUY_PCT_MIN,
+    BUY_PCT_MAX: envConfig.CASH_MGT_BUY_PCT_MAX,
+    PROFIT_TARGET_PCT: envConfig.CASH_MGT_PROFIT_TARGET_PCT,
+    STOP_LOSS_PCT: envConfig.CASH_MGT_STOP_LOSS_PCT
+});
+
+const getCurrentCashManagementParams = (runtimeEnvConfig = {}) => {
+    const strategy = new CashManagementStrategy(extractCashManagementRuntimeConfig(runtimeEnvConfig));
     return {
         baseBuyThreshold: strategy.BASE_BUY_THRESHOLD,
         baseSellThreshold: strategy.BASE_SELL_THRESHOLD,
@@ -202,6 +254,179 @@ const getCurrentCashManagementParams = () => {
         buyPctMax: strategy.BUY_PCT_MAX
     };
 };
+
+const AUTO_PROFILE_PRESETS = {
+    conservador: {
+        SPREAD_PCT: 0.005,
+        MIN_SPREAD_PCT: 0.006,
+        MAX_SPREAD_PCT: 0.009,
+        ORDER_SIZE: 0.00005,
+        MIN_ORDER_SIZE: 0.00004,
+        MAX_ORDER_SIZE: 0.00012,
+        MAX_CONCURRENT_PAIRS: 6,
+        MIN_FILL_RATE_FOR_NEW: 60,
+        PAIRS_THROTTLE_CYCLES: 8,
+        CASH_MGT_BASE_BUY_THRESHOLD: 0.00045,
+        CASH_MGT_BASE_SELL_THRESHOLD: 0.00075,
+        CASH_MGT_BASE_MICRO_TRADE_INTERVAL: 8,
+        CASH_MGT_MAX_BUY_COUNT: 3,
+        CASH_MGT_BUY_BRL_MIN: 80,
+        CASH_MGT_MICRO_BUY_BRL_MIN: 70,
+        CASH_MGT_PROFIT_TARGET_PCT: 0.004,
+        CASH_MGT_STOP_LOSS_PCT: 0.002
+    },
+    equilibrado: {
+        SPREAD_PCT: 0.005,
+        MIN_SPREAD_PCT: 0.006,
+        MAX_SPREAD_PCT: 0.009,
+        ORDER_SIZE: 0.00007,
+        MIN_ORDER_SIZE: 0.00004,
+        MAX_ORDER_SIZE: 0.0002,
+        MAX_CONCURRENT_PAIRS: 9,
+        MIN_FILL_RATE_FOR_NEW: 50,
+        PAIRS_THROTTLE_CYCLES: 5,
+        TAKE_PROFIT_PCT: 0.012,
+        CASH_MGT_BASE_BUY_THRESHOLD: 0.00040,
+        CASH_MGT_BASE_SELL_THRESHOLD: 0.00070,
+        CASH_MGT_BASE_MICRO_TRADE_INTERVAL: 6,
+        CASH_MGT_MAX_BUY_COUNT: 4,
+        CASH_MGT_BUY_BRL_MIN: 60,
+        CASH_MGT_MICRO_BUY_BRL_MIN: 50,
+        CASH_MGT_PROFIT_TARGET_PCT: 0.0035,
+        CASH_MGT_STOP_LOSS_PCT: 0.002
+    },
+    agressivo: {
+        SPREAD_PCT: 0.005,
+        MIN_SPREAD_PCT: 0.0065,
+        MAX_SPREAD_PCT: 0.0095,
+        ORDER_SIZE: 0.00006,
+        MIN_ORDER_SIZE: 0.00004,
+        MAX_ORDER_SIZE: 0.00025,
+        MAX_CONCURRENT_PAIRS: 8,
+        MIN_FILL_RATE_FOR_NEW: 50,
+        PAIRS_THROTTLE_CYCLES: 5,
+        TAKE_PROFIT_PCT: 0.013,
+        CASH_MGT_BASE_BUY_THRESHOLD: 0.00030,
+        CASH_MGT_BASE_SELL_THRESHOLD: 0.00070,
+        CASH_MGT_BASE_MICRO_TRADE_INTERVAL: 4,
+        CASH_MGT_MAX_BUY_COUNT: 6,
+        CASH_MGT_BUY_BRL_MIN: 40,
+        CASH_MGT_MICRO_BUY_BRL_MIN: 35,
+        CASH_MGT_PROFIT_TARGET_PCT: 0.0035,
+        CASH_MGT_STOP_LOSS_PCT: 0.0025
+    }
+};
+
+function extractRuntimeStrategyTest(results) {
+    if (!results || !Array.isArray(results.tests)) return null;
+    return results.tests.find((t) => t && (t.strategySource === 'runtime_config' || t.testName === 'Bot Strategy (Runtime Config)')) || null;
+}
+
+function parseNumberSafe(value, fallback = Number.NEGATIVE_INFINITY) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+async function autoSelectBestRiskProfile({hours, normalizedDataSource, runtimeProfile, baseRuntimeEnvConfig}) {
+    const candidates = [];
+    const profileNames = Object.keys(AUTO_PROFILE_PRESETS);
+
+    for (const profileName of profileNames) {
+        const candidateEnv = {
+            ...(baseRuntimeEnvConfig || {}),
+            ...AUTO_PROFILE_PRESETS[profileName],
+            RISK_PROFILE_MODE: profileName
+        };
+        const candidateUseCashManagement = parseBoolSafe(
+            candidateEnv.USE_CASH_MANAGEMENT,
+            process.env.USE_CASH_MANAGEMENT === 'true'
+        );
+        const candidateOptions = {
+            forceDataSource: normalizedDataSource,
+            runtimeConfigProfile: runtimeProfile,
+            runtimeConfigOverride: candidateEnv,
+            cashManagementParams: candidateUseCashManagement ? getCurrentCashManagementParams(candidateEnv) : null
+        };
+
+        const candidateResults = await AutomatedTestRunner.runTestBattery(hours, candidateOptions);
+        const runtimeTest = extractRuntimeStrategyTest(candidateResults);
+        const vsHold = parseNumberSafe(runtimeTest?.vsHoldBRL);
+        const pnl = parseNumberSafe(runtimeTest?.pnlBRL);
+        const roi = parseNumberSafe(runtimeTest?.roi);
+        candidates.push({
+            profile: profileName,
+            runtimeTest,
+            passed: !!runtimeTest?.passed,
+            vsHold,
+            pnl,
+            roi
+        });
+    }
+
+    candidates.sort((a, b) => {
+        if (Number(b.passed) !== Number(a.passed)) return Number(b.passed) - Number(a.passed);
+        if (b.vsHold !== a.vsHold) return b.vsHold - a.vsHold;
+        if (b.pnl !== a.pnl) return b.pnl - a.pnl;
+        return b.roi - a.roi;
+    });
+
+    const best = candidates[0] || null;
+    if (!best) {
+        return {
+            enabled: true,
+            applied: false,
+            reason: 'Sem candidatos válidos',
+            candidates: []
+        };
+    }
+
+    const mergedBestEnv = {
+        ...(baseRuntimeEnvConfig || {}),
+        ...AUTO_PROFILE_PRESETS[best.profile],
+        RISK_PROFILE_MODE: best.profile,
+        ADAPTIVE_LAST_AUTO_PROFILE: best.profile,
+        ADAPTIVE_LAST_AUTO_AT: new Date().toISOString(),
+        ADAPTIVE_LAST_AUTO_VS_HOLD: Number.isFinite(best.vsHold) ? Number(best.vsHold.toFixed(4)) : null,
+        ADAPTIVE_LAST_AUTO_PNL: Number.isFinite(best.pnl) ? Number(best.pnl.toFixed(4)) : null
+    };
+    const {normalized, errors} = normalizeAndValidateRuntimeConfig(mergedBestEnv);
+    if (errors.length > 0) {
+        return {
+            enabled: true,
+            applied: false,
+            reason: 'Validação da configuração automática falhou',
+            errors,
+            bestProfile: best.profile,
+            candidates: candidates.map((c) => ({
+                profile: c.profile,
+                passed: c.passed,
+                vsHoldBRL: Number.isFinite(c.vsHold) ? Number(c.vsHold.toFixed(2)) : null,
+                pnlBRL: Number.isFinite(c.pnl) ? Number(c.pnl.toFixed(2)) : null,
+                roi: Number.isFinite(c.roi) ? Number(c.roi.toFixed(2)) : null
+            }))
+        };
+    }
+
+    await db.upsertRuntimeConfig(runtimeProfile, normalized, true);
+    return {
+        enabled: true,
+        applied: true,
+        bestProfile: best.profile,
+        runtimeTest: {
+            passed: best.passed,
+            vsHoldBRL: Number.isFinite(best.vsHold) ? Number(best.vsHold.toFixed(2)) : null,
+            pnlBRL: Number.isFinite(best.pnl) ? Number(best.pnl.toFixed(2)) : null,
+            roi: Number.isFinite(best.roi) ? Number(best.roi.toFixed(2)) : null
+        },
+        candidates: candidates.map((c) => ({
+            profile: c.profile,
+            passed: c.passed,
+            vsHoldBRL: Number.isFinite(c.vsHold) ? Number(c.vsHold.toFixed(2)) : null,
+            pnlBRL: Number.isFinite(c.pnl) ? Number(c.pnl.toFixed(2)) : null,
+            roi: Number.isFinite(c.roi) ? Number(c.roi.toFixed(2)) : null
+        }))
+    };
+}
 
 // Função auxiliar para calcular idade
 const computeAge = (timestamp) => {
@@ -667,6 +892,32 @@ async function getLiveData(historyHours = 24) {
     try {
         await mbClient.ensureAuthenticated();
         const accountId = mbClient.getAccountId();
+        const runtimeConfigRow = await db.getRuntimeConfig(STATE_PROFILE).catch(() => null);
+        const runtimeEnvConfig = runtimeConfigRow?.env_config && typeof runtimeConfigRow.env_config === 'object'
+            ? runtimeConfigRow.env_config
+            : {};
+        const getRuntimeNum = (key, fallback) => {
+            const value = parseFloat(runtimeEnvConfig[key]);
+            return Number.isFinite(value) ? value : fallback;
+        };
+        const getRuntimeInt = (key, fallback) => {
+            const value = parseInt(runtimeEnvConfig[key], 10);
+            return Number.isFinite(value) ? value : fallback;
+        };
+        const effectiveSpreadPct = getRuntimeNum('SPREAD_PCT', SPREAD_PCT);
+        const effectiveOrderSize = getRuntimeNum('ORDER_SIZE', ORDER_SIZE);
+        const effectiveMinOrderSize = getRuntimeNum('MIN_ORDER_SIZE', MIN_ORDER_SIZE);
+        const effectiveMaxConcurrentPairs = getRuntimeInt('MAX_CONCURRENT_PAIRS', MAX_CONCURRENT_PAIRS);
+        const effectiveCycleSec = getRuntimeInt('CYCLE_SEC', parseInt(process.env.CYCLE_SEC || '15'));
+        const effectiveTradingEnabled = parseBoolSafe(runtimeEnvConfig.TRADING_ENABLED, true);
+        const effectiveUseCashManagement = parseBoolSafe(runtimeEnvConfig.USE_CASH_MANAGEMENT, process.env.USE_CASH_MANAGEMENT === 'true');
+        const effectiveAdaptiveStrategy = parseBoolSafe(runtimeEnvConfig.ADAPTIVE_STRATEGY, process.env.ADAPTIVE_STRATEGY !== 'false');
+        const effectivePriceDriftPct = getRuntimeNum('PRICE_DRIFT_PCT', PRICE_DRIFT);
+        const effectiveStopLossPct = getRuntimeNum('STOP_LOSS_PCT', parseFloat(process.env.STOP_LOSS_PCT || '0.008'));
+        const effectiveTakeProfitPct = getRuntimeNum('TAKE_PROFIT_PCT', parseFloat(process.env.TAKE_PROFIT_PCT || '0.001'));
+        const effectiveMinVolume = getRuntimeNum('MIN_VOLUME', MIN_VOLUME);
+        const effectiveVolLimitPct = getRuntimeNum('VOL_LIMIT_PCT', VOL_LIMIT_PCT);
+        const effectiveMinRepriceAgeSec = getRuntimeInt('MIN_REPRICE_AGE_SEC', parseInt(process.env.MIN_REPRICE_AGE_SEC || '86400'));
         
         let ticker, balances, orders, orderbook;
 
@@ -814,8 +1065,8 @@ async function getLiveData(historyHours = 24) {
             volatilityPct = ((max - min) / ((max + min) / 2)) * 100;
         }
 
-        let dynamicSpreadPct = volatilityPct >= VOL_LIMIT_PCT ? Math.min(0.008, SPREAD_PCT * 1.1)
-            : volatilityPct >= 0.5 ? SPREAD_PCT * 0.9 : SPREAD_PCT; // ALTERADO para alinhar com bot.js
+        let dynamicSpreadPct = volatilityPct >= effectiveVolLimitPct ? Math.min(0.008, effectiveSpreadPct * 1.1)
+            : volatilityPct >= 0.5 ? effectiveSpreadPct * 0.9 : effectiveSpreadPct; // ALTERADO para alinhar com bot.js
 
         let btcPosition = 0;
         let totalCost = 0;
@@ -938,9 +1189,9 @@ async function getLiveData(historyHours = 24) {
         // Enriquecer activeOrders com pair_id inteligente para ordens legadas
         const enrichedActiveOrders = enrichOrdersWithPairId(activeOrders, correctedOrders);
         
-        const buyCost = bid * ORDER_SIZE * (1 + FEE_RATE_MAKER); // ALTERADO: usar ORDER_SIZE e FEE_RATE_MAKER
+        const buyCost = bid * effectiveOrderSize * (1 + FEE_RATE_MAKER); // ALTERADO: usar ORDER_SIZE e FEE_RATE_MAKER
         const canBuy = balances.find(b => b.symbol === 'BRL')?.available >= buyCost;
-        const marketInterest = orderbook.bids[0][1] > ORDER_SIZE * 5 || orderbook.asks[0][1] > ORDER_SIZE * 5;
+        const marketInterest = orderbook.bids[0][1] > effectiveOrderSize * 5 || orderbook.asks[0][1] > effectiveOrderSize * 5;
         const brlAvailable = parseFloat(balances.find(b => b.symbol === 'BRL')?.available || 0);
         const btcAvailable = parseFloat(balances.find(b => b.symbol === 'BTC')?.available || 0);
         const openBuyOrdersCount = enrichedActiveOrders.filter(o => o.side === 'buy').length;
@@ -963,9 +1214,9 @@ async function getLiveData(historyHours = 24) {
         if (openBuyOrdersCount >= MAX_ACTIVE_BUYS) {
             buyCanCreate = false;
             buyReason = `❌ Limite de BUYs ativas atingido (${openBuyOrdersCount}/${MAX_ACTIVE_BUYS}).`;
-        } else if (openPairsCount >= MAX_CONCURRENT_PAIRS) {
+        } else if (openPairsCount >= effectiveMaxConcurrentPairs) {
             buyCanCreate = false;
-            buyReason = `❌ Limite de pares atingido (${openPairsCount}/${MAX_CONCURRENT_PAIRS}).`;
+            buyReason = `❌ Limite de pares atingido (${openPairsCount}/${effectiveMaxConcurrentPairs}).`;
         } else if (!canBuy) {
             buyCanCreate = false;
             buyReason = `❌ BRL insuficiente (${brlAvailable.toFixed(2)} < ${buyCost.toFixed(2)}).`;
@@ -979,14 +1230,20 @@ async function getLiveData(historyHours = 24) {
         if (eligibleSellPairsCount <= 0) {
             sellCanCreate = false;
             sellReason = '❌ Sem BUY executada pendente de SELL (regra: 1 SELL por par com BUY preenchida).';
-        } else if (btcAvailable < MIN_ORDER_SIZE) {
+        } else if (btcAvailable < effectiveMinOrderSize) {
             sellCanCreate = false;
-            sellReason = `❌ BTC insuficiente (${btcAvailable.toFixed(8)} < ${MIN_ORDER_SIZE}).`;
+            sellReason = `❌ BTC insuficiente (${btcAvailable.toFixed(8)} < ${effectiveMinOrderSize}).`;
         } else if (btcPosition <= 0) {
             sellCanCreate = false;
             sellReason = '⚠️ Sem posição comprada relevante para montar par de SELL.';
         } else {
             sellReason = `✅ SELL liberada para ${eligibleSellPairsCount} par(es) com BUY preenchida e sem SELL ativa.`;
+        }
+        if (!effectiveTradingEnabled) {
+            buyCanCreate = false;
+            sellCanCreate = false;
+            buyReason = '⛔ STOP ativo: colocação de ordens desabilitada.';
+            sellReason = '⛔ STOP ativo: colocação de ordens desabilitada.';
         }
 
         // filledOrders já foi definido acima com dados do banco
@@ -1125,15 +1382,18 @@ async function getLiveData(historyHours = 24) {
                     openBuyOrdersCount,
                     openSellOrdersCount,
                     openPairsCount,
-                    maxConcurrentPairs: MAX_CONCURRENT_PAIRS,
+                    maxConcurrentPairs: effectiveMaxConcurrentPairs,
                     maxActiveBuys: MAX_ACTIVE_BUYS
                 }
             },
             config: {
                 simulate: SIMULATE,
-                spreadPct: SPREAD_PCT,
-                orderSize: ORDER_SIZE,
-                cycleSec: parseInt(process.env.CYCLE_SEC || '15'),
+                tradingEnabled: effectiveTradingEnabled,
+                useCashManagement: effectiveUseCashManagement,
+                adaptiveStrategy: effectiveAdaptiveStrategy,
+                spreadPct: effectiveSpreadPct,
+                orderSize: effectiveOrderSize,
+                cycleSec: effectiveCycleSec,
                 maxOrderAgeSecMinHour: (() => {
                     const ageSec = MAX_ORDER_AGE;
                     const ageMin = Math.floor(ageSec / 60);
@@ -1143,16 +1403,16 @@ async function getLiveData(historyHours = 24) {
                 })(),
                 maxDailyVolume: process.env.MAX_DAILY_VOLUME || '0.01',
                 maxPosition: process.env.MAX_POSITION || '0.0002',
-                minOrderSize: MIN_ORDER_SIZE,
+                minOrderSize: effectiveMinOrderSize,
                 emergencyStopPnL: process.env.EMERGENCY_STOP_PNL || '-50',
-                priceDrift: (PRICE_DRIFT * 100).toFixed(2),
+                priceDrift: (effectivePriceDriftPct * 100).toFixed(2),
                 driftTargetPct: parseFloat(DRIFT_TARGET_PCT.toFixed(2)),
                 priceDriftBoost: (parseFloat(process.env.PRICE_DRIFT_BOOST_PCT || '0.0') * 100).toFixed(2),
-                stopLoss: (parseFloat(process.env.STOP_LOSS_PCT || '0.008')).toFixed(3),
-                takeProfit: (parseFloat(process.env.TAKE_PROFIT_PCT || '0.001')).toFixed(3),
-                minVolume: MIN_VOLUME,
+                stopLoss: effectiveStopLossPct.toFixed(3),
+                takeProfit: effectiveTakeProfitPct.toFixed(3),
+                minVolume: effectiveMinVolume,
                 volatilityLimit: parseFloat(process.env.VOLATILITY_LIMIT || 0.05),
-                minRepriceAgeSec: parseInt(process.env.MIN_REPRICE_AGE_SEC || '86400'),
+                minRepriceAgeSec: effectiveMinRepriceAgeSec,
                 feeRateMaker: FEE_RATE_MAKER, // ADICIONADO
                 feeRateTaker: FEE_RATE_TAKER // ADICIONADO
             },
@@ -1792,6 +2052,124 @@ app.get('/api/pairs', async (req, res) => {
 // ========== VARIÁVEIS DE CONTROLE DE TESTES ==========
 let automatedTestRunning = false;
 let automatedTestResults = null;
+let adaptiveAutoRunning = false;
+let adaptiveAutoLastRunAt = null;
+let adaptiveAutoLastStatus = 'idle';
+let adaptiveAutoTimer = null;
+let adaptiveAutoConfiguredEnabled = ADAPTIVE_PROFILE_AUTORUN_DEFAULT;
+let adaptiveAutoConfiguredIntervalMin = ADAPTIVE_PROFILE_INTERVAL_MIN_DEFAULT;
+let adaptiveAutoConfiguredTestHours = ADAPTIVE_PROFILE_TEST_HOURS_DEFAULT;
+
+function resolveAdaptiveAutoSettings(runtimeEnvConfig = {}) {
+    const enabled = parseBoolSafe(runtimeEnvConfig.ADAPTIVE_PROFILE_AUTORUN, ADAPTIVE_PROFILE_AUTORUN_DEFAULT);
+    const intervalMinRaw = parseInt(runtimeEnvConfig.ADAPTIVE_PROFILE_INTERVAL_MIN, 10);
+    const testHoursRaw = parseInt(runtimeEnvConfig.ADAPTIVE_PROFILE_TEST_HOURS, 10);
+    const intervalMin = Math.max(
+        5,
+        Number.isFinite(intervalMinRaw) ? intervalMinRaw : ADAPTIVE_PROFILE_INTERVAL_MIN_DEFAULT
+    );
+    const testHours = Math.max(
+        4,
+        Number.isFinite(testHoursRaw) ? testHoursRaw : ADAPTIVE_PROFILE_TEST_HOURS_DEFAULT
+    );
+    return {enabled, intervalMin, testHours};
+}
+
+async function runAdaptiveAutomatedCycle({hours = null, forceDataSource = 'supabase', trigger = 'scheduler'} = {}) {
+    if (!ENABLE_AUTOMATED_TESTS) return null;
+    if (automatedTestRunning || adaptiveAutoRunning) {
+        log('DEBUG', `[ADAPTIVE_AUTO] Ciclo ignorado (${trigger}): já existe execução em andamento.`);
+        return null;
+    }
+
+    const runtimeProfile = process.env.BOT_CONFIG_PROFILE || 'production';
+    adaptiveAutoRunning = true;
+    automatedTestRunning = true;
+    adaptiveAutoLastStatus = `running:${trigger}`;
+    try {
+        const runtimeConfigRow = await db.getRuntimeConfig(runtimeProfile).catch(() => null);
+        const runtimeEnvConfig = runtimeConfigRow?.env_config && typeof runtimeConfigRow.env_config === 'object'
+            ? runtimeConfigRow.env_config
+            : {};
+        const adaptiveSettings = resolveAdaptiveAutoSettings(runtimeEnvConfig);
+        adaptiveAutoConfiguredEnabled = adaptiveSettings.enabled;
+        adaptiveAutoConfiguredIntervalMin = adaptiveSettings.intervalMin;
+        adaptiveAutoConfiguredTestHours = adaptiveSettings.testHours;
+
+        if (trigger === 'interval' && !adaptiveSettings.enabled) {
+            adaptiveAutoLastStatus = 'disabled';
+            log('DEBUG', '[ADAPTIVE_AUTO] Auto-ajuste periódico desativado no runtime config.');
+            return null;
+        }
+
+        if (trigger === 'interval' && adaptiveAutoLastRunAt) {
+            const elapsedMs = Date.now() - new Date(adaptiveAutoLastRunAt).getTime();
+            const minIntervalMs = adaptiveSettings.intervalMin * 60 * 1000;
+            if (Number.isFinite(elapsedMs) && elapsedMs < minIntervalMs) {
+                adaptiveAutoLastStatus = 'idle_waiting_interval';
+                return null;
+            }
+        }
+
+        const effectiveHours = Number.isFinite(Number(hours)) ? Number(hours) : adaptiveSettings.testHours;
+        const useCashManagement = parseBoolSafe(runtimeEnvConfig.USE_CASH_MANAGEMENT, process.env.USE_CASH_MANAGEMENT === 'true');
+        const normalizedDataSource = forceDataSource === 'binance' ? 'binance' : 'supabase';
+        const testOptions = {
+            forceDataSource: normalizedDataSource,
+            runtimeConfigProfile: runtimeProfile,
+            cashManagementParams: useCashManagement ? getCurrentCashManagementParams(runtimeEnvConfig) : null
+        };
+
+        log('INFO', `[ADAPTIVE_AUTO] Iniciando ciclo (${trigger}) com ${effectiveHours}h...`);
+        const results = await AutomatedTestRunner.runTestBattery(effectiveHours, testOptions);
+
+        const adaptiveStrategyEnabled = parseBoolSafe(
+            runtimeEnvConfig.ADAPTIVE_STRATEGY,
+            process.env.ADAPTIVE_STRATEGY !== 'false'
+        );
+        if (adaptiveStrategyEnabled) {
+            const adaptiveSelection = await autoSelectBestRiskProfile({
+                hours: effectiveHours,
+                normalizedDataSource,
+                runtimeProfile,
+                baseRuntimeEnvConfig: runtimeEnvConfig
+            });
+            results.summary = {
+                ...(results.summary || {}),
+                adaptiveProfileSelection: adaptiveSelection
+            };
+            if (adaptiveSelection?.applied) {
+                adaptiveAutoLastStatus = `applied:${adaptiveSelection.bestProfile}`;
+                log('INFO', `[ADAPTIVE_AUTO] Perfil aplicado automaticamente: ${adaptiveSelection.bestProfile}`);
+            } else {
+                adaptiveAutoLastStatus = `not_applied:${adaptiveSelection?.reason || 'unknown'}`;
+                log('WARN', `[ADAPTIVE_AUTO] Seleção não aplicada: ${adaptiveSelection?.reason || 'sem motivo informado'}`);
+            }
+        } else {
+            results.summary = {
+                ...(results.summary || {}),
+                adaptiveProfileSelection: {
+                    enabled: false,
+                    applied: false,
+                    reason: 'ADAPTIVE_STRATEGY desativado'
+                }
+            };
+            adaptiveAutoLastStatus = 'disabled';
+        }
+
+        automatedTestResults = results;
+        adaptiveAutoLastRunAt = new Date().toISOString();
+        log('INFO', `[ADAPTIVE_AUTO] Ciclo concluído: ${results.summary.passed}/${results.summary.total} passaram`);
+        return results;
+    } catch (err) {
+        adaptiveAutoLastStatus = `error:${err.message}`;
+        log('ERROR', `[ADAPTIVE_AUTO] Falha no ciclo (${trigger}): ${err.message}`);
+        return null;
+    } finally {
+        adaptiveAutoRunning = false;
+        automatedTestRunning = false;
+    }
+}
 
 // ========== ENDPOINTS DE TESTES AUTOMATIZADOS ==========
 
@@ -1810,6 +2188,12 @@ app.get('/api/tests', async (req, res) => {
         }
         
         const cached = AutomatedTestRunner.getLastTestResults();
+        const runtimeProfile = process.env.BOT_CONFIG_PROFILE || 'production';
+        const runtimeConfigRow = await db.getRuntimeConfig(runtimeProfile).catch(() => null);
+        const runtimeEnvConfig = runtimeConfigRow?.env_config && typeof runtimeConfigRow.env_config === 'object'
+            ? runtimeConfigRow.env_config
+            : {};
+        const currentRiskProfile = String(runtimeEnvConfig.RISK_PROFILE_MODE || 'personalizado');
         
         res.json({
             hasResults: cached.results !== null,
@@ -1818,7 +2202,16 @@ app.get('/api/tests', async (req, res) => {
             lastRunTime: cached.lastRunTime,
             cacheAgeSeconds: cached.cacheAge,
             canRerun: !automatedTestRunning,
-            enabled: true
+            enabled: true,
+            adaptiveAuto: {
+                enabled: ENABLE_AUTOMATED_TESTS && adaptiveAutoConfiguredEnabled,
+                running: adaptiveAutoRunning,
+                intervalMin: adaptiveAutoConfiguredIntervalMin,
+                testHours: adaptiveAutoConfiguredTestHours,
+                lastRunTime: adaptiveAutoLastRunAt,
+                lastStatus: adaptiveAutoLastStatus,
+                currentProfile: currentRiskProfile
+            }
         });
     } catch (err) {
         log('ERROR', 'Erro ao obter resultados de testes:', err.message);
@@ -1846,19 +2239,68 @@ app.post('/api/tests/run', async (req, res) => {
         automatedTestRunning = true;
         const hours = parseInt(req.body?.hours) || 24;
         const forceDataSource = req.body?.dataSource || 'binance';
-        const useCashManagement = process.env.USE_CASH_MANAGEMENT === 'true';
+        const runtimeProfile = process.env.BOT_CONFIG_PROFILE || 'production';
+        const runtimeConfigRow = await db.getRuntimeConfig(runtimeProfile).catch(() => null);
+        const runtimeEnvConfig = runtimeConfigRow?.env_config && typeof runtimeConfigRow.env_config === 'object'
+            ? runtimeConfigRow.env_config
+            : {};
+        const useCashManagement = parseBoolSafe(runtimeEnvConfig.USE_CASH_MANAGEMENT, process.env.USE_CASH_MANAGEMENT === 'true');
         const normalizedDataSource = forceDataSource === 'supabase' ? 'supabase' : (forceDataSource === 'binance' ? 'binance' : null);
         const testOptions = {
             forceDataSource: normalizedDataSource,
-            runtimeConfigProfile: process.env.BOT_CONFIG_PROFILE || 'production',
-            cashManagementParams: useCashManagement ? getCurrentCashManagementParams() : null
+            runtimeConfigProfile: runtimeProfile,
+            cashManagementParams: useCashManagement ? getCurrentCashManagementParams(runtimeEnvConfig) : null
         };
         
         log('INFO', `Iniciando bateria de testes automatizados (${hours}h, fonte: ${forceDataSource})...`);
         
         // Executar testes assincronamente
         AutomatedTestRunner.runTestBattery(hours, testOptions)
-            .then(results => {
+            .then(async (results) => {
+                try {
+                    const adaptiveStrategyEnabled = parseBoolSafe(
+                        runtimeEnvConfig.ADAPTIVE_STRATEGY,
+                        process.env.ADAPTIVE_STRATEGY !== 'false'
+                    );
+                    if (adaptiveStrategyEnabled) {
+                        log('INFO', 'Estratégia adaptativa ativa: avaliando melhor perfil automaticamente...');
+                        const adaptiveSelection = await autoSelectBestRiskProfile({
+                            hours,
+                            normalizedDataSource,
+                            runtimeProfile,
+                            baseRuntimeEnvConfig: runtimeEnvConfig
+                        });
+                        results.summary = {
+                            ...(results.summary || {}),
+                            adaptiveProfileSelection: adaptiveSelection
+                        };
+                        if (adaptiveSelection?.applied) {
+                            log('INFO', `Perfil aplicado automaticamente: ${adaptiveSelection.bestProfile}`);
+                        } else {
+                            log('WARN', `Seleção automática não aplicada: ${adaptiveSelection?.reason || 'sem motivo informado'}`);
+                        }
+                    } else {
+                        results.summary = {
+                            ...(results.summary || {}),
+                            adaptiveProfileSelection: {
+                                enabled: false,
+                                applied: false,
+                                reason: 'ADAPTIVE_STRATEGY desativado'
+                            }
+                        };
+                    }
+                } catch (adaptiveErr) {
+                    results.summary = {
+                        ...(results.summary || {}),
+                        adaptiveProfileSelection: {
+                            enabled: true,
+                            applied: false,
+                            reason: adaptiveErr.message || 'Falha na seleção automática'
+                        }
+                    };
+                    log('ERROR', `Falha na seleção automática de perfil: ${adaptiveErr.message}`);
+                }
+
                 automatedTestResults = results;
                 automatedTestRunning = false;
                 log('INFO', `Testes automatizados concluídos: ${results.summary.passed}/${results.summary.total} passaram`);
@@ -2026,10 +2468,10 @@ app.post('/api/orders/cancel-all', async (req, res) => {
     }
 });
 
-// POST /api/pairs/clear-all - LIMPAR TODOS OS PARES (marca ordens como cancelled)
+// POST /api/pairs/clear-all - Limpa apenas pares NÃO completos (preserva ciclo completo)
 app.post('/api/pairs/clear-all', async (req, res) => {
     try {
-        log('WARN', '🚨 LIMPANDO TODOS OS PARES DO SISTEMA!');
+        log('WARN', '🚨 Limpando pares não completos (preservando ciclos completos)...');
 
         // Buscar todas as ordens (open + filled)
         const allOrders = await db.getOrders({ limit: 10000 });
@@ -2040,15 +2482,37 @@ app.post('/api/pairs/clear-all', async (req, res) => {
                 message: 'Nenhum par para limpar',
                 totalPairs: 0,
                 clearedCount: 0,
-                failedCount: 0
+                failedCount: 0,
+                preservedCompletePairs: 0
             });
         }
 
+        // Identificar pares completos (BUY filled + SELL filled) para PRESERVAR
+        const pairStats = new Map();
+        for (const order of allOrders) {
+            if (!order.pair_id) continue;
+            if (!pairStats.has(order.pair_id)) {
+                pairStats.set(order.pair_id, { buyFilled: false, sellFilled: false });
+            }
+            const stats = pairStats.get(order.pair_id);
+            if (order.side === 'buy' && order.status === 'filled') stats.buyFilled = true;
+            if (order.side === 'sell' && order.status === 'filled') stats.sellFilled = true;
+        }
+        const completedPairIds = new Set(
+            Array.from(pairStats.entries())
+                .filter(([, stats]) => stats.buyFilled && stats.sellFilled)
+                .map(([pairId]) => pairId)
+        );
+
+        // Apenas ordens de pares NÃO completos (ou sem pair_id) serão limpas
+        const targetOrders = allOrders.filter((order) => !order.pair_id || !completedPairIds.has(order.pair_id));
+
         const clearedPairs = new Set();
         const failedPairs = [];
+        const targetPairIds = new Set(targetOrders.map(o => o.pair_id).filter(Boolean));
 
         // 1. PRIMEIRO: Tentar cancelar todas as ordens OPEN
-        const openOrders = allOrders.filter(o => o.status === 'open');
+        const openOrders = targetOrders.filter(o => o.status === 'open');
         for (const order of openOrders) {
             let cancelled = false;
             try {
@@ -2070,8 +2534,8 @@ app.post('/api/pairs/clear-all', async (req, res) => {
             }
         }
 
-        // 2. SEGUNDO: Marcar TODAS as ordens FILLED como CANCELLED (já foram executadas, apenas limpar do display)
-        const filledOrders = allOrders.filter(o => o.status === 'filled');
+        // 2. SEGUNDO: Marcar FILLED apenas dos pares NÃO completos como CANCELLED
+        const filledOrders = targetOrders.filter(o => o.status === 'filled');
         for (const order of filledOrders) {
             try {
                 await db.saveOrder({ ...order, status: 'cancelled' });
@@ -2084,14 +2548,15 @@ app.post('/api/pairs/clear-all', async (req, res) => {
         }
 
         const uniqueFailedPairs = new Set(failedPairs);
-        log('INFO', `📊 LIMPEZA CONCLUÍDA: ${clearedPairs.size} pares limpos, ${uniqueFailedPairs.size} pares com erro`);
+        log('INFO', `📊 LIMPEZA CONCLUÍDA: ${clearedPairs.size} pares não completos limpos, ${completedPairIds.size} pares completos preservados, ${uniqueFailedPairs.size} pares com erro`);
 
         res.json({
             success: true,
-            message: `✅ Sistema limpo! ${clearedPairs.size} pares removidos`,
-            totalPairs: allOrders.length,
+            message: `✅ Limpeza concluída! ${clearedPairs.size} pares não completos removidos; ${completedPairIds.size} pares completos preservados.`,
+            totalPairs: targetPairIds.size,
             clearedCount: clearedPairs.size,
             failedCount: uniqueFailedPairs.size,
+            preservedCompletePairs: completedPairIds.size,
             clearedPairs: Array.from(clearedPairs).slice(0, 10),
             failedPairs: Array.from(uniqueFailedPairs).slice(0, 10)
         });
@@ -2231,10 +2696,12 @@ app.post('/api/metrics/reset', async (req, res) => {
 // Graceful shutdown
 process.on('SIGINT', () => {
     log('INFO', 'Shutting down server...');
+    if (adaptiveAutoTimer) clearInterval(adaptiveAutoTimer);
     process.exit();
 });
 process.on('SIGTERM', () => {
     log('INFO', 'Shutting down server...');
+    if (adaptiveAutoTimer) clearInterval(adaptiveAutoTimer);
     process.exit();
 });
 
@@ -2247,17 +2714,21 @@ db.init().then(() => {
             // Executar testes automatizados na inicialização (somente se ENABLE_AUTOMATED_TESTS !== 'false')
             if (ENABLE_AUTOMATED_TESTS) {
                 log('INFO', 'Iniciando testes automatizados na inicialização...');
-                automatedTestRunning = true;
-                AutomatedTestRunner.runTestBattery(24)
-                    .then(results => {
-                        automatedTestResults = results;
-                        automatedTestRunning = false;
-                        log('INFO', `✅ Testes de inicialização concluídos: ${results.summary.passed}/${results.summary.total} passaram (${results.summary.passRate}%)`);
-                    })
-                    .catch(err => {
-                        automatedTestRunning = false;
-                        log('WARN', `⚠️ Testes de inicialização falharam: ${err.message}`);
-                    });
+                runAdaptiveAutomatedCycle({
+                    hours: null,
+                    forceDataSource: 'supabase',
+                    trigger: 'startup'
+                }).catch((err) => log('WARN', `⚠️ Testes de inicialização falharam: ${err.message}`));
+
+                const schedulerTickMs = 60 * 1000;
+                adaptiveAutoTimer = setInterval(() => {
+                    runAdaptiveAutomatedCycle({
+                        hours: null,
+                        forceDataSource: 'supabase',
+                        trigger: 'interval'
+                    }).catch((err) => log('WARN', `⚠️ Ciclo automático falhou: ${err.message}`));
+                }, schedulerTickMs);
+                log('INFO', 'Scheduler de auto-ajuste iniciado (tick 1min, parâmetros via runtime config).');
             } else {
                 log('INFO', '⚠️ Testes automatizados desabilitados (ENABLE_AUTOMATED_TESTS=false)');
             }

@@ -56,6 +56,8 @@ let MAX_POSITION = parseFloat(process.env.MAX_POSITION || '0.0003'); // Posiçã
 let DAILY_LOSS_LIMIT = parseFloat(process.env.DAILY_LOSS_LIMIT || '10'); // Limite de perda diária em BRL
 let INVENTORY_THRESHOLD = parseFloat(process.env.INVENTORY_THRESHOLD || '0.0002'); // Ajustado para 0.02%
 let BIAS_FACTOR = parseFloat(process.env.BIAS_FACTOR || '0.00015'); // Ajustado para 0.015%
+let TRADING_ENABLED = process.env.TRADING_ENABLED !== 'false';
+let USE_CASH_MANAGEMENT = process.env.USE_CASH_MANAGEMENT === 'true';
 let SELL_FIRST_ENABLED = process.env.SELL_FIRST === 'true'; // Permite SELL sem BUY inicial
 let MIN_ORDER_CYCLES = parseInt(process.env.MIN_ORDER_CYCLES || '2'); // Mínimo 2 ciclos antes de reprecificar/cancelar
 let MAX_ORDER_AGE = parseInt(process.env.MAX_ORDER_AGE || '86400'); // Máximo 86400s (1 dia) antes de cancelar - tempo generoso para preenchimento
@@ -160,6 +162,29 @@ function parseIntSafe(value, fallback) {
 
 let runtimeConfigVersion = '';
 let lastRuntimeConfigSyncTs = 0;
+let cashManagementRuntimeConfig = {};
+
+function extractCashManagementRuntimeConfig(envConfig = {}) {
+    return {
+        BASE_BUY_THRESHOLD: envConfig.CASH_MGT_BASE_BUY_THRESHOLD,
+        BASE_SELL_THRESHOLD: envConfig.CASH_MGT_BASE_SELL_THRESHOLD,
+        BASE_BUY_MICRO_THRESHOLD: envConfig.CASH_MGT_BASE_BUY_MICRO_THRESHOLD,
+        BASE_SELL_MICRO_THRESHOLD: envConfig.CASH_MGT_BASE_SELL_MICRO_THRESHOLD,
+        BASE_MICRO_TRADE_INTERVAL: envConfig.CASH_MGT_BASE_MICRO_TRADE_INTERVAL,
+        MAX_BUY_COUNT: envConfig.CASH_MGT_MAX_BUY_COUNT,
+        MIN_BTC_RESERVE: envConfig.CASH_MGT_MIN_BTC_RESERVE,
+        BUY_BRL_MIN: envConfig.CASH_MGT_BUY_BRL_MIN,
+        MICRO_BUY_BRL_MIN: envConfig.CASH_MGT_MICRO_BUY_BRL_MIN,
+        SELL_PCT_BASE: envConfig.CASH_MGT_SELL_PCT_BASE,
+        BUY_PCT_BASE: envConfig.CASH_MGT_BUY_PCT_BASE,
+        SELL_PCT_MIN: envConfig.CASH_MGT_SELL_PCT_MIN,
+        SELL_PCT_MAX: envConfig.CASH_MGT_SELL_PCT_MAX,
+        BUY_PCT_MIN: envConfig.CASH_MGT_BUY_PCT_MIN,
+        BUY_PCT_MAX: envConfig.CASH_MGT_BUY_PCT_MAX,
+        PROFIT_TARGET_PCT: envConfig.CASH_MGT_PROFIT_TARGET_PCT,
+        STOP_LOSS_PCT: envConfig.CASH_MGT_STOP_LOSS_PCT
+    };
+}
 
 function applyRuntimeConfig(envConfig = {}) {
     const prevCycleSec = CYCLE_SEC;
@@ -179,6 +204,8 @@ function applyRuntimeConfig(envConfig = {}) {
     DAILY_LOSS_LIMIT = parseNum(envConfig.DAILY_LOSS_LIMIT, DAILY_LOSS_LIMIT);
     INVENTORY_THRESHOLD = parseNum(envConfig.INVENTORY_THRESHOLD, INVENTORY_THRESHOLD);
     BIAS_FACTOR = parseNum(envConfig.BIAS_FACTOR, BIAS_FACTOR);
+    TRADING_ENABLED = parseBool(envConfig.TRADING_ENABLED, TRADING_ENABLED);
+    USE_CASH_MANAGEMENT = parseBool(envConfig.USE_CASH_MANAGEMENT, USE_CASH_MANAGEMENT);
     SELL_FIRST_ENABLED = parseBool(envConfig.SELL_FIRST, SELL_FIRST_ENABLED);
     MIN_ORDER_CYCLES = parseIntSafe(envConfig.MIN_ORDER_CYCLES, MIN_ORDER_CYCLES);
     MAX_ORDER_AGE = parseIntSafe(envConfig.MAX_ORDER_AGE, MAX_ORDER_AGE);
@@ -209,6 +236,7 @@ function applyRuntimeConfig(envConfig = {}) {
     MIN_FILL_RATE_FOR_NEW = parseNum(envConfig.MIN_FILL_RATE_FOR_NEW, MIN_FILL_RATE_FOR_NEW);
     PAIRS_THROTTLE_CYCLES = parseIntSafe(envConfig.PAIRS_THROTTLE_CYCLES, PAIRS_THROTTLE_CYCLES);
     ADAPTIVE_STRATEGY_ENABLED = parseBool(envConfig.ADAPTIVE_STRATEGY, ADAPTIVE_STRATEGY_ENABLED);
+    cashManagementRuntimeConfig = extractCashManagementRuntimeConfig(envConfig);
 
     currentSpreadPct = Math.max(MIN_SPREAD_PCT, Math.min(currentSpreadPct, MAX_SPREAD_PCT));
     currentBaseSize = Math.max(MIN_ORDER_SIZE, Math.min(currentBaseSize, MAX_ORDER_SIZE));
@@ -217,6 +245,9 @@ function applyRuntimeConfig(envConfig = {}) {
 
     if (prevCycleSec !== CYCLE_SEC) {
         log('INFO', `[RUNTIME_CONFIG] CYCLE_SEC atualizado: ${prevCycleSec}s -> ${CYCLE_SEC}s`);
+    }
+    if (cashManagementStrategy && typeof cashManagementStrategy.updateConfig === 'function') {
+        cashManagementStrategy.updateConfig(cashManagementRuntimeConfig);
     }
 }
 
@@ -1497,6 +1528,10 @@ function getPairMetrics() {
 
 async function placeOrder(side, price, qty, sessionId = null, pairIdInput = null) {
     try {
+        if (!TRADING_ENABLED) {
+            log('WARN', `[TRADING_STOPPED] Ordem ${side.toUpperCase()} bloqueada: colocação de ordens está em STOP.`);
+            return false;
+        }
         if (qty * price < MIN_VOLUME) {
             log('WARN', `Ordem ${side.toUpperCase()} ignorada: volume baixo (${(qty * price).toFixed(8)} < ${MIN_VOLUME}).`);
             return false;
@@ -2211,7 +2246,7 @@ async function runCycle() {
         // ===== EXECUTAR LÓGICA DE CASH MANAGEMENT (Estratégia ativa se USE_CASH_MANAGEMENT=true) =====
         // ⚠️ PROTEÇÃO: SELL-FIRST foi desabilitado - causava INVERSÃO DE SPREAD!
         // Histórico: 21/01 colocava SELL @ 476.220 primeiro, depois BUY @ 476.949 (9h depois) = PERDA total
-        if (cashManagementStrategy && process.env.USE_CASH_MANAGEMENT === 'true') {
+        if (cashManagementStrategy && USE_CASH_MANAGEMENT) {
             log('DEBUG', `[CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...`);
 
             // ✅ FIX: Calcular preços corretamente com spread
@@ -2482,7 +2517,7 @@ async function main() {
     }
 
     // Inicializar estratégia principal
-    cashManagementStrategy = new CashManagementStrategy();
+    cashManagementStrategy = new CashManagementStrategy(cashManagementRuntimeConfig);
     
     log('SUCCESS', '[CASH_MANAGEMENT] Estratégia de gerenciamento de caixa inicializada (PRIMÁRIA).');
 
