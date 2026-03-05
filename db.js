@@ -1108,6 +1108,22 @@ class Database {
         });
     }
 
+    async getWorstPnLInSession(sessionId) {
+        return new Promise((resolve, reject) => {
+            this.db.get(`
+                SELECT MIN(pnl) AS worst_pnl
+                FROM recovery_points
+                WHERE session_id = ?
+            `, [sessionId], (err, row) => {
+                if (err) return reject(err);
+                if (!row || row.worst_pnl === null || row.worst_pnl === undefined) {
+                    return resolve(null);
+                }
+                resolve(parseFloat(row.worst_pnl));
+            });
+        });
+    }
+
     async updateRecoveryBaseline(sessionId, newBaseline) {
         const nowTs = Math.floor(Date.now() / 1000);
         return new Promise((resolve, reject) => {

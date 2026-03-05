@@ -83,6 +83,10 @@ let EXTERNAL_TREND_WEIGHT_COINBASE = parseFloat(process.env.EXTERNAL_TREND_WEIGH
 let EXTERNAL_TREND_WEIGHT_KRAKEN = parseFloat(process.env.EXTERNAL_TREND_WEIGHT_KRAKEN || '0.7');
 let PRICE_HISTORY_SAVE_INTERVAL_SEC = parseInt(process.env.PRICE_HISTORY_SAVE_INTERVAL_SEC || '30', 10);
 let PNL_HISTORY_SAVE_INTERVAL_SEC = parseInt(process.env.PNL_HISTORY_SAVE_INTERVAL_SEC || '60', 10);
+let ANTI_GRAVITY_MODE = process.env.ANTI_GRAVITY_MODE !== 'false';
+let MIN_PROFIT_BUFFER_PCT = parseFloat(process.env.MIN_PROFIT_BUFFER_PCT || '0.0015');
+let ANTI_GRAVITY_BUY_WIDEN = parseFloat(process.env.ANTI_GRAVITY_BUY_WIDEN || '0.22');
+let ANTI_GRAVITY_SELL_TIGHTEN = parseFloat(process.env.ANTI_GRAVITY_SELL_TIGHTEN || '0.10');
 const WARMUP_CANDLES = 50; // Velas para warmup
 const TEST_PHASE_CYCLES = 10; // Ciclos de fase teste
 const PARAM_ADJUST_FACTOR = 0.05; // 5% de ajuste
@@ -160,6 +164,16 @@ function parseIntSafe(value, fallback) {
     return Number.isFinite(n) ? n : fallback;
 }
 
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
+function getMinimumSpreadFloorPct() {
+    const roundTripMakerFee = FEE_RATE_MAKER * 2;
+    const targetNetBuffer = Math.max(0, MIN_PROFIT_BUFFER_PCT);
+    return roundTripMakerFee + targetNetBuffer;
+}
+
 let runtimeConfigVersion = '';
 let lastRuntimeConfigSyncTs = 0;
 let cashManagementRuntimeConfig = {};
@@ -188,6 +202,8 @@ function extractCashManagementRuntimeConfig(envConfig = {}) {
 
 function applyRuntimeConfig(envConfig = {}) {
     const prevCycleSec = CYCLE_SEC;
+    const prevMinSpread = MIN_SPREAD_PCT;
+    const prevExpectedProfitThreshold = EXPECTED_PROFIT_THRESHOLD;
 
     SIMULATE = parseBool(envConfig.SIMULATE, SIMULATE);
     CYCLE_SEC = Math.max(1, parseIntSafe(envConfig.CYCLE_SEC, CYCLE_SEC));
@@ -231,12 +247,28 @@ function applyRuntimeConfig(envConfig = {}) {
     EXTERNAL_TREND_WEIGHT_KRAKEN = parseNum(envConfig.EXTERNAL_TREND_WEIGHT_KRAKEN, EXTERNAL_TREND_WEIGHT_KRAKEN);
     PRICE_HISTORY_SAVE_INTERVAL_SEC = Math.max(1, parseIntSafe(envConfig.PRICE_HISTORY_SAVE_INTERVAL_SEC, PRICE_HISTORY_SAVE_INTERVAL_SEC));
     PNL_HISTORY_SAVE_INTERVAL_SEC = Math.max(1, parseIntSafe(envConfig.PNL_HISTORY_SAVE_INTERVAL_SEC, PNL_HISTORY_SAVE_INTERVAL_SEC));
+    ANTI_GRAVITY_MODE = parseBool(envConfig.ANTI_GRAVITY_MODE, ANTI_GRAVITY_MODE);
+    MIN_PROFIT_BUFFER_PCT = Math.max(0, parseNum(envConfig.MIN_PROFIT_BUFFER_PCT, MIN_PROFIT_BUFFER_PCT));
+    ANTI_GRAVITY_BUY_WIDEN = clamp(parseNum(envConfig.ANTI_GRAVITY_BUY_WIDEN, ANTI_GRAVITY_BUY_WIDEN), 0, 2);
+    ANTI_GRAVITY_SELL_TIGHTEN = clamp(parseNum(envConfig.ANTI_GRAVITY_SELL_TIGHTEN, ANTI_GRAVITY_SELL_TIGHTEN), 0, 1);
     MAX_CONCURRENT_PAIRS = parseIntSafe(envConfig.MAX_CONCURRENT_PAIRS, MAX_CONCURRENT_PAIRS);
     MAX_PAIRS_PER_CYCLE = parseIntSafe(envConfig.MAX_PAIRS_PER_CYCLE, MAX_PAIRS_PER_CYCLE);
     MIN_FILL_RATE_FOR_NEW = parseNum(envConfig.MIN_FILL_RATE_FOR_NEW, MIN_FILL_RATE_FOR_NEW);
     PAIRS_THROTTLE_CYCLES = parseIntSafe(envConfig.PAIRS_THROTTLE_CYCLES, PAIRS_THROTTLE_CYCLES);
     ADAPTIVE_STRATEGY_ENABLED = parseBool(envConfig.ADAPTIVE_STRATEGY, ADAPTIVE_STRATEGY_ENABLED);
     cashManagementRuntimeConfig = extractCashManagementRuntimeConfig(envConfig);
+
+    if (ANTI_GRAVITY_MODE) {
+        const spreadFloor = getMinimumSpreadFloorPct();
+        if (MIN_SPREAD_PCT < spreadFloor) {
+            MIN_SPREAD_PCT = spreadFloor;
+            log('WARN', `[ANTI_GRAVITY] MIN_SPREAD_PCT elevado para ${(MIN_SPREAD_PCT * 100).toFixed(3)}% (taxas + buffer).`);
+        }
+        if (TAKE_PROFIT_PCT < MIN_SPREAD_PCT) {
+            TAKE_PROFIT_PCT = MIN_SPREAD_PCT;
+        }
+        EXPECTED_PROFIT_THRESHOLD = Math.max(0, EXPECTED_PROFIT_THRESHOLD);
+    }
 
     currentSpreadPct = Math.max(MIN_SPREAD_PCT, Math.min(currentSpreadPct, MAX_SPREAD_PCT));
     currentBaseSize = Math.max(MIN_ORDER_SIZE, Math.min(currentBaseSize, MAX_ORDER_SIZE));
@@ -245,6 +277,12 @@ function applyRuntimeConfig(envConfig = {}) {
 
     if (prevCycleSec !== CYCLE_SEC) {
         log('INFO', `[RUNTIME_CONFIG] CYCLE_SEC atualizado: ${prevCycleSec}s -> ${CYCLE_SEC}s`);
+    }
+    if (prevMinSpread !== MIN_SPREAD_PCT) {
+        log('INFO', `[RUNTIME_CONFIG] MIN_SPREAD_PCT atualizado: ${(prevMinSpread * 100).toFixed(3)}% -> ${(MIN_SPREAD_PCT * 100).toFixed(3)}%`);
+    }
+    if (prevExpectedProfitThreshold !== EXPECTED_PROFIT_THRESHOLD) {
+        log('INFO', `[RUNTIME_CONFIG] EXPECTED_PROFIT_THRESHOLD atualizado: ${prevExpectedProfitThreshold.toFixed(6)} -> ${EXPECTED_PROFIT_THRESHOLD.toFixed(6)}`);
     }
     if (cashManagementStrategy && typeof cashManagementStrategy.updateConfig === 'function') {
         cashManagementStrategy.updateConfig(cashManagementRuntimeConfig);
@@ -266,6 +304,9 @@ async function refreshRuntimeConfig(force = false) {
     runtimeConfigVersion = nextVersion;
     log('SUCCESS', `[RUNTIME_CONFIG] Configuração aplicada em tempo real (profile=${RUNTIME_CONFIG_PROFILE}).`);
 }
+
+// Aplica guardrails de lucro também no boot (mesmo sem runtime config no banco).
+applyRuntimeConfig(process.env);
 
 // ---------------- GLOBAL STATE ----------------
 let cycleCount = 0;
@@ -927,6 +968,33 @@ async function checkExternalTrends() {
     return externalTrendData;
 }
 
+function applyAntiGravitySpreadGuards(pred, buySpreadAmount, sellSpreadAmount) {
+    if (!ANTI_GRAVITY_MODE || !pred) {
+        return { buySpreadAmount, sellSpreadAmount };
+    }
+
+    const confidence = clamp(pred.confidence || 0, 0, 1);
+    const volatilityFactor = pred.volatility > VOL_LIMIT_PCT ? 1.08 : 1;
+    let buyFactor = volatilityFactor;
+    let sellFactor = volatilityFactor;
+
+    if (pred.trend === 'down') {
+        buyFactor *= 1 + (ANTI_GRAVITY_BUY_WIDEN * confidence);
+        sellFactor *= 1 - (ANTI_GRAVITY_SELL_TIGHTEN * confidence);
+    } else if (pred.trend === 'up') {
+        buyFactor *= 1 - ((ANTI_GRAVITY_SELL_TIGHTEN * 0.4) * confidence);
+        sellFactor *= 1 + ((ANTI_GRAVITY_BUY_WIDEN * 0.5) * confidence);
+    }
+
+    const guardedBuySpread = buySpreadAmount * clamp(buyFactor, 0.75, 2.2);
+    const guardedSellSpread = sellSpreadAmount * clamp(sellFactor, 0.75, 2.2);
+
+    return {
+        buySpreadAmount: guardedBuySpread,
+        sellSpreadAmount: guardedSellSpread
+    };
+}
+
 async function validateTradingDecision(botTrend, botConfidence, side) {
     // Garante que temos dados externos (carrega se necessário)
     if (!externalTrendData) {
@@ -1357,7 +1425,7 @@ async function createPairedSellOrder(buyOrderData, currentMid, pairId) {
         // BUY foi preenchida a buyOrderData.price
         // SELL deve ser colocada ACIMA para lucrar
         const buyPrice = parseFloat(buyOrderData.price);
-        const minSellPrice = buyPrice * (1 + MIN_SPREAD_PCT); // Mínimo para cobrir fees
+        const minSellPrice = buyPrice * (1 + MIN_SPREAD_PCT); // Mínimo para cobrir fees + buffer
         const targetSellPrice = Math.max(
             currentMid * (1 + currentSpreadPct / 2),  // Spread normal
             minSellPrice                              // Mínimo obrigatório
@@ -2143,6 +2211,7 @@ async function runCycle() {
         const externalSpread = getExternalSpreadFactors(externalTrendData, pred.trend, pred.confidence, pred.volatility);
         buySpreadAmount = spreadAmount * externalSpread.buyFactor;
         sellSpreadAmount = spreadAmount * externalSpread.sellFactor;
+        ({ buySpreadAmount, sellSpreadAmount } = applyAntiGravitySpreadGuards(pred, buySpreadAmount, sellSpreadAmount));
         log('INFO', `[SPREAD_TREND] source=${externalSpread.source} trend=${externalSpread.trend} conf=${externalSpread.confidence.toFixed(2)} buyFactor=${externalSpread.buyFactor.toFixed(2)} sellFactor=${externalSpread.sellFactor.toFixed(2)} diverge=${externalSpread.divergent} volScale=${externalSpread.volatilityScale.toFixed(2)}`);
 
         // ===== NOVOS MÓDULOS DE ANÁLISE E OTIMIZAÇÃO =====
@@ -2269,6 +2338,7 @@ async function runCycle() {
             const avgBuyPrice = btcPosition > 0 ? (totalCost / btcPosition) : null;
             const minProfitPct = MIN_SPREAD_PCT;
             const sellSignalCash = cashManagementStrategy.shouldSell(mid, btcBalance, pred.trend, avgBuyPrice, minProfitPct);
+            const expectedProfitGateOk = pred.expectedProfit >= EXPECTED_PROFIT_THRESHOLD;
             if (avgBuyPrice) {
                 const minSellPrice = avgBuyPrice * (1 + minProfitPct);
                 log('DEBUG', `[CASH_MGT] AvgBuy=R$${avgBuyPrice.toFixed(2)} | MinSell=R$${minSellPrice.toFixed(2)} | Mid=R$${mid.toFixed(2)}`);
@@ -2304,7 +2374,10 @@ async function runCycle() {
             // Verificar sinal de COMPRA
             const buySignalCash = cashManagementStrategy.shouldBuy(mid, brlBalance, btcBalance, pred.trend);
             log('DEBUG', `[CASH_MGT] shouldBuy=${buySignalCash.shouldBuy}, reason=${buySignalCash.reason}, activeBuys=${getActiveOrderCount('buy')}/${MAX_ACTIVE_BUYS}`);
-            if (buySignalCash.shouldBuy && getActiveOrderCount('buy') < MAX_ACTIVE_BUYS) {
+            if (!expectedProfitGateOk && buySignalCash.shouldBuy) {
+                log('INFO', `[ANTI_GRAVITY] BUY bloqueada: expectedProfit=${pred.expectedProfit.toFixed(6)} abaixo do threshold=${EXPECTED_PROFIT_THRESHOLD.toFixed(6)}`);
+            }
+            if (buySignalCash.shouldBuy && expectedProfitGateOk && getActiveOrderCount('buy') < MAX_ACTIVE_BUYS) {
                 const buyQty = Math.min(0.0002, (brlBalance * buySignalCash.qty) / cashMgmtBuyPrice);
                 if (buyQty > MIN_ORDER_SIZE && brlBalance >= buyQty * cashMgmtBuyPrice) {
                     log('SUCCESS', `[CASH_MGT_BUY] ${buySignalCash.reason}`);
@@ -2335,7 +2408,7 @@ async function runCycle() {
             
             // Micro trades (pequenas operações para aproveitar volatilidade)
             const microTradeSignals = cashManagementStrategy.shouldMicroTrade(cycleCount, mid, btcBalance, brlBalance, avgBuyPrice, minProfitPct);
-            if (microTradeSignals.buy && getActiveOrderCount('buy') < MAX_ACTIVE_BUYS) {
+            if (microTradeSignals.buy && expectedProfitGateOk && getActiveOrderCount('buy') < MAX_ACTIVE_BUYS) {
                 const microBuyQty = Math.min(0.00006, (brlBalance * microTradeSignals.buy.qty) / cashMgmtBuyPrice);
                 if (microBuyQty > MIN_ORDER_SIZE) {
                     log('INFO', `[CASH_MGT_MICRO] ${microTradeSignals.buy.reason}`);

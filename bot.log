@@ -4232,3 +4232,432 @@
 00:28:38.519 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJTYVVBAP72FD56Q4X0YFV2R: age=66.2s, MAX_ORDER_AGE=86400s
 00:28:40.085 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
 00:28:40.096 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=true, reason=Queda 0.084% - COMPRA (1/6), activeBuys=1/5
+00:04:37.723 [INFO]   [Bot] ================================================
+00:04:37.730 [INFO]   [Bot] =        MB BOT - INICIANDO EXECUÇÃO           =
+00:04:37.746 [INFO]   [Bot] ================================================
+00:04:38.124 [SUCCESS] [Bot] [RUNTIME_CONFIG] Configuração aplicada em tempo real (profile=production).
+00:04:38.605 [INFO]   [Bot] [STATE] Saldo inicial restaurado do Supabase: BRL=200.00 BTC=0.00000000
+00:04:39.672 [SUCCESS] [Bot] [AUTH] Autenticação LIVE concluída.
+00:04:39.678 [INFO]   [Bot] [ADAPTIVE] Sistema adaptativo está ativado.
+00:04:39.698 [SUCCESS] [Bot] [CASH_MANAGEMENT] Estratégia de gerenciamento de caixa inicializada (PRIMÁRIA).
+00:04:40.074 [SUCCESS] [Bot] Bot iniciado em modo PRODUÇÃO. Ciclo a cada 60s.
+00:04:40.083 [INFO]   [Bot] Iniciando ciclo 1.
+00:04:40.975 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:04:40.985 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 1 incompleta(s), 0 órfã(s) removida(s)
+00:04:41.022 [DEBUG]  [Bot] Sincronização: Carregadas 1 ordens da BD (BUY: 0✓, SELL: 1✓). Pares no mapa: 1
+00:04:41.031 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 1 (BUY sem SELL ou vice-versa)
+00:04:41.045 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:04:44.412 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=381006.00, Best Ask=381449.00.
+00:04:44.781 [WARN]   [Bot] Histórico insuficiente para RSI (2/13). Retornando neutro (50).
+00:04:44.785 [WARN]   [Bot] Histórico insuficiente para EMA (2/8). Usando último preço.
+00:04:44.802 [WARN]   [Bot] Histórico insuficiente para EMA (2/20). Usando último preço.
+00:04:44.818 [WARN]   [Bot] Histórico insuficiente para EMA (2/12). Usando último preço.
+00:04:44.834 [WARN]   [Bot] Histórico insuficiente para EMA (2/26). Usando último preço.
+00:04:44.848 [WARN]   [Bot] Histórico insuficiente para EMA (2/9). Usando último preço.
+00:04:44.864 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=381227.50.
+00:04:44.896 [WARN]   [Bot] Nenhum retorno válido para calcular volatilidade. Retornando 0.1%.
+00:04:44.916 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:04:44.932 [WARN]   [Bot] Histórico insuficiente para ADX (2/28). Retornando força neutra (20).
+00:04:44.948 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.25","expectedProfit":"0.01","rsi":"50.00","emaShort":"381227.50","emaLong":"381227.50","volatility":"0.00","macd":"0.00","signal":"381227.50"}
+00:04:44.968 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.65 sellFactor=1.20 diverge=true volScale=1.00
+00:04:44.980 [WARN]   [Bot] Histórico insuficiente para ADX (2/28). Retornando força neutra (20).
+00:04:44.997 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 1 ordem(s) ativa(s).
+00:04:45.009 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=4.0s, MAX_ORDER_AGE=86400s
+00:04:46.810 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:04:46.816 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=0/5
+00:05:47.366 [SUCCESS] [Bot] [RUNTIME_CONFIG] Configuração aplicada em tempo real (profile=production).
+00:05:47.391 [INFO]   [Bot] Iniciando ciclo 2.
+00:05:48.258 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:05:48.262 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 1 incompleta(s), 0 órfã(s) removida(s)
+00:05:48.280 [DEBUG]  [Bot] Sincronização: Carregadas 1 ordens da BD (BUY: 0✓, SELL: 1✓). Pares no mapa: 1
+00:05:48.294 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 1 (BUY sem SELL ou vice-versa)
+00:05:48.311 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:05:48.592 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380677.00, Best Ask=381138.00.
+00:05:48.867 [WARN]   [Bot] Histórico insuficiente para RSI (4/13). Retornando neutro (50).
+00:05:48.875 [WARN]   [Bot] Histórico insuficiente para EMA (4/8). Usando último preço.
+00:05:48.888 [WARN]   [Bot] Histórico insuficiente para EMA (4/20). Usando último preço.
+00:05:48.900 [WARN]   [Bot] Histórico insuficiente para EMA (4/12). Usando último preço.
+00:05:48.913 [WARN]   [Bot] Histórico insuficiente para EMA (4/26). Usando último preço.
+00:05:48.929 [WARN]   [Bot] Histórico insuficiente para EMA (4/9). Usando último preço.
+00:05:48.942 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=380907.50.
+00:05:48.955 [INFO]   [Bot] Volatilidade calculada: 0.00%.
+00:05:48.969 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:05:48.983 [WARN]   [Bot] Histórico insuficiente para ADX (4/28). Retornando força neutra (20).
+00:05:48.994 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.25","expectedProfit":"0.01","rsi":"50.00","emaShort":"380907.50","emaLong":"380907.50","volatility":"0.00","macd":"0.00","signal":"380907.50"}
+00:05:49.007 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.65 sellFactor=1.20 diverge=true volScale=1.00
+00:05:49.019 [WARN]   [Bot] Histórico insuficiente para ADX (4/28). Retornando força neutra (20).
+00:05:49.033 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 1 ordem(s) ativa(s).
+00:05:49.045 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=68.1s, MAX_ORDER_AGE=86400s
+00:05:50.716 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:05:50.733 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=true, reason=Queda 0.084% - COMPRA (1/3), activeBuys=0/5
+00:05:50.753 [SUCCESS] [Bot] [CASH_MGT_BUY] Queda 0.084% - COMPRA (1/3)
+00:05:50.772 [WARN]   [Bot] [TRADING_STOPPED] Ordem BUY bloqueada: colocação de ordens está em STOP.
+00:06:51.119 [INFO]   [Bot] Iniciando ciclo 3.
+00:06:51.904 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:06:51.905 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 1 incompleta(s), 0 órfã(s) removida(s)
+00:06:51.917 [DEBUG]  [Bot] Sincronização: Carregadas 1 ordens da BD (BUY: 0✓, SELL: 1✓). Pares no mapa: 1
+00:06:51.927 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 1 (BUY sem SELL ou vice-versa)
+00:06:51.938 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:06:52.203 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380757.00, Best Ask=381210.00.
+00:06:52.618 [WARN]   [Bot] Histórico insuficiente para RSI (6/13). Retornando neutro (50).
+00:06:52.620 [WARN]   [Bot] Histórico insuficiente para EMA (6/8). Usando último preço.
+00:06:52.631 [WARN]   [Bot] Histórico insuficiente para EMA (6/20). Usando último preço.
+00:06:52.643 [WARN]   [Bot] Histórico insuficiente para EMA (6/12). Usando último preço.
+00:06:52.650 [WARN]   [Bot] Histórico insuficiente para EMA (6/26). Usando último preço.
+00:06:52.659 [WARN]   [Bot] Histórico insuficiente para EMA (6/9). Usando último preço.
+00:06:52.665 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=380983.50.
+00:06:52.676 [INFO]   [Bot] Volatilidade calculada: 1.97%.
+00:06:52.686 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:06:52.694 [WARN]   [Bot] Histórico insuficiente para ADX (6/28). Retornando força neutra (20).
+00:06:52.701 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.31","expectedProfit":"0.01","rsi":"50.00","emaShort":"380983.50","emaLong":"380983.50","volatility":"1.97","macd":"0.00","signal":"380983.50"}
+00:06:52.709 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.74 sellFactor=1.15 diverge=true volScale=0.75
+00:06:52.717 [WARN]   [Bot] Histórico insuficiente para ADX (6/28). Retornando força neutra (20).
+00:06:52.724 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 1 ordem(s) ativa(s).
+00:06:52.731 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=131.8s, MAX_ORDER_AGE=86400s
+00:06:53.917 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:06:53.919 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=0/5
+00:07:54.276 [INFO]   [Bot] Iniciando ciclo 4.
+00:07:55.299 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:07:55.301 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 1 incompleta(s), 0 órfã(s) removida(s)
+00:07:55.314 [DEBUG]  [Bot] Sincronização: Carregadas 1 ordens da BD (BUY: 0✓, SELL: 1✓). Pares no mapa: 1
+00:07:55.324 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 1 (BUY sem SELL ou vice-versa)
+00:07:55.333 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:07:55.697 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380766.00, Best Ask=381192.00.
+00:07:56.014 [WARN]   [Bot] Histórico insuficiente para RSI (8/13). Retornando neutro (50).
+00:07:56.077 [INFO]   [Bot] EMA(8) calculada: 381024.75.
+00:07:56.126 [WARN]   [Bot] Histórico insuficiente para EMA (8/20). Usando último preço.
+00:07:56.140 [WARN]   [Bot] Histórico insuficiente para EMA (8/12). Usando último preço.
+00:07:56.154 [WARN]   [Bot] Histórico insuficiente para EMA (8/26). Usando último preço.
+00:07:56.175 [WARN]   [Bot] Histórico insuficiente para EMA (8/9). Usando último preço.
+00:07:56.183 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=380979.00.
+00:07:56.189 [INFO]   [Bot] Volatilidade calculada: 1.70%.
+00:07:56.195 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:07:56.206 [WARN]   [Bot] Histórico insuficiente para ADX (8/28). Retornando força neutra (20).
+00:07:56.214 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.30","expectedProfit":"0.01","rsi":"50.00","emaShort":"381024.75","emaLong":"380979.00","volatility":"1.70","macd":"0.00","signal":"380979.00"}
+00:07:56.224 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.72 sellFactor=1.16 diverge=true volScale=0.79
+00:07:56.231 [WARN]   [Bot] Histórico insuficiente para ADX (8/28). Retornando força neutra (20).
+00:07:56.238 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 1 ordem(s) ativa(s).
+00:07:56.250 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=195.3s, MAX_ORDER_AGE=86400s
+00:07:57.780 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:07:57.782 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=0/5
+00:08:58.122 [INFO]   [Bot] Iniciando ciclo 5.
+00:08:58.916 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:08:58.925 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 1 incompleta(s), 0 órfã(s) removida(s)
+00:08:58.947 [DEBUG]  [Bot] Sincronização: Carregadas 1 ordens da BD (BUY: 0✓, SELL: 1✓). Pares no mapa: 1
+00:08:58.967 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 1 (BUY sem SELL ou vice-versa)
+00:08:58.999 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:08:59.022 [INFO]   [Bot] [PAIR_INTEGRITY] Pares: 1 totais | 0 completa(s) | 1 incompleta(s) | 0 órfã(s)
+00:08:59.355 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380578.00, Best Ask=381090.00.
+00:08:59.680 [WARN]   [Bot] Histórico insuficiente para RSI (10/13). Retornando neutro (50).
+00:08:59.686 [INFO]   [Bot] EMA(8) calculada: 380906.54.
+00:08:59.738 [WARN]   [Bot] Histórico insuficiente para EMA (10/20). Usando último preço.
+00:08:59.823 [WARN]   [Bot] Histórico insuficiente para EMA (10/12). Usando último preço.
+00:08:59.884 [WARN]   [Bot] Histórico insuficiente para EMA (10/26). Usando último preço.
+00:08:59.906 [INFO]   [Bot] EMA(9) calculada: 380962.41.
+00:08:59.925 [INFO]   [Bot] MACD calculado: MACD=0.00, Signal=380962.41.
+00:08:59.945 [INFO]   [Bot] Volatilidade calculada: 1.50%.
+00:08:59.963 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:08:59.984 [WARN]   [Bot] Histórico insuficiente para ADX (10/28). Retornando força neutra (20).
+00:09:00.002 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.30","expectedProfit":"0.01","rsi":"50.00","emaShort":"380906.54","emaLong":"380834.00","volatility":"1.50","macd":"0.00","signal":"380962.41"}
+00:09:00.021 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.72 sellFactor=1.16 diverge=true volScale=0.81
+00:09:00.040 [WARN]   [Bot] Histórico insuficiente para ADX (10/28). Retornando força neutra (20).
+00:09:00.083 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 1 ordem(s) ativa(s).
+00:09:00.118 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=259.1s, MAX_ORDER_AGE=86400s
+00:09:01.723 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:09:01.775 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=0/5
+00:10:02.310 [SUCCESS] [Bot] [RUNTIME_CONFIG] Configuração aplicada em tempo real (profile=production).
+00:10:02.315 [INFO]   [Bot] Iniciando ciclo 6.
+00:10:03.043 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:10:03.046 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 1 incompleta(s), 0 órfã(s) removida(s)
+00:10:03.056 [DEBUG]  [Bot] Sincronização: Carregadas 1 ordens da BD (BUY: 0✓, SELL: 1✓). Pares no mapa: 1
+00:10:03.066 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 1 (BUY sem SELL ou vice-versa)
+00:10:03.079 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:10:03.440 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380176.00, Best Ask=380438.00.
+00:10:03.881 [WARN]   [Bot] Histórico insuficiente para RSI (12/13). Retornando neutro (50).
+00:10:03.884 [INFO]   [Bot] EMA(8) calculada: 380679.86.
+00:10:03.899 [WARN]   [Bot] Histórico insuficiente para EMA (12/20). Usando último preço.
+00:10:03.912 [INFO]   [Bot] EMA(12) calculada: 380800.54.
+00:10:03.925 [WARN]   [Bot] Histórico insuficiente para EMA (12/26). Usando último preço.
+00:10:03.940 [INFO]   [Bot] EMA(9) calculada: 380692.10.
+00:10:03.951 [INFO]   [Bot] MACD calculado: MACD=493.54, Signal=380692.10.
+00:10:03.965 [INFO]   [Bot] Volatilidade calculada: 2.17%.
+00:10:03.979 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:10:03.991 [WARN]   [Bot] Histórico insuficiente para ADX (12/28). Retornando força neutra (20).
+00:10:04.005 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.32","expectedProfit":"0.01","rsi":"50.00","emaShort":"380679.86","emaLong":"380307.00","volatility":"2.17","macd":"493.54","signal":"380692.10"}
+00:10:04.018 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.75 sellFactor=1.15 diverge=true volScale=0.73
+00:10:04.032 [WARN]   [Bot] Histórico insuficiente para ADX (12/28). Retornando força neutra (20).
+00:10:04.045 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 1 ordem(s) ativa(s).
+00:10:04.057 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=323.1s, MAX_ORDER_AGE=86400s
+00:10:05.599 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:10:05.602 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=true, reason=Queda 0.158% - COMPRA (1/6), activeBuys=0/5
+00:10:05.613 [SUCCESS] [Bot] [CASH_MGT_BUY] Queda 0.158% - COMPRA (1/6)
+00:10:05.625 [INFO]   [Bot] ✅ Permitido criar novo par (Pares abertos: 1/8, Taxa fill: 100.0%)
+00:10:06.878 [SUCCESS] [Bot] Ordem BUY 01KJXN93ABJ8W9GFPJVWG890CN colocada @ R$378890.27, Qty: 0.00020000, Pair: PAIR_1772669405637_z..., Taxa Estimada: 0.30%
+00:10:06.880 [SUCCESS] [Bot] [CASH_MGT_BUY] Ordem de compra colocada: 0.00020000 BTC a R$ 378890.27
+00:11:07.439 [SUCCESS] [Bot] [RUNTIME_CONFIG] Configuração aplicada em tempo real (profile=production).
+00:11:07.449 [INFO]   [Bot] Iniciando ciclo 7.
+00:11:08.315 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:11:08.318 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:11:08.338 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 2 incompleta(s), 0 órfã(s) removida(s)
+00:11:08.371 [DEBUG]  [Bot] Sincronização: Carregadas 2 ordens da BD (BUY: 1✓, SELL: 1✓). Pares no mapa: 2
+00:11:08.392 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 2 (BUY sem SELL ou vice-versa)
+00:11:08.410 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:11:08.428 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:11:08.690 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380019.00, Best Ask=380227.00.
+00:11:09.008 [INFO]   [Bot] RSI calculado: 6.05.
+00:11:09.012 [INFO]   [Bot] EMA(8) calculada: 380459.26.
+00:11:09.027 [WARN]   [Bot] Histórico insuficiente para EMA (14/20). Usando último preço.
+00:11:09.043 [INFO]   [Bot] EMA(12) calculada: 380564.99.
+00:11:09.059 [WARN]   [Bot] Histórico insuficiente para EMA (14/26). Usando último preço.
+00:11:09.085 [INFO]   [Bot] EMA(9) calculada: 380495.39.
+00:11:09.118 [INFO]   [Bot] MACD calculado: MACD=441.99, Signal=380495.39.
+00:11:09.133 [INFO]   [Bot] Volatilidade calculada: 1.98%.
+00:11:09.192 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:11:09.216 [WARN]   [Bot] Histórico insuficiente para ADX (14/28). Retornando força neutra (20).
+00:11:09.238 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.57","expectedProfit":"0.01","rsi":"6.05","emaShort":"380459.26","emaLong":"380123.00","volatility":"1.98","macd":"441.99","signal":"380495.39"}
+00:11:09.245 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.74 sellFactor=1.15 diverge=true volScale=0.75
+00:11:09.284 [WARN]   [Bot] Histórico insuficiente para ADX (14/28). Retornando força neutra (20).
+00:11:09.309 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 2 ordem(s) ativa(s).
+00:11:09.312 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=1.0s, MAX_ORDER_AGE=86400s
+00:11:09.329 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=388.3s, MAX_ORDER_AGE=86400s
+00:11:10.700 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:11:10.707 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=true, reason=Queda 0.048% - COMPRA (1/6), activeBuys=1/5
+00:11:10.722 [SUCCESS] [Bot] [CASH_MGT_BUY] Queda 0.048% - COMPRA (1/6)
+00:11:10.738 [DEBUG]  [Bot] ⏳ Throttling ativo: aguarde 4 ciclo(s) antes de novo par.
+00:11:10.755 [WARN]   [Bot] ❌ Nova BUY bloqueada por limite dinâmico de pares. Aguarde completamento dos pares existentes.
+00:12:11.298 [INFO]   [Bot] Iniciando ciclo 8.
+00:12:12.154 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:12:12.159 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:12:12.173 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 2 incompleta(s), 0 órfã(s) removida(s)
+00:12:12.186 [DEBUG]  [Bot] Sincronização: Carregadas 2 ordens da BD (BUY: 1✓, SELL: 1✓). Pares no mapa: 2
+00:12:12.199 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 2 (BUY sem SELL ou vice-versa)
+00:12:12.211 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:12:12.225 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:12:12.461 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380238.00, Best Ask=380701.00.
+00:12:12.815 [INFO]   [Bot] RSI calculado: 32.93.
+00:12:12.822 [INFO]   [Bot] EMA(8) calculada: 380443.89.
+00:12:12.832 [WARN]   [Bot] Histórico insuficiente para EMA (16/20). Usando último preço.
+00:12:12.845 [INFO]   [Bot] EMA(12) calculada: 380548.11.
+00:12:12.859 [WARN]   [Bot] Histórico insuficiente para EMA (16/26). Usando último preço.
+00:12:12.874 [INFO]   [Bot] EMA(9) calculada: 380485.58.
+00:12:12.899 [INFO]   [Bot] MACD calculado: MACD=78.61, Signal=380485.58.
+00:12:12.916 [INFO]   [Bot] Volatilidade calculada: 2.61%.
+00:12:12.938 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:12:12.956 [WARN]   [Bot] Histórico insuficiente para ADX (16/28). Retornando força neutra (20).
+00:12:12.972 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.43","expectedProfit":"0.01","rsi":"32.93","emaShort":"380443.89","emaLong":"380469.50","volatility":"2.61","macd":"78.61","signal":"380485.58"}
+00:12:12.988 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.76 sellFactor=1.13 diverge=true volScale=0.67
+00:12:13.007 [WARN]   [Bot] Histórico insuficiente para ADX (16/28). Retornando força neutra (20).
+00:12:13.025 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 2 ordem(s) ativa(s).
+00:12:13.041 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=64.7s, MAX_ORDER_AGE=86400s
+00:12:13.059 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=452.1s, MAX_ORDER_AGE=86400s
+00:12:14.384 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:12:14.389 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=1/5
+00:13:14.861 [INFO]   [Bot] Iniciando ciclo 9.
+00:13:15.558 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:13:15.561 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:13:15.577 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 2 incompleta(s), 0 órfã(s) removida(s)
+00:13:15.591 [DEBUG]  [Bot] Sincronização: Carregadas 2 ordens da BD (BUY: 1✓, SELL: 1✓). Pares no mapa: 2
+00:13:15.607 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 2 (BUY sem SELL ou vice-versa)
+00:13:15.622 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:13:15.637 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:13:15.939 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380026.00, Best Ask=380415.00.
+00:13:16.219 [INFO]   [Bot] RSI calculado: 23.80.
+00:13:16.221 [INFO]   [Bot] EMA(8) calculada: 380285.06.
+00:13:16.237 [WARN]   [Bot] Histórico insuficiente para EMA (18/20). Usando último preço.
+00:13:16.253 [INFO]   [Bot] EMA(12) calculada: 380454.45.
+00:13:16.269 [WARN]   [Bot] Histórico insuficiente para EMA (18/26). Usando último preço.
+00:13:16.284 [INFO]   [Bot] EMA(9) calculada: 380374.58.
+00:13:16.298 [INFO]   [Bot] MACD calculado: MACD=233.95, Signal=380374.58.
+00:13:16.314 [INFO]   [Bot] Volatilidade calculada: 2.48%.
+00:13:16.330 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:13:16.346 [WARN]   [Bot] Histórico insuficiente para ADX (18/28). Retornando força neutra (20).
+00:13:16.363 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.48","expectedProfit":"0.01","rsi":"23.80","emaShort":"380285.06","emaLong":"380220.50","volatility":"2.48","macd":"233.95","signal":"380374.58"}
+00:13:16.378 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.76 sellFactor=1.14 diverge=true volScale=0.69
+00:13:16.392 [WARN]   [Bot] Histórico insuficiente para ADX (18/28). Retornando força neutra (20).
+00:13:16.407 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 2 ordem(s) ativa(s).
+00:13:16.422 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=128.1s, MAX_ORDER_AGE=86400s
+00:13:16.437 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=515.4s, MAX_ORDER_AGE=86400s
+00:13:17.933 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:13:17.936 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=1/5
+00:14:18.467 [INFO]   [Bot] Iniciando ciclo 10.
+00:14:19.942 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:14:19.945 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:14:19.960 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 2 incompleta(s), 0 órfã(s) removida(s)
+00:14:19.974 [DEBUG]  [Bot] Sincronização: Carregadas 2 ordens da BD (BUY: 1✓, SELL: 1✓). Pares no mapa: 2
+00:14:19.988 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 2 (BUY sem SELL ou vice-versa)
+00:14:20.003 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:14:20.017 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:14:20.032 [INFO]   [Bot] [PAIR_INTEGRITY] Pares: 2 totais | 0 completa(s) | 2 incompleta(s) | 0 órfã(s)
+00:14:20.647 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380468.00, Best Ask=380811.00.
+00:14:20.993 [INFO]   [Bot] RSI calculado: 40.92.
+00:14:20.996 [INFO]   [Bot] EMA(8) calculada: 380400.45.
+00:14:21.011 [INFO]   [Bot] EMA(20) calculada: 380631.86.
+00:14:21.024 [INFO]   [Bot] EMA(12) calculada: 380487.48.
+00:14:21.039 [WARN]   [Bot] Histórico insuficiente para EMA (20/26). Usando último preço.
+00:14:21.052 [INFO]   [Bot] EMA(9) calculada: 380413.37.
+00:14:21.066 [INFO]   [Bot] MACD calculado: MACD=-152.02, Signal=380413.37.
+00:14:21.081 [INFO]   [Bot] Volatilidade calculada: 2.90%.
+00:14:21.096 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:14:21.109 [WARN]   [Bot] Histórico insuficiente para ADX (20/28). Retornando força neutra (20).
+00:14:21.125 [INFO]   [Bot] Previsão de preço | {"trend":"down","confidence":"0.39","expectedProfit":"0.01","rsi":"40.92","emaShort":"380400.45","emaLong":"380631.86","volatility":"2.90","macd":"-152.02","signal":"380413.37"}
+00:14:21.139 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.78 sellFactor=1.13 diverge=true volScale=0.64
+00:14:21.153 [WARN]   [Bot] Histórico insuficiente para ADX (20/28). Retornando força neutra (20).
+00:14:21.167 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 2 ordem(s) ativa(s).
+00:14:21.181 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=192.9s, MAX_ORDER_AGE=86400s
+00:14:21.195 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=580.2s, MAX_ORDER_AGE=86400s
+00:14:23.034 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:14:23.048 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=1/5
+00:14:23.086 [DEBUG]  [Bot] ⏳ Throttling ativo: aguarde 1 ciclo(s) antes de novo par.
+00:14:23.105 [INFO]   [Bot] 📊 PARES | Ativos: 2/8 | Criados: 1 | Completos: 0 | Taxa: 0.0% | Pode criar: ❌ NÃO
+00:15:23.708 [INFO]   [Bot] Iniciando ciclo 11.
+00:15:24.533 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:15:24.536 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:15:24.543 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 2 incompleta(s), 0 órfã(s) removida(s)
+00:15:24.550 [DEBUG]  [Bot] Sincronização: Carregadas 2 ordens da BD (BUY: 1✓, SELL: 1✓). Pares no mapa: 2
+00:15:24.557 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 2 (BUY sem SELL ou vice-versa)
+00:15:24.564 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:15:24.573 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:15:35.198 [DEBUG]  [Bot] [EXTERNAL] Kraken indisponivel: timeout of 10000ms exceeded
+00:15:36.022 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380984.00, Best Ask=381266.00.
+00:15:36.442 [INFO]   [Bot] RSI calculado: 56.58.
+00:15:36.444 [INFO]   [Bot] EMA(8) calculada: 380733.09.
+00:15:36.456 [INFO]   [Bot] EMA(20) calculada: 380678.08.
+00:15:36.467 [INFO]   [Bot] EMA(12) calculada: 380597.56.
+00:15:36.479 [WARN]   [Bot] Histórico insuficiente para EMA (22/26). Usando último preço.
+00:15:36.492 [INFO]   [Bot] EMA(9) calculada: 380649.80.
+00:15:36.504 [INFO]   [Bot] MACD calculado: MACD=-527.44, Signal=380649.80.
+00:15:36.516 [INFO]   [Bot] Volatilidade calculada: 3.20%.
+00:15:36.527 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:15:36.539 [WARN]   [Bot] Histórico insuficiente para ADX (22/28). Retornando força neutra (20).
+00:15:36.551 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.39","expectedProfit":"0.01","rsi":"56.58","emaShort":"380733.09","emaLong":"380678.08","volatility":"3.20","macd":"-527.44","signal":"380649.80"}
+00:15:36.562 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.79 sellFactor=1.12 diverge=false volScale=0.60
+00:15:36.573 [WARN]   [Bot] Histórico insuficiente para ADX (22/28). Retornando força neutra (20).
+00:15:36.583 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 2 ordem(s) ativa(s).
+00:15:36.595 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=268.3s, MAX_ORDER_AGE=86400s
+00:15:36.605 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=655.6s, MAX_ORDER_AGE=86400s
+00:15:38.771 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:15:38.774 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=1/5
+00:16:39.129 [INFO]   [Bot] Iniciando ciclo 12.
+00:16:39.866 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:16:39.870 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:16:39.881 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 2 incompleta(s), 0 órfã(s) removida(s)
+00:16:39.890 [DEBUG]  [Bot] Sincronização: Carregadas 2 ordens da BD (BUY: 1✓, SELL: 1✓). Pares no mapa: 2
+00:16:39.903 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 2 (BUY sem SELL ou vice-versa)
+00:16:39.914 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:16:39.925 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:16:40.235 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=380626.00, Best Ask=381262.00.
+00:16:40.551 [INFO]   [Bot] RSI calculado: 67.08.
+00:16:40.554 [INFO]   [Bot] EMA(8) calculada: 380783.07.
+00:16:40.566 [INFO]   [Bot] EMA(20) calculada: 380736.59.
+00:16:40.579 [INFO]   [Bot] EMA(12) calculada: 380671.17.
+00:16:40.590 [WARN]   [Bot] Histórico insuficiente para EMA (24/26). Usando último preço.
+00:16:40.602 [INFO]   [Bot] EMA(9) calculada: 380792.92.
+00:16:40.613 [INFO]   [Bot] MACD calculado: MACD=-272.83, Signal=380792.92.
+00:16:40.624 [INFO]   [Bot] Volatilidade calculada: 3.09%.
+00:16:40.637 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:16:40.649 [WARN]   [Bot] Histórico insuficiente para ADX (24/28). Retornando força neutra (20).
+00:16:40.662 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.45","expectedProfit":"0.02","rsi":"67.08","emaShort":"380783.07","emaLong":"380736.59","volatility":"3.09","macd":"-272.83","signal":"380792.92"}
+00:16:40.674 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.79 sellFactor=1.12 diverge=false volScale=0.61
+00:16:40.687 [WARN]   [Bot] Histórico insuficiente para ADX (24/28). Retornando força neutra (20).
+00:16:40.699 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 2 ordem(s) ativa(s).
+00:16:40.711 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=332.4s, MAX_ORDER_AGE=86400s
+00:16:40.722 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=719.7s, MAX_ORDER_AGE=86400s
+00:16:42.167 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:16:42.170 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=true, reason=Queda 0.047% - COMPRA (1/6), activeBuys=1/5
+00:16:42.178 [SUCCESS] [Bot] [CASH_MGT_BUY] Queda 0.047% - COMPRA (1/6)
+00:16:42.186 [INFO]   [Bot] ✅ Permitido criar novo par (Pares abertos: 2/8, Taxa fill: 0.0%)
+00:16:43.691 [SUCCESS] [Bot] Ordem BUY 01KJXNN6KYZR27ZMM12P2S1ZPE colocada @ R$379448.08, Qty: 0.00017558, Pair: PAIR_1772669802197_i..., Taxa Estimada: 0.30%
+00:16:43.697 [SUCCESS] [Bot] [CASH_MGT_BUY] Ordem de compra colocada: 0.00017558 BTC a R$ 379448.08
+00:17:44.033 [INFO]   [Bot] Iniciando ciclo 13.
+00:17:44.778 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669802197_i... | BUY: ✓ | SELL: ✗
+00:17:44.782 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:17:44.793 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:17:44.804 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 3 incompleta(s), 0 órfã(s) removida(s)
+00:17:44.815 [DEBUG]  [Bot] Sincronização: Carregadas 3 ordens da BD (BUY: 2✓, SELL: 1✓). Pares no mapa: 3
+00:17:44.830 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 3 (BUY sem SELL ou vice-versa)
+00:17:44.847 [DEBUG]  [Bot]   → PAIR_1772669802197_i...: Só tem BUY
+00:17:44.861 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:17:44.875 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:17:45.186 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=381113.00, Best Ask=381751.00.
+00:17:45.567 [INFO]   [Bot] RSI calculado: 80.18.
+00:17:45.570 [INFO]   [Bot] EMA(8) calculada: 381095.55.
+00:17:45.582 [INFO]   [Bot] EMA(20) calculada: 380862.13.
+00:17:45.593 [INFO]   [Bot] EMA(12) calculada: 380933.94.
+00:17:45.604 [INFO]   [Bot] EMA(26) calculada: 380882.28.
+00:17:45.615 [INFO]   [Bot] EMA(9) calculada: 380996.25.
+00:17:45.624 [INFO]   [Bot] MACD calculado: MACD=51.66, Signal=380996.25.
+00:17:45.634 [INFO]   [Bot] Volatilidade calculada: 3.28%.
+00:17:45.645 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:17:45.656 [WARN]   [Bot] Histórico insuficiente para ADX (26/28). Retornando força neutra (20).
+00:17:45.665 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.53","expectedProfit":"0.01","rsi":"80.18","emaShort":"381095.55","emaLong":"380862.13","volatility":"3.28","macd":"51.66","signal":"380996.25"}
+00:17:45.675 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.79 sellFactor=1.12 diverge=false volScale=0.59
+00:17:45.685 [WARN]   [Bot] Histórico insuficiente para ADX (26/28). Retornando força neutra (20).
+00:17:45.696 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 3 ordem(s) ativa(s).
+00:17:45.706 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXNN6KYZR27ZMM12P2S1ZPE: age=0.9s, MAX_ORDER_AGE=86400s
+00:17:45.716 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=397.4s, MAX_ORDER_AGE=86400s
+00:17:45.726 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=784.7s, MAX_ORDER_AGE=86400s
+00:17:47.639 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:17:47.643 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=2/5
+00:18:48.489 [SUCCESS] [Bot] [RUNTIME_CONFIG] Configuração aplicada em tempo real (profile=production).
+00:18:48.491 [INFO]   [Bot] Iniciando ciclo 14.
+00:18:49.273 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669802197_i... | BUY: ✓ | SELL: ✗
+00:18:49.277 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:18:49.288 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:18:49.299 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 3 incompleta(s), 0 órfã(s) removida(s)
+00:18:49.311 [DEBUG]  [Bot] Sincronização: Carregadas 3 ordens da BD (BUY: 2✓, SELL: 1✓). Pares no mapa: 3
+00:18:49.322 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 3 (BUY sem SELL ou vice-versa)
+00:18:49.334 [DEBUG]  [Bot]   → PAIR_1772669802197_i...: Só tem BUY
+00:18:49.345 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:18:49.357 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:18:49.709 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=381244.00, Best Ask=381526.00.
+00:18:50.013 [INFO]   [Bot] RSI calculado: 74.49.
+00:18:50.016 [INFO]   [Bot] EMA(8) calculada: 381274.92.
+00:18:50.027 [INFO]   [Bot] EMA(20) calculada: 380937.39.
+00:18:50.039 [INFO]   [Bot] EMA(12) calculada: 381028.51.
+00:18:50.049 [INFO]   [Bot] EMA(26) calculada: 380910.74.
+00:18:50.061 [INFO]   [Bot] EMA(9) calculada: 381181.19.
+00:18:50.073 [INFO]   [Bot] MACD calculado: MACD=117.77, Signal=381181.19.
+00:18:50.084 [INFO]   [Bot] Volatilidade calculada: 3.16%.
+00:18:50.096 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:18:50.107 [INFO]   [Bot] ADX calculado: 24.56.
+00:18:50.118 [INFO]   [Bot] Previsão de preço | {"trend":"neutral","confidence":"0.49","expectedProfit":"0.02","rsi":"74.49","emaShort":"381274.92","emaLong":"380937.39","volatility":"3.16","macd":"117.77","signal":"381181.19"}
+00:18:50.130 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.79 sellFactor=1.12 diverge=false volScale=0.61
+00:18:50.142 [INFO]   [Bot] ADX calculado: 24.56.
+00:18:50.152 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 3 ordem(s) ativa(s).
+00:18:50.163 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXNN6KYZR27ZMM12P2S1ZPE: age=65.4s, MAX_ORDER_AGE=86400s
+00:18:50.175 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=461.8s, MAX_ORDER_AGE=86400s
+00:18:50.185 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=849.2s, MAX_ORDER_AGE=86400s
+00:18:52.180 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:18:52.183 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=2/5
+00:19:52.604 [INFO]   [Bot] Iniciando ciclo 15.
+00:19:53.405 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669802197_i... | BUY: ✓ | SELL: ✗
+00:19:53.408 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772669405637_z... | BUY: ✓ | SELL: ✗
+00:19:53.420 [WARN]   [Bot] [PAIRSYNC] Par incompleta: PAIR_1772648696941_c... | BUY: ✗ | SELL: ✓
+00:19:53.430 [DEBUG]  [Bot] [PAIRSYNC] Status de Pares: 0 completa(s), 3 incompleta(s), 0 órfã(s) removida(s)
+00:19:53.441 [DEBUG]  [Bot] Sincronização: Carregadas 3 ordens da BD (BUY: 2✓, SELL: 1✓). Pares no mapa: 3
+00:19:53.451 [WARN]   [Bot] [PAIR_CHECK] Pares Incompletas: 3 (BUY sem SELL ou vice-versa)
+00:19:53.466 [DEBUG]  [Bot]   → PAIR_1772669802197_i...: Só tem BUY
+00:19:53.477 [DEBUG]  [Bot]   → PAIR_1772669405637_z...: Só tem BUY
+00:19:53.487 [DEBUG]  [Bot]   → PAIR_1772648696941_c...: Só tem SELL
+00:19:53.498 [INFO]   [Bot] [PAIR_INTEGRITY] Pares: 3 totais | 0 completa(s) | 3 incompleta(s) | 0 órfã(s)
+00:19:53.843 [SUCCESS] [Bot] Orderbook atualizado: Best Bid=381243.00, Best Ask=381768.00.
+00:19:54.196 [INFO]   [Bot] RSI calculado: 86.90.
+00:19:54.200 [INFO]   [Bot] EMA(8) calculada: 381341.77.
+00:19:54.217 [INFO]   [Bot] EMA(20) calculada: 380969.25.
+00:19:54.231 [INFO]   [Bot] EMA(12) calculada: 381220.43.
+00:19:54.246 [INFO]   [Bot] EMA(26) calculada: 381005.86.
+00:19:54.259 [INFO]   [Bot] EMA(9) calculada: 381350.07.
+00:19:54.271 [INFO]   [Bot] MACD calculado: MACD=214.57, Signal=381350.07.
+00:19:54.283 [INFO]   [Bot] Volatilidade calculada: 3.06%.
+00:19:54.295 [INFO]   [Bot] Fills históricos insuficientes para análise. Retornando valores padrão.
+00:19:54.306 [INFO]   [Bot] ADX calculado: 24.46.
+00:19:54.318 [INFO]   [Bot] Previsão de preço | {"trend":"up","confidence":"0.56","expectedProfit":"0.02","rsi":"86.90","emaShort":"381341.77","emaLong":"380969.25","volatility":"3.06","macd":"214.57","signal":"381350.07"}
+00:19:54.329 [INFO]   [Bot] [SPREAD_TREND] source=external trend=up conf=1.00 buyFactor=0.78 sellFactor=1.12 diverge=false volScale=0.62
+00:19:54.338 [INFO]   [Bot] ADX calculado: 24.46.
+00:19:54.349 [DEBUG]  [Bot] 🔍 checkOrders iniciado. 3 ordem(s) ativa(s).
+00:19:54.361 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXNN6KYZR27ZMM12P2S1ZPE: age=129.6s, MAX_ORDER_AGE=86400s
+00:19:54.373 [DEBUG]  [Bot]   [checkOrders] Verificando BUY 01KJXN93ABJ8W9GFPJVWG890CN: age=526.0s, MAX_ORDER_AGE=86400s
+00:19:54.384 [DEBUG]  [Bot]   [checkOrders] Verificando SELL 01KJXKXJHKPQKZQFD2JERF7VQP: age=913.4s, MAX_ORDER_AGE=86400s
+00:19:55.720 [DEBUG]  [Bot] [CASH_MGT] USE_CASH_MANAGEMENT ativado. Avaliando sinais...
+00:19:55.723 [DEBUG]  [Bot] [CASH_MGT] shouldBuy=false, reason=Sem sinal de compra, activeBuys=2/5
+01:08:08.853 [WARN]   [Bot] [ANTI_GRAVITY] MIN_SPREAD_PCT elevado para 0.750% (taxas + buffer).
